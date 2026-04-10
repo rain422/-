@@ -2,14 +2,324 @@ import streamlit as st
 import feedparser
 from scholarly import scholarly
 from datetime import datetime
+import requests
+import xml.etree.ElementTree as ET
 import time
 import re
 
 # =====================================================================
-# 1. 페이지 설정
+# 다국어 UI 텍스트
+# =====================================================================
+LANG_OPTIONS = {"🇰🇷 한국어": "ko", "🇺🇸 English": "en", "🇯🇵 日本語": "ja", "🇨🇳 中文": "zh"}
+
+UI = {
+    "ko": {
+        "app_title": "🔋 BMS·SOH 연구 대시보드",
+        "app_sub": "배터리 건강 추정 2-04 | 자료수집 → 선택 → 전문 보고서 자동 생성",
+        "sidebar_title": "🔋 배터리 건강 추정",
+        "sidebar_sub": "2-04 연구 대시보드",
+        "sidebar_keyword": "🔑 검색 키워드",
+        "sidebar_progress": "진행 상태",
+        "topic_chapter": "Chapter 2-04",
+        "tab1": "📡 ① 뉴스 수집",
+        "tab2": "📚 ② 논문 검색",
+        "tab3": "✅ ③ 자료 선택 & 보고서",
+        "tab4": "💾 ④ 저장 & 다운로드",
+        "news_collect": "🔄 뉴스 수집 시작",
+        "scholar_search": "🔍 Google Scholar 검색",
+        "arxiv_search": "🔍 arXiv 논문 검색",
+        "reset": "🗑️ 초기화",
+        "gen_report": "📄 전문 보고서 자동 생성",
+        "download_txt": "📄 TXT 다운로드",
+        "download_md": "📋 Markdown 다운로드",
+        "print_pdf": "🖨️ 인쇄/PDF",
+        "metric_topic": "선택 주제",
+        "metric_news": "수집 뉴스",
+        "metric_paper": "수집 논문",
+        "metric_selected": "선택 자료",
+        "metric_report": "보고서",
+        "report_done": "완성 ✓",
+        "report_wait": "대기중",
+        "select_news_header": "📰 보고서에 포함할 뉴스를 선택하세요 (복수 선택 가능)",
+        "select_paper_header": "📚 보고서에 포함할 논문을 선택하세요 (복수 선택 가능)",
+        "domestic_news": "🇰🇷 국내 뉴스",
+        "foreign_news": "🌍 해외 뉴스",
+        "no_data": "먼저 ①탭에서 뉴스를, ②탭에서 논문을 수집해주세요.",
+        "scholar_warning": "⚠️ Google Scholar는 잦은 요청 시 일시 차단될 수 있습니다.",
+        "arxiv_info": "💡 arXiv는 무료 학술 논문 저장소입니다. 차단 없이 안정적으로 검색됩니다.",
+        "collected": "건 수집 완료",
+        "papers_collected": "편 수집 완료",
+        "select_tip": "③탭에서 원하는 항목을 선택하세요",
+        "edit_label": "✏️ 최종 수정 (수정 후 다운로드)",
+        "preview": "👁️ 최종 미리보기",
+        "no_report": "아직 보고서가 없습니다",
+        "no_report_guide": "① 뉴스 수집 → ② 논문 검색 → ③ 자료 선택 후 보고서 생성",
+        "steps": ["① 뉴스 수집", "② 논문 검색", "③ 자료 선택", "④ 보고서 생성", "⑤ 다운로드"],
+        "flow": ["① 뉴스 수집", "② 논문 검색", "③ 자료 선택", "④ 보고서 생성", "⑤ 다운로드"],
+        "report_title": "연구 분석 보고서",
+        "abstract": "초록 (Abstract)",
+        "intro": "1. 서론 (Introduction)",
+        "intro_bg": "1.1 연구 배경 및 필요성",
+        "intro_obj": "1.2 연구 목적",
+        "intro_struct": "1.3 보고서 구성",
+        "theory": "2. 이론적 배경 (Theoretical Background)",
+        "theory_def": "2.1 핵심 개념 정의",
+        "theory_concept": "2.2 관련 핵심 개념",
+        "theory_trend": "2.3 기존 연구 동향 요약",
+        "trends": "3. 최신 기술 동향 분석 (Recent Trends)",
+        "domestic_trend": "3.1 국내 동향",
+        "foreign_trend": "3.2 해외 동향",
+        "literature": "4. 핵심 선행 연구 검토 (Literature Review)",
+        "arxiv_review": "4.2 arXiv 최신 연구",
+        "analysis": "5. 기술적 분석 및 고찰 (Technical Analysis)",
+        "comparison": "5.1 주요 연구 특징 비교",
+        "metrics": "5.2 성능 지표 및 평가 기준",
+        "limits": "5.3 한계점 및 개선 방향",
+        "conclusion": "6. 결론 및 향후 연구 방향 (Conclusion)",
+        "findings": "6.1 주요 발견사항 요약",
+        "future": "6.2 향후 연구 방향 제언",
+        "references": "참고문헌 (References)",
+        "auto_generated": "본 보고서는 배터리 건강 추정 연구 대시보드에서 자동 생성되었습니다.",
+        "written_date": "작성일",
+        "keyword_label": "키워드",
+        "ref_book": "기준 문헌",
+        "collected_data": "수집 자료",
+        "news_unit": "건",
+        "paper_unit": "편",
+        "lang_label": "언어 선택",
+    },
+    "en": {
+        "app_title": "🔋 BMS·SOH Research Dashboard",
+        "app_sub": "Battery Health Estimation 2-04 | Collect → Select → Auto Report",
+        "sidebar_title": "🔋 Battery Health",
+        "sidebar_sub": "2-04 Research Dashboard",
+        "sidebar_keyword": "🔑 Search Keyword",
+        "sidebar_progress": "Progress",
+        "topic_chapter": "Chapter 2-04",
+        "tab1": "📡 ① News",
+        "tab2": "📚 ② Papers",
+        "tab3": "✅ ③ Select & Report",
+        "tab4": "💾 ④ Save & Download",
+        "news_collect": "🔄 Collect News",
+        "scholar_search": "🔍 Google Scholar Search",
+        "arxiv_search": "🔍 arXiv Search",
+        "reset": "🗑️ Reset",
+        "gen_report": "📄 Generate Professional Report",
+        "download_txt": "📄 Download TXT",
+        "download_md": "📋 Download Markdown",
+        "print_pdf": "🖨️ Print/PDF",
+        "metric_topic": "Topic",
+        "metric_news": "News",
+        "metric_paper": "Papers",
+        "metric_selected": "Selected",
+        "metric_report": "Report",
+        "report_done": "Done ✓",
+        "report_wait": "Pending",
+        "select_news_header": "📰 Select news to include in the report",
+        "select_paper_header": "📚 Select papers to include in the report",
+        "domestic_news": "🇰🇷 Korean News",
+        "foreign_news": "🌍 Global News",
+        "no_data": "Please collect news (Tab ①) and papers (Tab ②) first.",
+        "scholar_warning": "⚠️ Google Scholar may temporarily block frequent requests.",
+        "arxiv_info": "💡 arXiv is a free open-access repository with stable access.",
+        "collected": " collected",
+        "papers_collected": " papers found",
+        "select_tip": "Go to Tab ③ to select items",
+        "edit_label": "✏️ Final Edit (edit before downloading)",
+        "preview": "👁️ Final Preview",
+        "no_report": "No report yet",
+        "no_report_guide": "① Collect News → ② Search Papers → ③ Select & Generate",
+        "steps": ["① News", "② Papers", "③ Select", "④ Report", "⑤ Download"],
+        "flow": ["① News", "② Papers", "③ Select", "④ Generate", "⑤ Download"],
+        "report_title": "Research Analysis Report",
+        "abstract": "Abstract",
+        "intro": "1. Introduction",
+        "intro_bg": "1.1 Background & Motivation",
+        "intro_obj": "1.2 Research Objectives",
+        "intro_struct": "1.3 Report Structure",
+        "theory": "2. Theoretical Background",
+        "theory_def": "2.1 Key Concept Definitions",
+        "theory_concept": "2.2 Core Concepts",
+        "theory_trend": "2.3 Existing Research Overview",
+        "trends": "3. Recent Technology Trends",
+        "domestic_trend": "3.1 Korean Trends",
+        "foreign_trend": "3.2 Global Trends",
+        "literature": "4. Literature Review",
+        "arxiv_review": "4.2 Recent arXiv Preprints",
+        "analysis": "5. Technical Analysis",
+        "comparison": "5.1 Methodology Comparison",
+        "metrics": "5.2 Performance Metrics",
+        "limits": "5.3 Limitations & Improvements",
+        "conclusion": "6. Conclusion & Future Work",
+        "findings": "6.1 Key Findings",
+        "future": "6.2 Future Research Directions",
+        "references": "References",
+        "auto_generated": "This report was auto-generated by the Battery Health Estimation Research Dashboard.",
+        "written_date": "Date",
+        "keyword_label": "Keywords",
+        "ref_book": "Reference Book",
+        "collected_data": "Collected Data",
+        "news_unit": "",
+        "paper_unit": "",
+        "lang_label": "Language",
+    },
+    "ja": {
+        "app_title": "🔋 BMS·SOH 研究ダッシュボード",
+        "app_sub": "バッテリー健全性推定 2-04 | 収集 → 選択 → 専門レポート自動生成",
+        "sidebar_title": "🔋 バッテリー健全性推定",
+        "sidebar_sub": "2-04 研究ダッシュボード",
+        "sidebar_keyword": "🔑 検索キーワード",
+        "sidebar_progress": "進捗状況",
+        "topic_chapter": "Chapter 2-04",
+        "tab1": "📡 ① ニュース収集",
+        "tab2": "📚 ② 論文検索",
+        "tab3": "✅ ③ 資料選択 & レポート",
+        "tab4": "💾 ④ 保存 & ダウンロード",
+        "news_collect": "🔄 ニュース収集開始",
+        "scholar_search": "🔍 Google Scholar 検索",
+        "arxiv_search": "🔍 arXiv 論文検索",
+        "reset": "🗑️ リセット",
+        "gen_report": "📄 専門レポート自動生成",
+        "download_txt": "📄 TXT ダウンロード",
+        "download_md": "📋 Markdown ダウンロード",
+        "print_pdf": "🖨️ 印刷/PDF",
+        "metric_topic": "選択テーマ",
+        "metric_news": "収集ニュース",
+        "metric_paper": "収集論文",
+        "metric_selected": "選択資料",
+        "metric_report": "レポート",
+        "report_done": "完成 ✓",
+        "report_wait": "待機中",
+        "select_news_header": "📰 レポートに含めるニュースを選択してください",
+        "select_paper_header": "📚 レポートに含める論文を選択してください",
+        "domestic_news": "🇰🇷 韓国ニュース",
+        "foreign_news": "🌍 海外ニュース",
+        "no_data": "①タブでニュースを、②タブで論文を収集してください。",
+        "scholar_warning": "⚠️ Google Scholarは頻繁なリクエストで一時ブロックされる場合があります。",
+        "arxiv_info": "💡 arXivは無料の学術論文リポジトリです。安定してアクセス可能です。",
+        "collected": "件収集完了",
+        "papers_collected": "件収集完了",
+        "select_tip": "③タブで選択してください",
+        "edit_label": "✏️ 最終編集",
+        "preview": "👁️ プレビュー",
+        "no_report": "レポートがありません",
+        "no_report_guide": "① ニュース収集 → ② 論文検索 → ③ 資料選択後にレポート生成",
+        "steps": ["① ニュース", "② 論文", "③ 選択", "④ 生成", "⑤ DL"],
+        "flow": ["① ニュース収集", "② 論文検索", "③ 資料選択", "④ レポート生成", "⑤ DL"],
+        "report_title": "研究分析レポート",
+        "abstract": "要旨 (Abstract)",
+        "intro": "1. 序論 (Introduction)",
+        "intro_bg": "1.1 研究背景と必要性",
+        "intro_obj": "1.2 研究目的",
+        "intro_struct": "1.3 レポート構成",
+        "theory": "2. 理論的背景",
+        "theory_def": "2.1 主要概念の定義",
+        "theory_concept": "2.2 関連コアコンセプト",
+        "theory_trend": "2.3 既存研究動向",
+        "trends": "3. 最新技術動向分析",
+        "domestic_trend": "3.1 韓国動向",
+        "foreign_trend": "3.2 海外動向",
+        "literature": "4. 先行研究レビュー",
+        "arxiv_review": "4.2 arXiv 最新研究",
+        "analysis": "5. 技術的分析と考察",
+        "comparison": "5.1 主要手法の比較",
+        "metrics": "5.2 性能指標と評価",
+        "limits": "5.3 限界点と改善方向",
+        "conclusion": "6. 結論と今後の研究方向",
+        "findings": "6.1 主な発見事項",
+        "future": "6.2 今後の研究提言",
+        "references": "参考文献",
+        "auto_generated": "このレポートはバッテリー健全性推定研究ダッシュボードで自動生成されました。",
+        "written_date": "作成日",
+        "keyword_label": "キーワード",
+        "ref_book": "参考教材",
+        "collected_data": "収集データ",
+        "news_unit": "件",
+        "paper_unit": "件",
+        "lang_label": "言語選択",
+    },
+    "zh": {
+        "app_title": "🔋 BMS·SOH 研究仪表板",
+        "app_sub": "电池健康状态估计 2-04 | 收集 → 选择 → 自动生成专业报告",
+        "sidebar_title": "🔋 电池健康估计",
+        "sidebar_sub": "2-04 研究仪表板",
+        "sidebar_keyword": "🔑 搜索关键词",
+        "sidebar_progress": "进度状态",
+        "topic_chapter": "Chapter 2-04",
+        "tab1": "📡 ① 新闻收集",
+        "tab2": "📚 ② 论文检索",
+        "tab3": "✅ ③ 选择资料 & 报告",
+        "tab4": "💾 ④ 保存 & 下载",
+        "news_collect": "🔄 开始收集新闻",
+        "scholar_search": "🔍 Google Scholar 搜索",
+        "arxiv_search": "🔍 arXiv 论文搜索",
+        "reset": "🗑️ 重置",
+        "gen_report": "📄 自动生成专业报告",
+        "download_txt": "📄 下载 TXT",
+        "download_md": "📋 下载 Markdown",
+        "print_pdf": "🖨️ 打印/PDF",
+        "metric_topic": "选择主题",
+        "metric_news": "收集新闻",
+        "metric_paper": "收集论文",
+        "metric_selected": "选择资料",
+        "metric_report": "报告",
+        "report_done": "完成 ✓",
+        "report_wait": "等待中",
+        "select_news_header": "📰 请选择要包含在报告中的新闻（可多选）",
+        "select_paper_header": "📚 请选择要包含在报告中的论文（可多选）",
+        "domestic_news": "🇰🇷 韩国新闻",
+        "foreign_news": "🌍 国际新闻",
+        "no_data": "请先在①标签收集新闻，在②标签检索论文。",
+        "scholar_warning": "⚠️ Google Scholar 频繁请求可能被临时封锁。",
+        "arxiv_info": "💡 arXiv 是免费学术论文存储库，访问稳定无封锁。",
+        "collected": "条已收集",
+        "papers_collected": "篇已收集",
+        "select_tip": "请在③标签选择所需内容",
+        "edit_label": "✏️ 最终编辑（下载前可修改）",
+        "preview": "👁️ 最终预览",
+        "no_report": "尚无报告",
+        "no_report_guide": "① 收集新闻 → ② 检索论文 → ③ 选择资料后生成报告",
+        "steps": ["① 新闻", "② 论文", "③ 选择", "④ 生成", "⑤ 下载"],
+        "flow": ["① 新闻收集", "② 论文检索", "③ 资料选择", "④ 报告生成", "⑤ 下载"],
+        "report_title": "研究分析报告",
+        "abstract": "摘要 (Abstract)",
+        "intro": "1. 绪论 (Introduction)",
+        "intro_bg": "1.1 研究背景与必要性",
+        "intro_obj": "1.2 研究目的",
+        "intro_struct": "1.3 报告结构",
+        "theory": "2. 理论背景",
+        "theory_def": "2.1 核心概念定义",
+        "theory_concept": "2.2 相关核心概念",
+        "theory_trend": "2.3 既有研究动向",
+        "trends": "3. 最新技术动向分析",
+        "domestic_trend": "3.1 韩国动向",
+        "foreign_trend": "3.2 国际动向",
+        "literature": "4. 核心先行研究综述",
+        "arxiv_review": "4.2 arXiv 最新研究",
+        "analysis": "5. 技术分析与考察",
+        "comparison": "5.1 主要方法比较",
+        "metrics": "5.2 性能指标与评估",
+        "limits": "5.3 局限性与改进方向",
+        "conclusion": "6. 结论与未来研究方向",
+        "findings": "6.1 主要发现",
+        "future": "6.2 未来研究建议",
+        "references": "参考文献",
+        "auto_generated": "本报告由电池健康估计研究仪表板自动生成。",
+        "written_date": "日期",
+        "keyword_label": "关键词",
+        "ref_book": "参考教材",
+        "collected_data": "收集数据",
+        "news_unit": "条",
+        "paper_unit": "篇",
+        "lang_label": "语言选择",
+    },
+}
+
+# =====================================================================
+# 페이지 설정
 # =====================================================================
 st.set_page_config(
-    page_title="배터리 건강 추정 연구 대시보드",
+    page_title="BMS·SOH Research Dashboard",
     page_icon="🔋",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -17,386 +327,315 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
-
-html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+html, body, [class*="css"] { font-family: 'Noto Sans KR','Noto Sans JP','Noto Sans SC', sans-serif; }
 .stApp { background-color: #f5f7fa; color: #1a1a2e; }
-
-section[data-testid="stSidebar"] {
-    background-color: #ffffff;
-    border-right: 1px solid #e0e4ea;
-}
-
-.top-nav {
-    background: #ffffff; border-bottom: 2px solid #e8eaf0;
-    padding: 16px 32px; margin-bottom: 20px; border-radius: 12px;
-    display: flex; align-items: center; gap: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.top-nav-logo { font-size: 1.5rem; font-weight: 800; color: #1a73e8; letter-spacing: -0.5px; }
-.top-nav-sub  { color: #5f6368; font-size: 0.85rem; border-left: 1px solid #dadce0; padding-left: 16px; }
-
-.topic-header {
-    background: #ffffff; border: 1px solid #e0e4ea; border-radius: 12px;
-    padding: 20px 28px; margin-bottom: 16px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-}
-.topic-num   { font-size: 0.78rem; color: #1a73e8; font-weight: 600; background: #e8f0fe; border-radius: 20px; padding: 2px 12px; display: inline-block; margin-bottom: 8px; }
-.topic-title { font-size: 1.5rem; font-weight: 700; color: #202124; margin: 0; }
-.topic-en    { font-size: 0.85rem; color: #5f6368; margin-top: 4px; }
-
-.flow-bar { display: flex; align-items: center; background: #ffffff; border: 1px solid #e0e4ea; border-radius: 10px; padding: 12px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.flow-step { font-size: 0.82rem; font-weight: 600; padding: 6px 16px; border-radius: 20px; color: #9aa0a6; background: #f1f3f4; }
-.flow-step.active { background: #1a73e8; color: #ffffff; }
-.flow-step.done   { background: #e6f4ea; color: #137333; }
-.flow-arrow { color: #dadce0; font-size: 1rem; margin: 0 6px; }
-
-.metric-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
-.metric-card { background: #ffffff; border: 1px solid #e0e4ea; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.metric-card-label { font-size: 0.74rem; color: #5f6368; margin-bottom: 5px; font-weight: 500; }
-.metric-card-value { font-size: 1.2rem; font-weight: 700; color: #1a73e8; }
-.metric-card-value.green { color: #137333; }
-.metric-card-value.gray  { color: #9aa0a6; }
-
-.news-item { background: #ffffff; border: 1px solid #e8eaf0; border-radius: 10px; padding: 12px 16px; margin: 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.15s, border-color 0.15s; }
-.news-item:hover { box-shadow: 0 3px 12px rgba(26,115,232,0.12); border-color: #1a73e8; }
-.news-item-title { font-size: 0.9rem; font-weight: 600; color: #1a0dab; margin-bottom: 4px; line-height: 1.4; }
-.news-item-title a { color: #1a0dab; text-decoration: none; }
-.news-item-title a:hover { text-decoration: underline; }
-.news-item-meta  { font-size: 0.75rem; color: #5f6368; }
-
-.paper-item { background: #ffffff; border: 1px solid #e8eaf0; border-left: 4px solid #1a73e8; border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-.paper-item-title  { font-size: 0.9rem; font-weight: 600; color: #1a0dab; margin-bottom: 4px; }
-.paper-item-author { font-size: 0.78rem; color: #5f6368; margin-bottom: 3px; }
-.paper-item-venue  { font-size: 0.76rem; color: #137333; margin-bottom: 6px; }
-.paper-item-abs    { font-size: 0.81rem; color: #3c4043; line-height: 1.65; }
-
-.select-header { background: #e8f0fe; border: 1px solid #c5d8fc; border-radius: 8px; padding: 10px 16px; margin-bottom: 12px; font-size: 0.85rem; color: #1557b0; font-weight: 600; }
-.section-title { font-size: 1.05rem; font-weight: 700; color: #202124; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid #e8eaf0; }
-
-/* 보고서 전문 스타일 */
-.report-wrap {
-    background: #ffffff; border: 1px solid #e0e4ea; border-radius: 14px;
-    padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    max-width: 860px; margin: 0 auto;
-}
-.report-doctitle {
-    font-size: 1.45rem; font-weight: 800; color: #1a73e8;
-    text-align: center; margin-bottom: 6px; line-height: 1.4;
-}
-.report-subtitle {
-    font-size: 0.88rem; color: #5f6368; text-align: center; margin-bottom: 4px;
-}
-.report-meta {
-    font-size: 0.8rem; color: #9aa0a6; text-align: center;
-    border-bottom: 2px solid #e8eaf0; padding-bottom: 20px; margin-bottom: 28px;
-}
-.report-abstract {
-    background: #f8f9fa; border-left: 4px solid #1a73e8;
-    border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 28px;
-    font-size: 0.88rem; color: #3c4043; line-height: 1.8;
-}
-.report-abstract-title { font-size: 0.78rem; font-weight: 700; color: #1a73e8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-.report-h2 { font-size: 1.05rem; font-weight: 700; color: #202124; margin: 28px 0 12px; padding-left: 12px; border-left: 4px solid #1a73e8; }
-.report-h3 { font-size: 0.92rem; font-weight: 700; color: #3c4043; margin: 16px 0 8px; }
-.report-p  { font-size: 0.88rem; color: #3c4043; line-height: 1.9; margin-bottom: 10px; }
-.report-news-item { background: #f8f9fa; border: 1px solid #e8eaf0; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
-.report-news-title { font-size: 0.88rem; font-weight: 600; color: #1a0dab; margin-bottom: 4px; }
-.report-news-meta  { font-size: 0.76rem; color: #5f6368; }
-.report-paper-item { background: #f8f9fa; border: 1px solid #e8eaf0; border-left: 3px solid #1a73e8; border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 8px 0; }
-.report-paper-title  { font-size: 0.88rem; font-weight: 600; color: #202124; margin-bottom: 4px; }
-.report-paper-author { font-size: 0.78rem; color: #5f6368; margin-bottom: 4px; }
-.report-paper-abs    { font-size: 0.82rem; color: #3c4043; line-height: 1.7; }
-.report-ref { font-size: 0.82rem; color: #3c4043; line-height: 1.7; padding: 6px 0; border-bottom: 1px solid #f1f3f4; }
-.report-keyword { display: inline-block; background: #e8f0fe; color: #1557b0; border-radius: 4px; padding: 2px 8px; font-size: 0.76rem; font-weight: 500; margin: 2px; }
-.report-divider { border: none; border-top: 1px solid #e8eaf0; margin: 24px 0; }
-
-.status-box       { background: #e8f0fe; border: 1px solid #c5d8fc; border-radius: 8px; padding: 10px 16px; font-size: 0.84rem; color: #1557b0; margin-bottom: 8px; }
-.status-box.green { background: #e6f4ea; border-color: #a8d5b5; color: #137333; }
-.status-box.warn  { background: #fef7e0; border-color: #fde68a; color: #b45309; }
-
-.stButton > button { background-color: #1a73e8 !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; font-family: 'Noto Sans KR', sans-serif !important; font-weight: 600 !important; font-size: 0.88rem !important; transition: background 0.2s !important; width: 100% !important; }
-.stButton > button:hover { background-color: #1557b0 !important; box-shadow: 0 2px 10px rgba(26,115,232,0.3) !important; }
-
-.stTabs [data-baseweb="tab-list"] { background: #ffffff; border-radius: 10px 10px 0 0; border-bottom: 2px solid #e8eaf0; padding: 0 10px; }
-.stTabs [data-baseweb="tab"] { font-family: 'Noto Sans KR', sans-serif; font-size: 0.88rem; font-weight: 500; color: #5f6368; padding: 12px 20px; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-.stTabs [aria-selected="true"] { color: #1a73e8 !important; border-bottom-color: #1a73e8 !important; font-weight: 700 !important; }
-.stTabs [data-baseweb="tab-panel"] { background: #ffffff; border: 1px solid #e8eaf0; border-top: none; border-radius: 0 0 10px 10px; padding: 24px !important; }
-
-textarea { background: #fafafa !important; color: #202124 !important; border: 1px solid #dadce0 !important; border-radius: 8px !important; }
-hr { border-color: #e8eaf0 !important; }
+section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e4ea; }
+.top-nav { background:#ffffff; border-bottom:2px solid #e8eaf0; padding:16px 32px; margin-bottom:20px; border-radius:12px; display:flex; align-items:center; gap:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.top-nav-logo { font-size:1.5rem; font-weight:800; color:#1a73e8; letter-spacing:-0.5px; }
+.top-nav-sub  { color:#5f6368; font-size:0.85rem; border-left:1px solid #dadce0; padding-left:16px; }
+.topic-header { background:#ffffff; border:1px solid #e0e4ea; border-radius:12px; padding:20px 28px; margin-bottom:16px; box-shadow:0 1px 6px rgba(0,0,0,0.05); }
+.topic-num    { font-size:0.78rem; color:#1a73e8; font-weight:600; background:#e8f0fe; border-radius:20px; padding:2px 12px; display:inline-block; margin-bottom:8px; }
+.topic-title  { font-size:1.5rem; font-weight:700; color:#202124; margin:0; }
+.topic-en     { font-size:0.85rem; color:#5f6368; margin-top:4px; }
+.flow-bar  { display:flex; align-items:center; background:#ffffff; border:1px solid #e0e4ea; border-radius:10px; padding:12px 20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.04); flex-wrap:wrap; gap:4px; }
+.flow-step { font-size:0.8rem; font-weight:600; padding:5px 14px; border-radius:20px; color:#9aa0a6; background:#f1f3f4; }
+.flow-step.active { background:#1a73e8; color:#ffffff; }
+.flow-step.done   { background:#e6f4ea; color:#137333; }
+.flow-arrow { color:#dadce0; font-size:0.9rem; margin:0 4px; }
+.metric-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+.metric-card { background:#ffffff; border:1px solid #e0e4ea; border-radius:12px; padding:16px 18px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.metric-card-label { font-size:0.74rem; color:#5f6368; margin-bottom:5px; font-weight:500; }
+.metric-card-value { font-size:1.15rem; font-weight:700; color:#1a73e8; }
+.metric-card-value.green { color:#137333; }
+.metric-card-value.gray  { color:#9aa0a6; }
+.news-item { background:#ffffff; border:1px solid #e8eaf0; border-radius:10px; padding:12px 16px; margin:6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:box-shadow 0.15s,border-color 0.15s; }
+.news-item:hover { box-shadow:0 3px 12px rgba(26,115,232,0.12); border-color:#1a73e8; }
+.news-item-title { font-size:0.9rem; font-weight:600; margin-bottom:4px; line-height:1.4; }
+.news-item-title a { color:#1a0dab; text-decoration:none; }
+.news-item-title a:hover { text-decoration:underline; }
+.news-item-meta { font-size:0.75rem; color:#5f6368; }
+.paper-item { background:#ffffff; border:1px solid #e8eaf0; border-left:4px solid #1a73e8; border-radius:0 10px 10px 0; padding:14px 18px; margin:8px 0; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+.arxiv-item { background:#ffffff; border:1px solid #e8eaf0; border-left:4px solid #e8710a; border-radius:0 10px 10px 0; padding:14px 18px; margin:8px 0; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+.paper-item-title  { font-size:0.9rem; font-weight:600; color:#1a0dab; margin-bottom:4px; }
+.paper-item-author { font-size:0.78rem; color:#5f6368; margin-bottom:3px; }
+.paper-item-venue  { font-size:0.76rem; color:#137333; margin-bottom:6px; }
+.paper-item-abs    { font-size:0.81rem; color:#3c4043; line-height:1.65; }
+.arxiv-badge { display:inline-block; background:#fff3e0; color:#e8710a; border:1px solid #ffcc80; border-radius:4px; padding:1px 8px; font-size:0.72rem; font-weight:700; margin-bottom:4px; }
+.scholar-badge { display:inline-block; background:#e8f0fe; color:#1a73e8; border:1px solid #aecbfa; border-radius:4px; padding:1px 8px; font-size:0.72rem; font-weight:700; margin-bottom:4px; }
+.select-header { background:#e8f0fe; border:1px solid #c5d8fc; border-radius:8px; padding:10px 16px; margin-bottom:12px; font-size:0.85rem; color:#1557b0; font-weight:600; }
+.section-title { font-size:1.05rem; font-weight:700; color:#202124; margin:0 0 14px; padding-bottom:10px; border-bottom:2px solid #e8eaf0; }
+.lang-badge { display:inline-block; background:#f1f3f4; color:#5f6368; border-radius:20px; padding:3px 12px; font-size:0.78rem; font-weight:600; margin:2px; cursor:pointer; border:1px solid #e0e4ea; }
+.lang-badge.active { background:#1a73e8; color:#ffffff; border-color:#1a73e8; }
+.stButton > button { background-color:#1a73e8 !important; color:#ffffff !important; border:none !important; border-radius:8px !important; font-family:inherit !important; font-weight:600 !important; font-size:0.88rem !important; transition:background 0.2s !important; width:100% !important; }
+.stButton > button:hover { background-color:#1557b0 !important; box-shadow:0 2px 10px rgba(26,115,232,0.3) !important; }
+.stTabs [data-baseweb="tab-list"] { background:#ffffff; border-radius:10px 10px 0 0; border-bottom:2px solid #e8eaf0; padding:0 10px; }
+.stTabs [data-baseweb="tab"] { font-family:inherit; font-size:0.88rem; font-weight:500; color:#5f6368; padding:12px 18px; border-bottom:2px solid transparent; margin-bottom:-2px; }
+.stTabs [aria-selected="true"] { color:#1a73e8 !important; border-bottom-color:#1a73e8 !important; font-weight:700 !important; }
+.stTabs [data-baseweb="tab-panel"] { background:#ffffff; border:1px solid #e8eaf0; border-top:none; border-radius:0 0 10px 10px; padding:24px !important; }
+textarea { background:#fafafa !important; color:#202124 !important; border:1px solid #dadce0 !important; border-radius:8px !important; }
+hr { border-color:#e8eaf0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. 주제 데이터 (배경 지식 포함)
+# 주제 데이터
 # =====================================================================
 TOPICS = [
-    ("01", "배터리 건강 추정의 필요성", "Battery State of Health Estimation",
-     "배터리 건강 상태(SOH, State of Health)는 배터리의 현재 용량을 초기 용량 대비 비율로 나타내며, 전기차·에너지 저장 시스템의 안전성과 성능 관리에 핵심적인 역할을 한다. SOH 추정은 과충전·과방전 방지, 잔여 수명 예측, 배터리 교체 시점 결정에 활용된다.",
-     ["SOH (State of Health)", "배터리 열화", "잔여 유용 수명 (RUL)", "전기차 (EV)", "BMS (Battery Management System)"]),
-
-    ("02", "음극 노화", "Lithium-ion Battery Anode Aging",
-     "음극(주로 흑연)의 노화는 리튬 도금(Li plating), SEI(고체 전해질 계면) 성장, 구조적 균열 등으로 발생한다. 이는 가역 용량 손실과 내부 저항 증가를 초래하며, 배터리 수명 단축의 주요 원인이다.",
-     ["SEI (Solid Electrolyte Interphase)", "리튬 도금 (Li Plating)", "흑연 음극", "용량 손실", "사이클 열화"]),
-
-    ("03", "양극 노화", "Lithium-ion Battery Cathode Aging",
-     "양극 노화는 구조적 상변이, 전이금속 용해, 입자 균열 등으로 발생한다. NMC, LFP 등 양극 소재별로 열화 메커니즘이 다르며, 고온 환경에서 가속화된다.",
-     ["양극 소재 (NMC/LFP/NCA)", "구조적 열화", "전이금속 용해", "상변이", "캘린더 노화"]),
-
-    ("04", "R₀에 대한 전압 감도", "Battery Internal Resistance Voltage Sensitivity",
-     "내부 저항 R₀는 배터리 전압 강하의 주요 원인으로, SOH와 밀접한 상관관계를 가진다. 전압 감도 분석을 통해 R₀ 변화를 추적하면 배터리 열화 진단이 가능하다.",
-     ["내부 저항 (R₀)", "전압 강하", "등가 회로 모델", "임피던스", "열화 진단"]),
-
-    ("05", "R₀를 추정하기 위한 코드", "Battery Internal Resistance Estimation Algorithm",
-     "전류 펄스 응답, 전기화학 임피던스 분광법(EIS), 최소제곱법 등을 활용하여 R₀를 실시간으로 추정한다. Python·MATLAB 기반 알고리즘이 주로 사용된다.",
-     ["최소제곱법", "EIS", "전류 펄스", "실시간 추정", "Python 알고리즘"]),
-
-    ("06", "전체 용량에 대한 전압의 민감도 Q", "Battery Voltage Sensitivity Total Capacity",
-     "전체 용량 Q는 배터리 SOH 추정의 핵심 파라미터로, OCV-SOC 곡선의 기울기 변화를 통해 추정할 수 있다. 용량 감소는 활물질 손실과 직접적으로 연결된다.",
-     ["전체 용량 (Q)", "OCV-SOC 곡선", "활물질 손실", "쿨롱 카운팅", "용량 추정"]),
-
-    ("07", "칼만 필터를 통한 파라미터 추정", "Kalman Filter Battery Parameter Estimation",
-     "칼만 필터(KF)는 노이즈가 있는 측정값에서 배터리 상태변수를 최적으로 추정하는 재귀적 알고리즘이다. 선형 시스템에 적합하며 SOC·SOH 동시 추정에 널리 활용된다.",
-     ["칼만 필터 (KF)", "상태 추정", "공분산", "예측-수정", "재귀 알고리즘"]),
-
-    ("08", "EKF 파라미터 추정", "Extended Kalman Filter Battery SOH",
-     "확장 칼만 필터(EKF)는 비선형 배터리 모델에 칼만 필터를 적용하기 위해 야코비안(Jacobian) 행렬로 선형화하는 방법이다. SOC와 R₀의 동시 추정에 효과적이다.",
-     ["EKF (확장 칼만 필터)", "야코비안 행렬", "비선형 시스템", "SOC 추정", "선형화"]),
-
-    ("09", "SPKF 파라미터 추정", "Sigma-Point Kalman Filter Battery",
-     "시그마 포인트 칼만 필터(SPKF)는 UKF(무향 칼만 필터)라고도 하며, 비선형 변환을 시그마 포인트의 통계적 전파로 근사한다. EKF보다 정확도가 높고 야코비안 계산이 불필요하다.",
-     ["SPKF/UKF", "시그마 포인트", "무향 변환", "비선형 추정", "통계적 근사"]),
-
-    ("10", "조인트 추정과 듀얼 추정", "Joint Dual Estimation Battery State",
-     "조인트 추정은 상태변수와 파라미터를 단일 확장 상태벡터로 동시 추정하고, 듀얼 추정은 두 개의 분리된 필터로 각각 추정하는 방법이다. 두 방법 모두 SOC와 SOH의 동시 추정에 활용된다.",
-     ["조인트 추정", "듀얼 추정", "상태-파라미터 동시 추정", "이중 필터", "적응형 추정"]),
-
-    ("11", "견고성과 속도", "Robustness Speed Battery Estimation",
-     "추정 알고리즘의 견고성은 센서 노이즈, 모델 불확실성, 초기값 오차에 대한 민감도를 의미한다. 계산 속도는 실시간 BMS 적용을 위한 핵심 요소이며, 두 특성 간 트레이드오프가 존재한다.",
-     ["견고성 (Robustness)", "계산 복잡도", "실시간 처리", "노이즈 민감도", "수렴 속도"]),
-
-    ("12", "선형 회귀를 통한 전체 용량의 비편향 추정값", "Unbiased Battery Capacity Linear Regression",
-     "선형 회귀를 통해 측정 데이터에서 배터리 전체 용량을 편향 없이 추정한다. 누적 전류(쿨롱 카운팅) 데이터와 SOC 변화량의 관계를 활용하며, 최소제곱법이 기본 도구로 사용된다.",
-     ["비편향 추정", "선형 회귀", "쿨롱 카운팅", "최소제곱법 (OLS)", "용량 추정"]),
-
-    ("13", "가중 일반 최소제곱법", "Weighted Generalized Least Squares Battery",
-     "가중 일반 최소제곱법(WGLS)은 측정 노이즈의 분산이 불균일할 때 각 데이터 포인트에 가중치를 부여하여 추정 정확도를 향상시키는 방법이다.",
-     ["WGLS", "이분산성", "가중 행렬", "최적 추정", "노이즈 모델링"]),
-
-    ("14", "총 가중 최소제곱법", "Weighted Total Least Squares Battery",
-     "총 가중 최소제곱법(TWLS)은 입력과 출력 모두에 노이즈가 존재하는 오차변수모델(EIV)에 적합한 추정 방법으로, 배터리 용량 추정의 정확도를 개선한다.",
-     ["TWLS", "오차변수모델 (EIV)", "양방향 노이즈", "총 최소제곱", "용량 추정"]),
-
-    ("15", "모델 적합도의 우수성", "Goodness of Fit Battery Equivalent Circuit",
-     "등가 회로 모델의 적합도는 RMSE, R², AIC 등의 지표로 평가한다. 좋은 적합도는 정확한 SOH 추정의 전제 조건이며, 과적합을 방지하기 위한 모델 복잡도 선택이 중요하다.",
-     ["RMSE", "R² (결정계수)", "AIC/BIC", "등가 회로 모델", "모델 검증"]),
-
-    ("16", "신뢰 구간", "Confidence Interval Battery Estimation",
-     "추정값의 신뢰 구간은 추정 불확실성을 정량화하며, 배터리 안전 마진 설정에 활용된다. 칼만 필터의 공분산 행렬에서 직접 신뢰 구간을 도출할 수 있다.",
-     ["신뢰 구간", "불확실성 정량화", "공분산", "오차 한계", "통계적 추론"]),
-
-    ("17", "단순화된 총 최소제곱", "Simplified Total Least Squares Battery",
-     "단순화된 TLS는 계산 복잡도를 줄이면서도 EIV 모델의 장점을 유지하는 방법이다. 실시간 BMS 적용을 위해 연산량을 최소화한 근사 알고리즘이 개발되었다.",
-     ["단순화된 TLS", "근사 알고리즘", "계산 효율", "실시간 BMS", "EIV 모델"]),
-
-    ("18", "근사 전체 솔루션", "Approximate Total Solution Battery",
-     "근사 전체 솔루션은 복잡한 최적화 문제를 닫힌 형태(closed-form)의 해로 근사하여 계산 효율을 높이는 방법이다. 배터리 파라미터 추정에서 정확도와 속도의 균형을 맞춘다.",
-     ["근사 해 (Closed-form)", "계산 최적화", "파라미터 추정", "수치 안정성", "실시간 구현"]),
-
-    ("19", "방법별 시뮬레이션 코드", "Battery SOH Estimation Simulation Code",
-     "EKF, SPKF, 최소제곱법 등 다양한 SOH 추정 방법의 성능을 Python·MATLAB 시뮬레이션으로 비교한다. 동일한 배터리 데이터셋에서 각 방법의 정확도, 수렴 속도, 계산량을 평가한다.",
-     ["시뮬레이션", "Python/MATLAB", "알고리즘 비교", "성능 평가", "배터리 데이터셋"]),
-
-    ("20", "HEV 시뮬레이션 예시", "Hybrid Electric Vehicle Battery Simulation",
-     "하이브리드 전기차(HEV)의 배터리는 빈번한 충방전과 높은 전류 변동이 특징이다. HEV 주행 사이클(UDDS, HWFET 등)을 적용한 SOH 추정 시뮬레이션으로 실제 환경 성능을 검증한다.",
-     ["HEV (하이브리드 전기차)", "주행 사이클", "UDDS/HWFET", "동적 부하", "SOH 추정"]),
-
-    ("21", "EV 시뮬레이션 예시", "Electric Vehicle EV Battery Simulation",
-     "순수 전기차(EV)는 1회 충전 주행거리와 배터리 수명이 상품성의 핵심이다. WLTP, EPA 등 표준 주행 사이클에서의 SOH 추정 정확도와 에너지 관리 전략을 시뮬레이션으로 분석한다.",
-     ["EV (순수 전기차)", "주행거리 (Range)", "WLTP/EPA", "에너지 관리", "충전 전략"]),
-
-    ("22", "시뮬레이션에 대한 논의", "Battery Simulation Discussion Results",
-     "다양한 추정 방법의 시뮬레이션 결과를 비교·분석하고, 실차 적용 시 고려할 사항(센서 정밀도, 온도 영향, 계산 자원)을 논의한다. 시뮬레이션과 실험 결과의 차이도 검토한다.",
-     ["결과 비교", "실차 적용", "온도 영향", "센서 오차", "검증 및 시험"]),
-
-    ("23", "결론 및 향후 방향", "Battery Health Estimation Future Research",
-     "배터리 SOH 추정 기술의 현재 한계를 정리하고, 머신러닝 기반 추정, 디지털 트윈, 클라우드 BMS 등 미래 연구 방향을 제시한다. 고체 배터리 등 차세대 배터리에 대한 적용 가능성도 논의한다.",
-     ["머신러닝 SOH 추정", "디지털 트윈", "차세대 배터리", "클라우드 BMS", "연구 과제"]),
-
-    ("24", "비선형 칼만 필터 알고리즘", "Nonlinear Kalman Filter Algorithm Battery",
-     "EKF, UKF, CKF(Cubature KF), PF(파티클 필터) 등 비선형 칼만 필터 계열 알고리즘의 이론적 배경과 배터리 SOH 추정에의 적용을 체계적으로 정리한다.",
-     ["비선형 칼만 필터", "UKF/CKF", "파티클 필터", "비선형 추정", "알고리즘 비교"]),
+    ("01","배터리 건강 추정의 필요성","Battery State of Health Estimation",
+     "배터리 건강 상태(SOH)는 현재 용량을 초기 용량 대비 비율로 나타내며, 전기차·에너지 저장 시스템의 안전성과 성능 관리에 핵심적이다.",
+     ["SOH","배터리 열화","RUL","EV","BMS"]),
+    ("02","음극 노화","Lithium-ion Battery Anode Aging",
+     "음극의 노화는 리튬 도금, SEI 성장, 구조적 균열 등으로 발생하며 가역 용량 손실과 내부 저항 증가를 초래한다.",
+     ["SEI","리튬 도금","흑연 음극","용량 손실","사이클 열화"]),
+    ("03","양극 노화","Lithium-ion Battery Cathode Aging",
+     "양극 노화는 구조적 상변이, 전이금속 용해, 입자 균열 등으로 발생하며 NMC, LFP 등 소재별로 열화 메커니즘이 다르다.",
+     ["NMC/LFP/NCA","구조적 열화","전이금속 용해","상변이","캘린더 노화"]),
+    ("04","R₀에 대한 전압 감도","Battery Internal Resistance Voltage Sensitivity",
+     "내부 저항 R₀는 배터리 전압 강하의 주요 원인으로, SOH와 밀접한 상관관계를 가진다.",
+     ["내부 저항","전압 강하","등가 회로 모델","임피던스","열화 진단"]),
+    ("05","R₀를 추정하기 위한 코드","Battery Internal Resistance Estimation Algorithm",
+     "전류 펄스 응답, EIS, 최소제곱법 등을 활용하여 R₀를 실시간으로 추정한다.",
+     ["최소제곱법","EIS","전류 펄스","실시간 추정","Python 알고리즘"]),
+    ("06","전체 용량에 대한 전압의 민감도 Q","Battery Voltage Sensitivity Total Capacity",
+     "전체 용량 Q는 SOH 추정의 핵심 파라미터로, OCV-SOC 곡선의 기울기 변화를 통해 추정할 수 있다.",
+     ["전체 용량 Q","OCV-SOC","활물질 손실","쿨롱 카운팅","용량 추정"]),
+    ("07","칼만 필터를 통한 파라미터 추정","Kalman Filter Battery Parameter Estimation",
+     "칼만 필터는 노이즈가 있는 측정값에서 배터리 상태변수를 최적으로 추정하는 재귀적 알고리즘이다.",
+     ["칼만 필터","상태 추정","공분산","예측-수정","재귀 알고리즘"]),
+    ("08","EKF 파라미터 추정","Extended Kalman Filter Battery SOH",
+     "확장 칼만 필터(EKF)는 비선형 배터리 모델에 야코비안 행렬로 선형화하여 적용하는 방법이다.",
+     ["EKF","야코비안","비선형 시스템","SOC 추정","선형화"]),
+    ("09","SPKF 파라미터 추정","Sigma-Point Kalman Filter Battery",
+     "SPKF/UKF는 비선형 변환을 시그마 포인트의 통계적 전파로 근사하며 EKF보다 정확도가 높다.",
+     ["SPKF/UKF","시그마 포인트","무향 변환","비선형 추정","통계적 근사"]),
+    ("10","조인트 추정과 듀얼 추정","Joint Dual Estimation Battery State",
+     "조인트 추정은 상태변수와 파라미터를 단일 벡터로, 듀얼 추정은 두 필터로 각각 추정한다.",
+     ["조인트 추정","듀얼 추정","이중 필터","적응형 추정","동시 추정"]),
+    ("11","견고성과 속도","Robustness Speed Battery Estimation",
+     "추정 알고리즘의 견고성은 센서 노이즈·모델 불확실성에 대한 민감도를 의미하며, 실시간 BMS 적용의 핵심이다.",
+     ["견고성","계산 복잡도","실시간 처리","노이즈 민감도","수렴 속도"]),
+    ("12","선형 회귀를 통한 전체 용량의 비편향 추정값","Unbiased Battery Capacity Linear Regression",
+     "선형 회귀를 통해 측정 데이터에서 배터리 전체 용량을 편향 없이 추정한다.",
+     ["비편향 추정","선형 회귀","쿨롱 카운팅","OLS","용량 추정"]),
+    ("13","가중 일반 최소제곱법","Weighted Generalized Least Squares Battery",
+     "WGLS는 측정 노이즈의 분산이 불균일할 때 각 데이터 포인트에 가중치를 부여하여 정확도를 향상시킨다.",
+     ["WGLS","이분산성","가중 행렬","최적 추정","노이즈 모델링"]),
+    ("14","총 가중 최소제곱법","Weighted Total Least Squares Battery",
+     "TWLS는 입출력 모두에 노이즈가 존재하는 EIV 모델에 적합한 추정 방법이다.",
+     ["TWLS","EIV","양방향 노이즈","총 최소제곱","용량 추정"]),
+    ("15","모델 적합도의 우수성","Goodness of Fit Battery Equivalent Circuit",
+     "등가 회로 모델의 적합도는 RMSE, R², AIC 등으로 평가하며 과적합 방지를 위한 모델 복잡도 선택이 중요하다.",
+     ["RMSE","R²","AIC/BIC","등가 회로 모델","모델 검증"]),
+    ("16","신뢰 구간","Confidence Interval Battery Estimation",
+     "추정값의 신뢰 구간은 불확실성을 정량화하며, 배터리 안전 마진 설정에 활용된다.",
+     ["신뢰 구간","불확실성 정량화","공분산","오차 한계","통계적 추론"]),
+    ("17","단순화된 총 최소제곱","Simplified Total Least Squares Battery",
+     "단순화된 TLS는 계산 복잡도를 줄이면서 EIV 모델의 장점을 유지하는 방법이다.",
+     ["단순화 TLS","근사 알고리즘","계산 효율","실시간 BMS","EIV"]),
+    ("18","근사 전체 솔루션","Approximate Total Solution Battery",
+     "근사 전체 솔루션은 복잡한 최적화를 닫힌 형태로 근사하여 계산 효율을 높이는 방법이다.",
+     ["근사 해","계산 최적화","파라미터 추정","수치 안정성","실시간 구현"]),
+    ("19","방법별 시뮬레이션 코드","Battery SOH Estimation Simulation Code",
+     "EKF, SPKF, 최소제곱법 등의 성능을 Python·MATLAB 시뮬레이션으로 비교한다.",
+     ["시뮬레이션","Python/MATLAB","알고리즘 비교","성능 평가","배터리 데이터셋"]),
+    ("20","HEV 시뮬레이션 예시","Hybrid Electric Vehicle Battery Simulation",
+     "HEV의 배터리는 빈번한 충방전과 높은 전류 변동이 특징이며, UDDS·HWFET 사이클로 성능을 검증한다.",
+     ["HEV","주행 사이클","UDDS/HWFET","동적 부하","SOH 추정"]),
+    ("21","EV 시뮬레이션 예시","Electric Vehicle EV Battery Simulation",
+     "EV는 1회 충전 주행거리와 배터리 수명이 핵심이며, WLTP·EPA 사이클에서 SOH 추정 정확도를 분석한다.",
+     ["EV","주행거리","WLTP/EPA","에너지 관리","충전 전략"]),
+    ("22","시뮬레이션에 대한 논의","Battery Simulation Discussion Results",
+     "다양한 추정 방법의 시뮬레이션 결과를 비교하고, 실차 적용 시 고려사항을 논의한다.",
+     ["결과 비교","실차 적용","온도 영향","센서 오차","검증"]),
+    ("23","결론 및 향후 방향","Battery Health Estimation Future Research",
+     "머신러닝 기반 추정, 디지털 트윈, 클라우드 BMS 등 미래 연구 방향을 제시한다.",
+     ["머신러닝 SOH","디지털 트윈","차세대 배터리","클라우드 BMS","연구 과제"]),
+    ("24","비선형 칼만 필터 알고리즘","Nonlinear Kalman Filter Algorithm Battery",
+     "EKF, UKF, CKF, PF 등 비선형 칼만 필터 계열 알고리즘의 이론과 배터리 SOH 추정 적용을 정리한다.",
+     ["비선형 칼만 필터","UKF/CKF","파티클 필터","비선형 추정","알고리즘 비교"]),
 ]
-
-TOPIC_MAP = {f"{n}. {k}": (n, k, e, bg, kw) for n, k, e, bg, kw in TOPICS}
-TOPIC_DISPLAY = [f"{n}. {k}" for n, k, e, bg, kw in TOPICS]
+TOPIC_DISPLAY = [f"{n}. {k}" for n,k,e,bg,kw in TOPICS]
+TOPIC_MAP = {f"{n}. {k}": (n,k,e,bg,kw) for n,k,e,bg,kw in TOPICS}
 
 # =====================================================================
-# 3. 함수
+# 수집 함수
 # =====================================================================
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_news_en(keyword, max_results=6):
-    url = f"https://news.google.com/rss/search?q={keyword.replace(' ', '+')}&hl=en-US&gl=US&ceid=US:en"
+def fetch_news(keyword, hl, gl, ceid, max_results=6):
+    url = f"https://news.google.com/rss/search?q={keyword.replace(' ','+')}&hl={hl}&gl={gl}&ceid={ceid}"
     return feedparser.parse(url).entries[:max_results]
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_news_ko(keyword, max_results=6):
-    url = f"https://news.google.com/rss/search?q={keyword.replace(' ', '+')}&hl=ko&gl=KR&ceid=KR:ko"
-    return feedparser.parse(url).entries[:max_results]
+def fetch_arxiv(keyword, max_results=5):
+    """arXiv API로 논문 검색"""
+    q = keyword.replace(" ", "+AND+")
+    url = f"http://export.arxiv.org/api/query?search_query=all:{q}&start=0&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
+    try:
+        resp = requests.get(url, timeout=10)
+        root = ET.fromstring(resp.text)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entries = root.findall("atom:entry", ns)
+        results = []
+        for e in entries:
+            title   = (e.find("atom:title", ns).text or "").strip().replace("\n", " ")
+            summary = (e.find("atom:summary", ns).text or "").strip()[:400]
+            authors = ", ".join(a.find("atom:name", ns).text for a in e.findall("atom:author", ns)[:3])
+            link    = e.find("atom:id", ns).text or ""
+            pub     = (e.find("atom:published", ns).text or "")[:10]
+            results.append({"title": title, "authors": authors, "abstract": summary,
+                             "url": link, "published": pub, "source": "arXiv"})
+        return results
+    except Exception:
+        return []
 
-def fetch_scholar(keyword, max_results=5):
+def fetch_scholar(keyword, max_results=4):
     results = []
     try:
         gen = scholarly.search_pubs(keyword)
         for _ in range(max_results):
             try:
-                results.append(next(gen))
+                pub = next(gen)
+                bib = pub.get("bib", {})
+                results.append({
+                    "title":    bib.get("title", "No title"),
+                    "authors":  bib.get("author", "Unknown"),
+                    "year":     bib.get("pub_year", ""),
+                    "journal":  bib.get("venue", ""),
+                    "abstract": bib.get("abstract", ""),
+                    "url":      pub.get("pub_url", ""),
+                    "source":   "scholar"
+                })
             except StopIteration:
                 break
     except Exception:
         pass
     return results
 
-def generate_structured_report(num, ko, en, bg, keywords, sel_news, sel_papers):
-    """선택한 뉴스·논문을 전문 학술 보고서 형식으로 자동 구조화"""
-    today = datetime.now().strftime("%Y년 %m월 %d일")
-    kw_list = " / ".join(keywords)
+# =====================================================================
+# 보고서 생성
+# =====================================================================
+def generate_report(num, ko, en, bg, keywords, sel_news, sel_papers, sel_arxiv, lang, t):
+    today = datetime.now().strftime("%Y-%m-%d")
+    kw_str = " / ".join(keywords)
+    n_news = len(sel_news); n_papers = len(sel_papers) + len(sel_arxiv)
+    abstract = f"{ko}은(는) 배터리 건강 상태(SOH) 추정의 핵심 주제이다. {bg} 본 보고서는 뉴스 {n_news}건, 논문 {n_papers}편을 분석하여 현황과 연구 동향을 정리한다."
 
-    # ── 초록 자동 생성
-    abstract = f"{ko}은(는) 배터리 건강 상태(SOH) 추정 분야의 핵심 주제 중 하나이다. {bg} 본 보고서는 최신 뉴스·동향 자료 {len(sel_news)}건과 학술 논문 {len(sel_papers)}편을 수집·분석하여 해당 주제의 현황과 연구 동향을 체계적으로 정리한다."
-
-    # ── 국내/해외 뉴스 분리
     news_ko_sel = [n for n in sel_news if n.get("lang") == "ko"]
     news_en_sel = [n for n in sel_news if n.get("lang") == "en"]
 
-    # ── 논문 인용 번호
-    ref_list = []
+    ref_num = 1
+    all_refs = []
+    for p in sel_papers:
+        ref = f"[{ref_num}] {p['authors']} ({p['year']}). {p['title']}."
+        if p.get('journal'): ref += f" {p['journal']}."
+        if p.get('url'):     ref += f" {p['url']}"
+        all_refs.append(ref); ref_num += 1
+    for p in sel_arxiv:
+        ref = f"[{ref_num}] {p['authors']} ({p['published'][:4]}). {p['title']}. arXiv. {p['url']}"
+        all_refs.append(ref); ref_num += 1
+    for n in sel_news:
+        all_refs.append(f"[{ref_num}] {n['title']}. {n['source']} ({n['published']}). {n['link']}")
+        ref_num += 1
+
+    scholar_body = ""
     for i, p in enumerate(sel_papers, 1):
-        ref = f"[{i}] {p['authors']} ({p['year']}). {p['title']}."
-        if p['journal']: ref += f" {p['journal']}."
-        if p['url']:     ref += f" Retrieved from {p['url']}"
-        ref_list.append(ref)
+        abs_t = (p['abstract'][:250]+"...") if len(p['abstract'])>250 else p['abstract']
+        scholar_body += f"\n**[{i}] {p['title']}** ({p['year']}) — {p['authors'][:50]}\n\n> {abs_t}\n"
+    arxiv_body = ""
+    for i, p in enumerate(sel_arxiv, len(sel_papers)+1):
+        abs_t = (p['abstract'][:250]+"...") if len(p['abstract'])>250 else p['abstract']
+        arxiv_body += f"\n**[{i}] {p['title']}** ({p['published'][:7]}) — {p['authors'][:50]}\n\n> {abs_t}\n"
 
-    # ── 뉴스 인용 번호 (논문 이어서)
-    news_ref_start = len(sel_papers) + 1
-    news_refs = []
-    for i, n in enumerate(sel_news, news_ref_start):
-        news_refs.append(f"[{i}] {n['title']}. {n['source']} ({n['published']}). {n['link']}")
-
-    all_refs = ref_list + news_refs
-
-    # ── 기술 분석 텍스트
-    paper_analysis = ""
-    if sel_papers:
-        for i, p in enumerate(sel_papers, 1):
-            abs_text = p['abstract'][:200] + "..." if len(p['abstract']) > 200 else p['abstract']
-            paper_analysis += f"\n**{p['title']}** ({p['year']}) [{i}]"
-            if p['authors']:
-                paper_analysis += f" — {p['authors'][:60]}"
-            if abs_text:
-                paper_analysis += f"\n\n> {abs_text}\n"
-    else:
-        paper_analysis = "\n(수집된 논문 없음 — ②탭에서 논문을 검색하세요)\n"
-
-    # ── 최종 마크다운 보고서
-    report = f"""# {num}. {ko}
-## 연구 분석 보고서
+    r = f"""# {num}. {ko}
+## {t['report_title']}
 
 ---
-**작성일:** {today} &nbsp;|&nbsp; **키워드:** {kw_list}  
-**기준 문헌:** Gregory Plett - *Battery Management Systems: Equivalent-Circuit Methods*  
-**수집 자료:** 뉴스 {len(sel_news)}건 · 논문 {len(sel_papers)}편
+**{t['written_date']}:** {today} &nbsp;|&nbsp; **{t['keyword_label']}:** {kw_str}
+**{t['ref_book']}:** Gregory Plett - *Battery Management Systems*
+**{t['collected_data']}:** {t['metric_news']} {n_news}{t['news_unit']} · {t['metric_paper']} {n_papers}{t['paper_unit']}
 
 ---
 
-## 초록 (Abstract)
+## {t['abstract']}
 
 {abstract}
 
-**주요 키워드:** {kw_list}
+**{t['keyword_label']}:** {kw_str}
 
 ---
 
-## 1. 서론 (Introduction)
+## {t['intro']}
 
-### 1.1 연구 배경 및 필요성
+### {t['intro_bg']}
 
 {bg}
 
-배터리 에너지 저장 시스템(BESS)의 급속한 보급과 전기차 시장의 성장에 따라, 배터리의 건강 상태를 정확히 파악하는 것은 안전성 확보, 수명 예측, 운용 최적화 측면에서 필수적인 과제가 되고 있다. 특히 {ko} 분야는 배터리 관리 시스템(BMS)의 핵심 기능 중 하나로, 최근 연구가 활발히 진행되고 있다.
+배터리 에너지 저장 시스템의 급속한 보급에 따라 {ko} 분야는 BMS의 핵심 기능으로 주목받고 있다.
 
-### 1.2 연구 목적
+### {t['intro_obj']}
 
-본 보고서는 {ko}({en})에 관한 최신 연구 동향과 기술 현황을 체계적으로 분석하고, 관련 핵심 개념 및 방법론을 정리하는 것을 목적으로 한다.
+본 보고서는 {ko}({en})에 관한 최신 연구 동향과 기술 현황을 체계적으로 분석하는 것을 목적으로 한다.
 
-### 1.3 보고서 구성
+### {t['intro_struct']}
 
-본 보고서는 이론적 배경(2장), 최신 기술 동향(3장), 핵심 선행 연구 검토(4장), 기술적 분석 및 고찰(5장), 결론(6장) 순으로 구성된다.
+이론적 배경(2장) → 최신 기술 동향(3장) → 선행 연구 검토(4장) → 기술적 분석(5장) → 결론(6장)
 
 ---
 
-## 2. 이론적 배경 (Theoretical Background)
+## {t['theory']}
 
-### 2.1 핵심 개념 정의
+### {t['theory_def']}
 
 {bg}
 
-배터리의 건강 상태 추정은 다음의 핵심 파라미터를 중심으로 이루어진다:
+- **SOH:** 현재 최대 용량 / 초기 정격 용량 × 100%
+- **SOC:** 현재 잔여 용량 / 현재 최대 용량 × 100%
+- **내부 저항 R₀:** 배터리 열화의 직접적 지표
 
-- **SOH (State of Health):** 현재 최대 용량 / 초기 정격 용량 × 100%
-- **SOC (State of Charge):** 현재 잔여 용량 / 현재 최대 용량 × 100%
-- **내부 저항 (R₀):** 배터리 열화의 직접적 지표
-
-### 2.2 관련 핵심 개념
+### {t['theory_concept']}
 
 | 개념 | 설명 |
 |------|------|
-{"".join([f"| **{kw}** | {ko} 분야의 핵심 요소 |\n" for kw in keywords])}
+{"".join([f"| **{kw}** | {ko} 분야 핵심 요소 |\n" for kw in keywords])}
 
-### 2.3 기존 연구 동향 요약
+### {t['theory_trend']}
 
-{ko} 분야에서는 전통적인 물리 기반 모델부터 데이터 기반 머신러닝 방법까지 다양한 접근법이 연구되고 있다. 등가 회로 모델(ECM)은 구현 용이성과 실시간 처리 능력으로 BMS에 널리 채택되며, 칼만 필터 계열 알고리즘이 파라미터 추정에 주로 활용된다.
-
----
-
-## 3. 최신 기술 동향 분석 (Recent Trends)
-
-### 3.1 국내 동향
-
-{"아래는 수집된 국내 최신 뉴스 및 기술 동향이다." if news_ko_sel else "이번 수집에서 국내 관련 뉴스는 확인되지 않았다."}
-
-{"".join([f'''
-**[뉴스 {i+1}]** [{n["title"]}]({n["link"]})  
-> 출처: {n["source"]} | 날짜: {n["published"]}
-
-''' for i, n in enumerate(news_ko_sel)])}
-
-### 3.2 해외 동향
-
-{"아래는 수집된 해외 최신 연구 동향 및 산업 뉴스이다." if news_en_sel else "이번 수집에서 해외 관련 뉴스는 확인되지 않았다."}
-
-{"".join([f'''
-**[뉴스 {i+1}]** [{n["title"]}]({n["link"]})  
-> 출처: {n["source"]} | 날짜: {n["published"]}
-
-''' for i, n in enumerate(news_en_sel)])}
+{ko} 분야는 물리 기반 모델부터 데이터 기반 머신러닝까지 다양한 방법이 연구되고 있으며, 등가 회로 모델(ECM)과 칼만 필터 계열 알고리즘이 BMS에 널리 활용된다.
 
 ---
 
-## 4. 핵심 선행 연구 검토 (Literature Review)
+## {t['trends']}
 
-본 장에서는 수집된 학술 논문 {len(sel_papers)}편을 분석하여 {ko} 분야의 주요 연구 성과를 정리한다.
+### {t['domestic_trend']}
 
-{paper_analysis if sel_papers else "(②탭에서 논문을 검색하고 선택하면 이 섹션이 자동으로 채워집니다)"}
+{"다음은 수집된 국내 최신 뉴스이다." if news_ko_sel else "이번 수집에서 국내 뉴스는 없었다."}
+
+{"".join([f'\n**[뉴스]** [{n["title"]}]({n["link"]})  \n> {n["source"]} | {n["published"]}\n' for n in news_ko_sel])}
+
+### {t['foreign_trend']}
+
+{"다음은 수집된 해외 최신 뉴스이다." if news_en_sel else "이번 수집에서 해외 뉴스는 없었다."}
+
+{"".join([f'\n**[News]** [{n["title"]}]({n["link"]})  \n> {n["source"]} | {n["published"]}\n' for n in news_en_sel])}
 
 ---
 
-## 5. 기술적 분석 및 고찰 (Technical Analysis)
+## {t['literature']}
 
-### 5.1 주요 연구 특징 비교
+### 4.1 Google Scholar 논문
 
-수집된 자료를 바탕으로 {ko} 관련 주요 기술적 접근법을 비교하면 다음과 같다:
+{scholar_body if sel_papers else "(선택된 Scholar 논문 없음)"}
+
+### {t['arxiv_review']}
+
+{arxiv_body if sel_arxiv else "(선택된 arXiv 논문 없음)"}
+
+---
+
+## {t['analysis']}
+
+### {t['comparison']}
 
 | 구분 | 주요 방법 | 특징 | 적용 분야 |
 |------|----------|------|----------|
@@ -404,114 +643,117 @@ def generate_structured_report(num, ko, en, bg, keywords, sel_news, sel_papers):
 | 필터 기반 | EKF / UKF | 높은 정확도, 노이즈 강인성 | 전기차 |
 | 데이터 기반 | 머신러닝 / 딥러닝 | 대용량 데이터 필요 | 클라우드 BMS |
 
-### 5.2 성능 지표 및 평가 기준
+### {t['metrics']}
 
-- **정확도:** RMSE (Root Mean Square Error), MAE (Mean Absolute Error)
-- **견고성:** 센서 노이즈, 온도 변화, 초기값 오차에 대한 민감도
+- **정확도:** RMSE, MAE
+- **견고성:** 노이즈·온도·초기값 오차에 대한 민감도
 - **계산 효율:** 실시간 BMS 적용을 위한 연산 복잡도
 
-### 5.3 한계점 및 개선 방향
+### {t['limits']}
 
-현재 {ko} 연구의 주요 한계점은 다음과 같다:
 1. 실제 차량 환경의 복잡한 동적 부하 조건 재현의 어려움
-2. 온도, 충방전 패턴 등 다양한 외부 조건에 대한 일반화 부족
-3. 센서 오차 및 초기 파라미터 불확실성에 따른 추정 오차
+2. 온도·충방전 패턴 등 다양한 외부 조건에 대한 일반화 부족
+3. 센서 오차 및 초기 파라미터 불확실성
 
 ---
 
-## 6. 결론 및 향후 연구 방향 (Conclusion)
+## {t['conclusion']}
 
-### 6.1 주요 발견사항 요약
+### {t['findings']}
 
-본 보고서에서는 {ko}({en})에 관한 최신 동향과 핵심 선행 연구를 체계적으로 분석하였다. 수집된 {len(sel_news)}건의 뉴스와 {len(sel_papers)}편의 논문 분석을 통해 다음과 같은 주요 결론을 도출하였다:
+- {ko}은(는) 배터리 BMS의 핵심 기능으로 연구 수요가 지속 증가
+- 칼만 필터 계열과 데이터 기반 방법의 융합 연구가 최신 트렌드
+- 실시간 처리와 정확도를 동시에 만족하는 경량화 알고리즘 개발이 핵심 과제
 
-- {ko}은(는) 배터리 BMS의 핵심 기능으로, 전기차 시장 성장과 함께 연구 수요가 지속 증가하고 있다
-- 칼만 필터 계열과 데이터 기반 방법의 융합 연구가 최신 트렌드로 부상하고 있다
-- 실시간 처리와 정확도를 동시에 만족하는 경량화 알고리즘 개발이 핵심 과제이다
+### {t['future']}
 
-### 6.2 향후 연구 방향 제언
-
-1. **AI/ML 융합:** 딥러닝 기반 SOH 추정 모델과 물리 기반 모델의 융합 연구
-2. **디지털 트윈:** 실시간 배터리 디지털 트윈을 활용한 예측적 SOH 추정
-3. **차세대 배터리 적용:** 고체 배터리, 리튬-황 배터리 등 차세대 소재에 대한 SOH 추정 방법론 개발
-4. **클라우드 BMS:** 대규모 차량 군집의 배터리 데이터 기반 집단 지성형 SOH 추정
+1. **AI/ML 융합:** 딥러닝 기반 SOH 추정과 물리 기반 모델의 융합
+2. **디지털 트윈:** 실시간 배터리 디지털 트윈 활용
+3. **차세대 배터리:** 고체 배터리·리튬-황 배터리 적용 방법론 개발
+4. **클라우드 BMS:** 집단 지성형 SOH 추정 시스템 구축
 
 ---
 
-## 참고문헌 (References)
+## {t['references']}
 
-{"".join([f"{r}  \n" for r in all_refs]) if all_refs else "(수집된 참고문헌 없음)"}
+{"".join([f"{r}  \n" for r in all_refs]) if all_refs else "(참고문헌 없음)"}
 
 ---
-*본 보고서는 배터리 건강 추정 연구 대시보드에서 자동 생성되었습니다.*  
-*기준 교재: Gregory Plett, Battery Management Systems Vol.2 (2015)*
+*{t['auto_generated']}*
 """
-    return report
+    return r
 
 # =====================================================================
-# 4. 세션 초기화
+# 세션 초기화
 # =====================================================================
-defaults = {
-    "news_ko": [], "news_en": [], "papers": [],
-    "report_text": "", "step": 0, "prev_idx": -1,
-    "sel_news": [], "sel_papers": []
-}
-for k, v in defaults.items():
+for k, v in [("news_ko",[]),("news_en",[]),("papers",[]),("arxiv_papers",[]),
+              ("report_text",""),("step",0),("prev_idx",-1),
+              ("sel_news",[]),("sel_papers",[]),("sel_arxiv",[]),
+              ("ui_lang","ko")]:
     if k not in st.session_state:
         st.session_state[k] = v
 
 # =====================================================================
-# 5. 사이드바
+# 사이드바
 # =====================================================================
 with st.sidebar:
-    st.markdown("""
-    <div style="padding:16px 0 12px; border-bottom:1px solid #e8eaf0; margin-bottom:14px;">
-        <div style="font-size:1rem; font-weight:700; color:#1a73e8;">🔋 배터리 건강 추정</div>
-        <div style="font-size:0.75rem; color:#9aa0a6; margin-top:2px;">2-04 연구 대시보드</div>
+    # 언어 선택
+    lang_choice = st.selectbox(
+        "🌐 Language / 언어",
+        list(LANG_OPTIONS.keys()),
+        index=list(LANG_OPTIONS.values()).index(st.session_state["ui_lang"])
+    )
+    st.session_state["ui_lang"] = LANG_OPTIONS[lang_choice]
+    lang = st.session_state["ui_lang"]
+    t = UI[lang]
+
+    st.markdown(f"""
+    <div style="padding:14px 0 10px; border-bottom:1px solid #e8eaf0; margin-bottom:12px;">
+        <div style="font-size:1rem; font-weight:700; color:#1a73e8;">{t['sidebar_title']}</div>
+        <div style="font-size:0.75rem; color:#9aa0a6; margin-top:2px;">{t['sidebar_sub']}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    selected_display = st.selectbox("소제목 선택", TOPIC_DISPLAY, label_visibility="collapsed")
+    selected_display = st.selectbox("", TOPIC_DISPLAY, label_visibility="collapsed")
     idx = TOPIC_DISPLAY.index(selected_display)
     num, ko, en, bg, keywords = TOPIC_MAP[selected_display]
 
     if st.session_state["prev_idx"] != idx:
-        for k in ["news_ko", "news_en", "papers", "report_text", "sel_news", "sel_papers"]:
-            st.session_state[k] = [] if k != "report_text" else ""
+        for k2 in ["news_ko","news_en","papers","arxiv_papers","report_text","sel_news","sel_papers","sel_arxiv"]:
+            st.session_state[k2] = [] if k2 != "report_text" else ""
         st.session_state["step"] = 0
         st.session_state["prev_idx"] = idx
 
     st.markdown(f"""
-    <div style="background:#e8f0fe; border-radius:8px; padding:10px 14px; margin:12px 0;">
-        <div style="font-size:0.72rem; color:#1557b0; font-weight:600; margin-bottom:4px;">🔑 검색 키워드</div>
+    <div style="background:#e8f0fe; border-radius:8px; padding:10px 14px; margin:10px 0;">
+        <div style="font-size:0.72rem; color:#1557b0; font-weight:600; margin-bottom:3px;">{t['sidebar_keyword']}</div>
         <div style="font-size:0.8rem; color:#1a73e8; font-weight:500; line-height:1.5;">{en}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#5f6368; margin:14px 0 8px;'>진행 상태</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size:0.8rem; font-weight:600; color:#5f6368; margin:12px 0 8px;'>{t['sidebar_progress']}</div>", unsafe_allow_html=True)
     step = st.session_state["step"]
-    for label, threshold in [("① 뉴스 수집", 1), ("② 논문 검색", 2), ("③ 자료 선택", 3), ("④ 보고서 생성", 4), ("⑤ 다운로드", 5)]:
-        done = step >= threshold
+    for i, label in enumerate(t["steps"], 1):
+        done = step >= i
         icon = "✅" if done else "○"
         color = "#137333" if done else "#9aa0a6"
-        weight = "600" if done else "400"
-        st.markdown(f"<div style='color:{color}; font-size:0.82rem; font-weight:{weight}; padding:5px 0; border-bottom:1px solid #f1f3f4;'>{icon} {label}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='color:{color}; font-size:0.82rem; font-weight:{'600' if done else '400'}; padding:5px 0; border-bottom:1px solid #f1f3f4;'>{icon} {label}</div>", unsafe_allow_html=True)
 
-    st.markdown(f"<div style='color:#bdc1c6; font-size:0.72rem; margin-top:14px;'>{datetime.now().strftime('%Y-%m-%d %H:%M')}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='color:#bdc1c6; font-size:0.72rem; margin-top:12px;'>{datetime.now().strftime('%Y-%m-%d %H:%M')}</div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 6. 메인
+# 메인
 # =====================================================================
 st.markdown(f"""
 <div class="top-nav">
-    <div class="top-nav-logo">🔋 BMS·SOH 연구 대시보드</div>
-    <div class="top-nav-sub">배터리 건강 추정 2-04 | 자료수집 → 선택 → 전문 보고서 자동 생성 | API 키 불필요</div>
+    <div class="top-nav-logo">{t['app_title']}</div>
+    <div class="top-nav-sub">{t['app_sub']}</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="topic-header">
-    <div class="topic-num">Chapter 2-04 &nbsp;·&nbsp; {num}번 주제</div>
+    <div class="topic-num">{t['topic_chapter']} · {num}</div>
     <div class="topic-title">{num}. {ko}</div>
     <div class="topic-en">{en}</div>
 </div>
@@ -519,246 +761,223 @@ st.markdown(f"""
 
 step = st.session_state["step"]
 def fc(n): return "done" if step > n else ("active" if step == n else "")
-st.markdown(f"""
-<div class="flow-bar">
-    <div class="flow-step {fc(0)}">① 뉴스 수집</div><div class="flow-arrow">→</div>
-    <div class="flow-step {fc(1)}">② 논문 검색</div><div class="flow-arrow">→</div>
-    <div class="flow-step {fc(2)}">③ 자료 선택</div><div class="flow-arrow">→</div>
-    <div class="flow-step {fc(3)}">④ 보고서 생성</div><div class="flow-arrow">→</div>
-    <div class="flow-step {fc(4)}">⑤ 다운로드</div>
-</div>
-""", unsafe_allow_html=True)
+flow_items = t["flow"]
+flow_html = "".join([
+    f'<div class="flow-step {fc(i)}">{flow_items[i]}</div>' +
+    (f'<div class="flow-arrow">→</div>' if i < len(flow_items)-1 else "")
+    for i in range(len(flow_items))
+])
+st.markdown(f'<div class="flow-bar">{flow_html}</div>', unsafe_allow_html=True)
 
-news_cnt   = len(st.session_state["news_ko"]) + len(st.session_state["news_en"])
-paper_cnt  = len(st.session_state["papers"])
-sel_total  = len(st.session_state["sel_news"]) + len(st.session_state["sel_papers"])
-has_report = bool(st.session_state["report_text"])
+news_cnt  = len(st.session_state["news_ko"]) + len(st.session_state["news_en"])
+paper_cnt = len(st.session_state["papers"]) + len(st.session_state["arxiv_papers"])
+sel_total = len(st.session_state["sel_news"]) + len(st.session_state["sel_papers"]) + len(st.session_state["sel_arxiv"])
+has_rpt   = bool(st.session_state["report_text"])
 
 st.markdown(f"""
 <div class="metric-row">
-    <div class="metric-card"><div class="metric-card-label">선택 주제</div><div class="metric-card-value">{num}번</div></div>
-    <div class="metric-card"><div class="metric-card-label">수집 뉴스</div><div class="metric-card-value {'green' if news_cnt else 'gray'}">{news_cnt}건</div></div>
-    <div class="metric-card"><div class="metric-card-label">수집 논문</div><div class="metric-card-value {'green' if paper_cnt else 'gray'}">{paper_cnt}편</div></div>
-    <div class="metric-card"><div class="metric-card-label">선택 자료</div><div class="metric-card-value {'green' if sel_total else 'gray'}">{sel_total}건</div></div>
-    <div class="metric-card"><div class="metric-card-label">보고서</div><div class="metric-card-value {'green' if has_report else 'gray'}">{'완성 ✓' if has_report else '대기중'}</div></div>
+    <div class="metric-card"><div class="metric-card-label">{t['metric_topic']}</div><div class="metric-card-value">{num}</div></div>
+    <div class="metric-card"><div class="metric-card-label">{t['metric_news']}</div><div class="metric-card-value {'green' if news_cnt else 'gray'}">{news_cnt}{t['news_unit']}</div></div>
+    <div class="metric-card"><div class="metric-card-label">{t['metric_paper']}</div><div class="metric-card-value {'green' if paper_cnt else 'gray'}">{paper_cnt}{t['paper_unit']}</div></div>
+    <div class="metric-card"><div class="metric-card-label">{t['metric_selected']}</div><div class="metric-card-value {'green' if sel_total else 'gray'}">{sel_total}</div></div>
+    <div class="metric-card"><div class="metric-card-label">{t['metric_report']}</div><div class="metric-card-value {'green' if has_rpt else 'gray'}">{t['report_done'] if has_rpt else t['report_wait']}</div></div>
 </div>
 """, unsafe_allow_html=True)
 
-# =====================================================================
-# 7. 탭
-# =====================================================================
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📡 ① 뉴스 수집",
-    "📚 ② 논문 검색",
-    "✅ ③ 자료 선택 & 보고서 생성",
-    "💾 ④ 저장 & 다운로드",
-])
+tab1, tab2, tab3, tab4 = st.tabs([t["tab1"], t["tab2"], t["tab3"], t["tab4"]])
 
-# ── Tab 1: 뉴스 ──────────────────────────
+# ── Tab 1: 뉴스 ──────────────────────────────
 with tab1:
-    st.markdown('<div class="section-title">📡 최신 뉴스 및 정보 수집</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{t["tab1"]}</div>', unsafe_allow_html=True)
     c1, c2, _ = st.columns([2, 2, 6])
     with c1:
-        run_news = st.button("🔄 뉴스 수집 시작", type="primary", use_container_width=True)
+        run_news = st.button(t["news_collect"], type="primary", use_container_width=True)
     with c2:
-        if st.button("🗑️ 초기화", use_container_width=True):
-            st.session_state["news_ko"] = []
-            st.session_state["news_en"] = []
-            st.rerun()
+        if st.button(t["reset"], key="reset_news", use_container_width=True):
+            st.session_state["news_ko"] = []; st.session_state["news_en"] = []; st.rerun()
 
     if run_news:
         prog = st.progress(0); status = st.empty()
-        status.info("🇰🇷 국내 뉴스 검색 중...")
-        prog.progress(25)
-        raw_ko = fetch_news_ko(ko + " 배터리", 6)
-        st.session_state["news_ko"] = [
-            {"title": e.title, "link": e.link, "lang": "ko",
-             "published": getattr(e, 'published', ''),
-             "source": (e.get('source') or {}).get('title', 'Google News')}
-            for e in raw_ko
-        ]
-        status.info("🌍 해외 뉴스 검색 중...")
-        prog.progress(75)
-        raw_en = fetch_news_en(en, 6)
-        st.session_state["news_en"] = [
-            {"title": e.title, "link": e.link, "lang": "en",
-             "published": getattr(e, 'published', ''),
-             "source": (e.get('source') or {}).get('title', 'Google News')}
-            for e in raw_en
-        ]
+        status.info("🇰🇷 ...")
+        prog.progress(20)
+        raw_ko = fetch_news(ko + " 배터리", "ko", "KR", "KR:ko", 6)
+        st.session_state["news_ko"] = [{"title":e.title,"link":e.link,"lang":"ko","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_ko]
+        status.info("🌍 ...")
+        prog.progress(60)
+        raw_en = fetch_news(en, "en", "US", "US:en", 6)
+        st.session_state["news_en"] = [{"title":e.title,"link":e.link,"lang":"en","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_en]
         prog.progress(100); status.empty(); prog.empty()
-        if st.session_state["step"] < 1:
-            st.session_state["step"] = 1
+        if st.session_state["step"] < 1: st.session_state["step"] = 1
         st.rerun()
 
     ko_list = st.session_state["news_ko"]
     en_list = st.session_state["news_en"]
     if ko_list or en_list:
-        st.success(f"✅ 총 {len(ko_list)+len(en_list)}건 수집 완료 — ③탭에서 원하는 항목을 선택하세요")
+        st.success(f"✅ {len(ko_list)+len(en_list)}{t['news_unit']} {t['collected']} — {t['select_tip']}")
         col_ko, col_en = st.columns(2)
         with col_ko:
-            st.markdown(f"<div style='font-weight:700; margin-bottom:8px;'>🇰🇷 국내 ({len(ko_list)}건)</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-weight:700; margin-bottom:8px;'>{t['domestic_news']} ({len(ko_list)}{t['news_unit']})</div>", unsafe_allow_html=True)
             for item in ko_list:
-                st.markdown(f"""<div class="news-item">
-                    <div class="news-item-title"><a href="{item['link']}" target="_blank">{item['title']}</a></div>
-                    <div class="news-item-meta">📅 {item['published']} · {item['source']}</div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(f'<div class="news-item"><div class="news-item-title"><a href="{item["link"]}" target="_blank">{item["title"]}</a></div><div class="news-item-meta">📅 {item["published"]} · {item["source"]}</div></div>', unsafe_allow_html=True)
         with col_en:
-            st.markdown(f"<div style='font-weight:700; margin-bottom:8px;'>🌍 해외 ({len(en_list)}건)</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-weight:700; margin-bottom:8px;'>{t['foreign_news']} ({len(en_list)}{t['news_unit']})</div>", unsafe_allow_html=True)
             for item in en_list:
-                st.markdown(f"""<div class="news-item">
-                    <div class="news-item-title"><a href="{item['link']}" target="_blank">{item['title']}</a></div>
-                    <div class="news-item-meta">📅 {item['published']} · {item['source']}</div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(f'<div class="news-item"><div class="news-item-title"><a href="{item["link"]}" target="_blank">{item["title"]}</a></div><div class="news-item-meta">📅 {item["published"]} · {item["source"]}</div></div>', unsafe_allow_html=True)
     else:
-        st.markdown("""<div style="text-align:center; padding:40px; color:#9aa0a6;">
-            <div style="font-size:2.5rem; margin-bottom:12px;">📰</div>
-            <div>위 버튼을 클릭하면 국내·해외 뉴스를 수집합니다</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center;padding:40px;color:#9aa0a6;"><div style="font-size:2.5rem;margin-bottom:12px;">📰</div><div>{t["news_collect"]}</div></div>', unsafe_allow_html=True)
 
-# ── Tab 2: 논문 ──────────────────────────
+# ── Tab 2: 논문 ──────────────────────────────
 with tab2:
-    st.markdown('<div class="section-title">📚 학술 논문 검색</div>', unsafe_allow_html=True)
-    st.warning("⚠️ Google Scholar는 잦은 요청 시 일시 차단될 수 있습니다.")
-    c1, c2, _ = st.columns([2, 2, 6])
-    with c1:
-        run_scholar = st.button("🔍 논문 검색 시작", type="primary", use_container_width=True)
-    with c2:
-        if st.button("🗑️ 초기화 ", use_container_width=True):
+    st.markdown(f'<div class="section-title">{t["tab2"]}</div>', unsafe_allow_html=True)
+
+    # arXiv
+    st.markdown(f'<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.84rem;color:#7f4f00;">💡 {t["arxiv_info"]}</div>', unsafe_allow_html=True)
+    ca1, ca2, _ = st.columns([2, 2, 6])
+    with ca1:
+        run_arxiv = st.button(t["arxiv_search"], type="primary", use_container_width=True)
+    with ca2:
+        if st.button(t["reset"], key="reset_arxiv", use_container_width=True):
+            st.session_state["arxiv_papers"] = []; st.rerun()
+
+    if run_arxiv:
+        with st.spinner("arXiv 검색 중..."):
+            arxiv_results = fetch_arxiv(en, 5)
+        st.session_state["arxiv_papers"] = arxiv_results
+        if st.session_state["step"] < 2: st.session_state["step"] = 2
+        st.rerun()
+
+    arxiv_list = st.session_state["arxiv_papers"]
+    if arxiv_list:
+        st.success(f"✅ arXiv 논문 {len(arxiv_list)}{t['paper_unit']} {t['papers_collected']}")
+        for i, p in enumerate(arxiv_list, 1):
+            abs_t = (p['abstract'][:280]+"...") if len(p['abstract'])>280 else p['abstract']
+            st.markdown(f"""<div class="arxiv-item">
+                <div class="arxiv-badge">arXiv</div>
+                <div class="paper-item-title">[{i}] <a href="{p['url']}" target="_blank" style="color:#1a0dab;">{p['title']}</a></div>
+                <div class="paper-item-author">👤 {p['authors']} | 📅 {p['published']}</div>
+                <div class="paper-item-abs">{abs_t}</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Google Scholar
+    st.warning(t["scholar_warning"])
+    cs1, cs2, _ = st.columns([2, 2, 6])
+    with cs1:
+        run_scholar = st.button(t["scholar_search"], type="primary", use_container_width=True)
+    with cs2:
+        if st.button(t["reset"], key="reset_scholar", use_container_width=True):
             st.session_state["papers"] = []; st.rerun()
 
     if run_scholar:
-        with st.spinner("Google Scholar 조회 중... (최대 20초 소요)"):
-            raw = fetch_scholar(en, 5)
-        papers = []
-        for pub in raw:
-            bib = pub.get('bib', {})
-            papers.append({
-                "title":    bib.get('title', '제목 없음'),
-                "authors":  bib.get('author', '저자 미상'),
-                "year":     bib.get('pub_year', ''),
-                "journal":  bib.get('venue', ''),
-                "abstract": bib.get('abstract', ''),
-                "url":      pub.get('pub_url', ''),
-            })
-        st.session_state["papers"] = papers
-        if st.session_state["step"] < 2:
-            st.session_state["step"] = 2
+        with st.spinner("Google Scholar 조회 중..."):
+            results = fetch_scholar(en, 4)
+        st.session_state["papers"] = results
+        if st.session_state["step"] < 2: st.session_state["step"] = 2
         st.rerun()
 
-    papers = st.session_state["papers"]
-    if papers:
-        st.success(f"✅ 논문 {len(papers)}편 수집 완료 — ③탭에서 원하는 논문을 선택하세요")
-        for i, p in enumerate(papers, 1):
-            abs_text  = (p['abstract'][:300] + "...") if len(p['abstract']) > 300 else p['abstract']
-            abs_html  = f"<div class='paper-item-abs'><b>Abstract:</b> {abs_text}</div>" if abs_text else ""
-            link_html = f"<a href='{p['url']}' target='_blank' style='color:#1a73e8; font-size:0.8rem; font-weight:600;'>➡️ 원문 보기</a>" if p['url'] else ""
+    scholar_list = st.session_state["papers"]
+    if scholar_list:
+        st.success(f"✅ Google Scholar 논문 {len(scholar_list)}{t['paper_unit']} {t['papers_collected']}")
+        for i, p in enumerate(scholar_list, 1):
+            abs_t = (p['abstract'][:280]+"...") if len(p['abstract'])>280 else p['abstract']
+            link_html = f"<a href='{p['url']}' target='_blank' style='color:#1a73e8;font-size:0.8rem;'>➡️</a>" if p.get('url') else ""
             st.markdown(f"""<div class="paper-item">
-                <div class="paper-item-title">[{i}] {p['title']} ({p['year']})</div>
+                <div class="scholar-badge">Scholar</div>
+                <div class="paper-item-title">[{i}] {p['title']} ({p['year']}) {link_html}</div>
                 <div class="paper-item-author">👤 {p['authors']}</div>
-                {"<div class='paper-item-venue'>📔 " + p['journal'] + "</div>" if p['journal'] else ""}
-                {abs_html}
-                <div style="margin-top:8px;">{link_html}</div>
+                {"<div class='paper-item-venue'>📔 " + p['journal'] + "</div>" if p.get('journal') else ""}
+                <div class="paper-item-abs">{abs_t}</div>
             </div>""", unsafe_allow_html=True)
-    else:
-        st.markdown("""<div style="text-align:center; padding:40px; color:#9aa0a6;">
-            <div style="font-size:2.5rem; margin-bottom:12px;">📖</div>
-            <div>위 버튼을 클릭하면 Google Scholar에서 관련 논문을 검색합니다</div>
-        </div>""", unsafe_allow_html=True)
 
-# ── Tab 3: 자료 선택 & 보고서 생성 ─────
+# ── Tab 3: 선택 & 보고서 ─────────────────────
 with tab3:
-    st.markdown('<div class="section-title">✅ 자료 선택 및 전문 보고서 자동 생성</div>', unsafe_allow_html=True)
-
+    st.markdown(f'<div class="section-title">{t["tab3"]}</div>', unsafe_allow_html=True)
     all_news   = st.session_state["news_ko"] + st.session_state["news_en"]
-    all_papers = st.session_state["papers"]
+    all_scholar = st.session_state["papers"]
+    all_arxiv   = st.session_state["arxiv_papers"]
 
-    if not all_news and not all_papers:
-        st.info("먼저 ①탭에서 뉴스를, ②탭에서 논문을 수집해주세요.")
+    if not all_news and not all_scholar and not all_arxiv:
+        st.info(t["no_data"])
     else:
-        # 뉴스 선택
-        sel_news_list = []
+        sel_news_list   = []
+        sel_scholar_list = []
+        sel_arxiv_list  = []
+
         if all_news:
-            st.markdown('<div class="select-header">📰 보고서에 포함할 뉴스를 선택하세요 (복수 선택 가능)</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="select-header">{t["select_news_header"]}</div>', unsafe_allow_html=True)
             col1, col2 = st.columns(2)
             for i, item in enumerate(all_news):
                 flag = "🇰🇷" if item.get("lang") == "ko" else "🌍"
-                with (col1 if i % 2 == 0 else col2):
+                with (col1 if i%2==0 else col2):
                     if st.checkbox(f"{flag} {item['title'][:55]}{'...' if len(item['title'])>55 else ''}", key=f"nc_{i}"):
                         sel_news_list.append(item)
 
-        # 논문 선택
-        sel_paper_list = []
-        if all_papers:
+        if all_scholar or all_arxiv:
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown('<div class="select-header">📚 보고서에 포함할 논문을 선택하세요 (복수 선택 가능)</div>', unsafe_allow_html=True)
-            for i, p in enumerate(all_papers):
-                if st.checkbox(f"[{i+1}] {p['title'][:65]}{'...' if len(p['title'])>65 else ''} ({p['year']})", key=f"pc_{i}"):
-                    sel_paper_list.append(p)
+            st.markdown(f'<div class="select-header">{t["select_paper_header"]}</div>', unsafe_allow_html=True)
+
+            if all_arxiv:
+                st.markdown("<div style='font-size:0.84rem; font-weight:700; color:#e8710a; margin:8px 0 4px;'>📄 arXiv 논문</div>", unsafe_allow_html=True)
+                for i, p in enumerate(all_arxiv):
+                    if st.checkbox(f"[arXiv] {p['title'][:60]}{'...' if len(p['title'])>60 else ''} ({p['published'][:7]})", key=f"ax_{i}"):
+                        sel_arxiv_list.append(p)
+
+            if all_scholar:
+                st.markdown("<div style='font-size:0.84rem; font-weight:700; color:#1a73e8; margin:8px 0 4px;'>📚 Google Scholar 논문</div>", unsafe_allow_html=True)
+                for i, p in enumerate(all_scholar):
+                    if st.checkbox(f"[Scholar] {p['title'][:60]}{'...' if len(p['title'])>60 else ''} ({p['year']})", key=f"sc_{i}"):
+                        sel_scholar_list.append(p)
 
         st.session_state["sel_news"]   = sel_news_list
-        st.session_state["sel_papers"] = sel_paper_list
-        total_sel = len(sel_news_list) + len(sel_paper_list)
+        st.session_state["sel_papers"] = sel_scholar_list
+        st.session_state["sel_arxiv"]  = sel_arxiv_list
+        total_sel = len(sel_news_list) + len(sel_scholar_list) + len(sel_arxiv_list)
 
         st.markdown("<br>", unsafe_allow_html=True)
         if total_sel > 0:
-            st.success(f"✅ 뉴스 {len(sel_news_list)}건 + 논문 {len(sel_paper_list)}편 선택됨")
+            st.success(f"✅ {t['metric_news']} {len(sel_news_list)}{t['news_unit']} + arXiv {len(sel_arxiv_list)}{t['paper_unit']} + Scholar {len(sel_scholar_list)}{t['paper_unit']} {t['metric_selected']}")
         else:
-            st.warning("⚠️ 최소 1개 이상 선택해야 보고서를 생성할 수 있습니다.")
+            st.warning("⚠️ 최소 1개 이상 선택하세요.")
 
         st.markdown("---")
         col_gen, _ = st.columns([3, 7])
         with col_gen:
-            gen_btn = st.button("📄 전문 보고서 자동 생성", type="primary",
-                                use_container_width=True, disabled=(total_sel == 0))
+            gen_btn = st.button(t["gen_report"], type="primary", use_container_width=True, disabled=(total_sel == 0))
 
         if gen_btn and total_sel > 0:
-            with st.spinner("전문 보고서를 생성하는 중입니다..."):
-                time.sleep(0.5)
-                report = generate_structured_report(
-                    num, ko, en, bg, keywords,
-                    sel_news_list, sel_paper_list
-                )
+            with st.spinner("보고서 생성 중..."):
+                time.sleep(0.4)
+                report = generate_report(num, ko, en, bg, keywords, sel_news_list, sel_scholar_list, sel_arxiv_list, lang, t)
                 st.session_state["report_text"] = report
-                if st.session_state["step"] < 4:
-                    st.session_state["step"] = 4
-            st.success("✅ 보고서 생성 완료! ④탭에서 확인 및 다운로드하세요.")
+                if st.session_state["step"] < 4: st.session_state["step"] = 4
+            st.success(f"✅ {t['report_done']} → {t['tab4']}")
             st.markdown("---")
             st.markdown(report)
-
         elif st.session_state["report_text"] and not gen_btn:
             st.markdown("---")
-            st.markdown("### 📄 이전에 생성된 보고서")
             st.markdown(st.session_state["report_text"])
 
-# ── Tab 4: 저장 & 다운로드 ───────────────
+# ── Tab 4: 저장 ──────────────────────────────
 with tab4:
-    st.markdown('<div class="section-title">💾 저장 및 다운로드</div>', unsafe_allow_html=True)
-    report_text = st.session_state["report_text"]
-
-    if report_text:
-        st.success("✅ 보고서가 준비되었습니다.")
-        st.markdown("<div style='font-size:0.88rem; font-weight:600; color:#5f6368; margin-bottom:6px;'>✏️ 최종 수정 (수정 후 다운로드)</div>", unsafe_allow_html=True)
-        edited = st.text_area("내용을 수정하세요", value=report_text, height=400, key=f"final_{num}")
+    st.markdown(f'<div class="section-title">{t["tab4"]}</div>', unsafe_allow_html=True)
+    rpt = st.session_state["report_text"]
+    if rpt:
+        st.success(f"✅ {t['report_done']}")
+        edited = st.text_area(t["edit_label"], value=rpt, height=400, key=f"final_{num}_{lang}")
         st.session_state["report_text"] = edited
-
         st.markdown("<br>", unsafe_allow_html=True)
         file_base = f"BMS_SOH_{num}_{datetime.now().strftime('%Y%m%d')}"
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.download_button("📄 TXT 다운로드", data=edited, file_name=f"{file_base}.txt", mime="text/plain", type="primary", use_container_width=True)
+            st.download_button(t["download_txt"], data=edited, file_name=f"{file_base}.txt", mime="text/plain", type="primary", use_container_width=True)
         with c2:
-            st.download_button("📋 Markdown(.md)", data=edited, file_name=f"{file_base}.md", mime="text/markdown", type="primary", use_container_width=True)
+            st.download_button(t["download_md"], data=edited, file_name=f"{file_base}.md", mime="text/markdown", type="primary", use_container_width=True)
         with c3:
-            if st.button("🖨️ 인쇄/PDF", use_container_width=True):
-                st.info("브라우저에서 Ctrl+P → PDF로 저장하세요.")
-
+            if st.button(t["print_pdf"], use_container_width=True):
+                st.info("Ctrl+P → PDF")
         st.markdown("---")
-        st.markdown("### 👁️ 최종 미리보기")
+        st.markdown(f"### {t['preview']}")
         st.markdown(edited)
     else:
-        st.markdown("""<div style="text-align:center; padding:50px; color:#9aa0a6;">
-            <div style="font-size:2.5rem; margin-bottom:14px;">📋</div>
-            <div style="font-size:1rem; font-weight:600; color:#5f6368; margin-bottom:8px;">아직 보고서가 없습니다</div>
-            <div>① 뉴스 수집 → ② 논문 검색 → ③ 자료 선택 후 보고서 생성</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center;padding:50px;color:#9aa0a6;"><div style="font-size:2.5rem;margin-bottom:14px;">📋</div><div style="font-size:1rem;font-weight:600;color:#5f6368;margin-bottom:8px;">{t["no_report"]}</div><div>{t["no_report_guide"]}</div></div>', unsafe_allow_html=True)
