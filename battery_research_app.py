@@ -2,7 +2,6 @@ import streamlit as st
 import feedparser
 from scholarly import scholarly
 from datetime import datetime
-import requests
 import time
 import urllib.parse
 
@@ -329,45 +328,45 @@ def fetch_news(keyword, hl, gl, ceid, max_results=6):
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_arxiv(keyword, max_results=5):
-    """arXiv API — HTTPS, 단순 쿼리"""
+    """arXiv Atom API — feedparser로 파싱 (가장 안정적)"""
     try:
         query = urllib.parse.quote(keyword)
-        url = f"https://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
-        headers = {"User-Agent": "Mozilla/5.0 BatteryResearchApp/1.0"}
-        resp = requests.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-
-        # namespace 처리
-        text = resp.text
-        # atom namespace 제거 후 파싱
-        text = text.replace('xmlns="http://www.w3.org/2005/Atom"', '')
-        import xml.etree.ElementTree as ET
-        root = ET.fromstring(text)
+        url = (
+            f"https://export.arxiv.org/api/query"
+            f"?search_query=all:{query}"
+            f"&start=0&max_results={max_results}"
+            f"&sortBy=submittedDate&sortOrder=descending"
+        )
+        # feedparser가 Atom 네임스페이스를 자동으로 처리
+        feed = feedparser.parse(url)
 
         results = []
-        for entry in root.findall("entry"):
-            def gt(tag):
-                el = entry.find(tag)
-                return el.text.strip() if el is not None and el.text else ""
+        for entry in feed.entries:
+            title   = entry.get("title", "").replace("\n", " ").strip()
+            summary = entry.get("summary", "")[:400].replace("\n", " ").strip()
+            pub     = entry.get("published", "")[:10]
+            link    = entry.get("id", "") or entry.get("link", "")
 
-            title   = gt("title").replace("\n", " ").replace("  ", " ")
-            summary = gt("summary")[:400]
-            pub     = gt("published")[:10]
-            link_el = entry.find("id")
-            link    = link_el.text.strip() if link_el is not None else ""
-            authors = ", ".join(
-                a.find("name").text for a in entry.findall("author")
-                if a.find("name") is not None
-            )[:3*30]
+            # 저자 처리
+            authors_raw = entry.get("authors", [])
+            if authors_raw:
+                authors = ", ".join(
+                    a.get("name", "") for a in authors_raw[:3]
+                )
+            else:
+                authors = entry.get("author", "")
 
             if title:
                 results.append({
-                    "title": title, "authors": authors,
-                    "abstract": summary, "url": link,
-                    "published": pub, "source": "arXiv"
+                    "title":    title,
+                    "authors":  authors,
+                    "abstract": summary,
+                    "url":      link,
+                    "published": pub,
+                    "source":   "arXiv",
                 })
         return results
-    except Exception as e:
+    except Exception:
         return []
 
 def fetch_scholar(keyword, max_results=4):
