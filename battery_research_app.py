@@ -9,537 +9,526 @@ import urllib.parse
 # 페이지 설정
 # =====================================================================
 st.set_page_config(
-    page_title="BATTERYSIM — Battery Research Hub",
+    page_title="BatteryIQ — 배터리 건강 추정 연구 포털",
     page_icon="🔋",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # =====================================================================
-# 전역 CSS — 포털/매거진 스타일
+# 각 주제별 Unsplash 이미지 URL (무료, 직접 링크)
+# =====================================================================
+TOPIC_IMAGES = [
+    "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=220&fit=crop",  # 01 배터리/EV
+    "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&h=220&fit=crop",  # 02 음극/실험실
+    "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&h=220&fit=crop",  # 03 양극/전자현미경
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=220&fit=crop",  # 04 회로/전압
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=220&fit=crop",  # 05 코드/프로그래밍
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=220&fit=crop",     # 06 데이터/그래프
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&h=220&fit=crop",  # 07 칼만필터/수식
+    "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&h=220&fit=crop",  # 08 EKF/신호
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=220&fit=crop",    # 09 SPKF/파형
+    "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=220&fit=crop", # 10 조인트추정
+    "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=600&h=220&fit=crop",  # 11 견고성/테스트
+    "https://images.unsplash.com/photo-1543286386-713bdd548da4?w=600&h=220&fit=crop",    # 12 선형회귀
+    "https://images.unsplash.com/photo-1526628953301-3cd20f514094?w=600&h=220&fit=crop", # 13 통계/최소제곱
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&h=220&fit=crop", # 14 총 최소제곱
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=220&fit=crop", # 15 모델적합도
+    "https://images.unsplash.com/photo-1473091534298-04dcbce3278c?w=600&h=220&fit=crop", # 16 신뢰구간
+    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=220&fit=crop",   # 17 단순화
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=220&fit=crop", # 18 근사해
+    "https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=600&h=220&fit=crop", # 19 시뮬레이션코드
+    "https://images.unsplash.com/photo-1549317661-cf369843aba2?w=600&h=220&fit=crop",   # 20 HEV
+    "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=220&fit=crop",   # 21 EV
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=220&fit=crop", # 22 논의/회의
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=220&fit=crop", # 23 미래방향
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&h=220&fit=crop", # 24 비선형필터
+]
+
+# =====================================================================
+# CSS
 # =====================================================================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Bebas+Neue&family=Barlow:wght@400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 
 :root {
-    --red:    #e8001c;
-    --black:  #111111;
-    --white:  #ffffff;
-    --gray1:  #f4f4f4;
-    --gray2:  #e0e0e0;
-    --gray3:  #888888;
-    --accent: #ff2d44;
+    --primary:  #1D4ED8;
+    --primary-dark: #1E3A8A;
+    --accent:   #0EA5E9;
+    --green:    #10B981;
+    --red:      #EF4444;
+    --bg:       #F1F5F9;
+    --white:    #FFFFFF;
+    --gray1:    #F8FAFC;
+    --gray2:    #E2E8F0;
+    --gray3:    #94A3B8;
+    --gray4:    #64748B;
+    --dark:     #0F172A;
+    --card-shadow: 0 2px 12px rgba(15,23,42,0.08);
 }
 
 html, body, [class*="css"] {
-    font-family: 'Noto Sans KR', 'Barlow', sans-serif;
-    background: #f4f4f4 !important;
-    color: var(--black);
+    font-family: 'Noto Sans KR', 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg) !important;
+    color: var(--dark);
 }
-
-/* 전체 앱 배경 */
-.stApp { background: #f4f4f4 !important; }
-
-/* 사이드바 숨김 */
+.stApp { background: var(--bg) !important; }
 section[data-testid="stSidebar"] { display: none !important; }
-.stAppViewContainer { padding: 0 !important; }
 [data-testid="stAppViewBlockContainer"] { padding: 0 !important; max-width: 100% !important; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
+#MainMenu, footer, header { visibility: hidden; }
+.stDeployButton { display: none; }
 
-/* ── 상단 네비 ── */
-.portal-nav {
-    background: var(--black);
-    padding: 0 40px;
+/* ── 네비바 ── */
+.nav {
+    background: var(--dark);
+    height: 58px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 60px;
+    padding: 0 36px;
     position: sticky;
     top: 0;
-    z-index: 100;
-    border-bottom: 3px solid var(--red);
+    z-index: 999;
 }
-.portal-logo {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 1.6rem;
-    color: var(--white);
-    letter-spacing: 2px;
+.nav-logo {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--white);
+    letter-spacing: -0.5px;
 }
-.portal-logo span { color: var(--red); font-style: italic; }
-.portal-nav-links {
-    display: flex;
-    gap: 28px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #aaaaaa;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-.portal-nav-links a { color: #aaaaaa; text-decoration: none; }
-.portal-nav-links a:hover { color: var(--white); }
-.portal-nav-links a.active { color: var(--white); }
-
-/* ── 히어로 배너 ── */
-.portal-hero {
-    background: var(--black);
-    padding: 36px 40px 28px;
-    border-bottom: 1px solid #222;
-}
-.portal-hero-label {
-    font-size: 0.72rem;
+.nav-logo-badge {
+    background: var(--primary);
+    color: var(--white);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
     font-weight: 700;
-    color: var(--red);
+    letter-spacing: 0.5px;
+}
+.nav-links {
+    display: flex;
+    gap: 24px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #94A3B8;
+}
+
+/* ── 히어로 ── */
+.hero {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--accent) 100%);
+    padding: 40px 36px 32px;
+}
+.hero-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
     letter-spacing: 3px;
     text-transform: uppercase;
-    margin-bottom: 8px;
-}
-.portal-hero-title {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 3.2rem;
-    color: var(--white);
-    letter-spacing: 2px;
-    line-height: 1;
+    color: rgba(255,255,255,0.6);
     margin-bottom: 10px;
 }
-.portal-hero-sub {
-    font-size: 0.9rem;
-    color: #888;
+.hero-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 10px;
+    letter-spacing: -1px;
+}
+.hero-title span { color: #7DD3FC; }
+.hero-sub {
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.7);
     font-weight: 400;
+    margin-bottom: 24px;
 }
-.portal-hero-stats {
+.hero-stats {
     display: flex;
-    gap: 32px;
-    margin-top: 20px;
+    gap: 28px;
 }
-.portal-stat {
-    text-align: center;
-}
-.portal-stat-num {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 2rem;
-    color: var(--red);
+.hero-stat-num {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #7DD3FC;
     line-height: 1;
 }
-.portal-stat-label {
-    font-size: 0.72rem;
-    color: #666;
+.hero-stat-label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.5);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-top: 2px;
 }
 
 /* ── 섹션 헤더 ── */
-.section-header {
+.sec-header {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray2);
+    padding: 18px 36px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 22px 40px 14px;
-    background: var(--white);
-    border-bottom: 2px solid var(--gray2);
-    margin-bottom: 0;
+    gap: 12px;
 }
-.section-header-line {
-    width: 4px;
-    height: 22px;
-    background: var(--red);
-    border-radius: 2px;
+.sec-header-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--primary);
 }
-.section-header-title {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 1px;
-    color: var(--black);
+.sec-header-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--dark);
+    letter-spacing: -0.3px;
 }
-.section-header-count {
+.sec-header-sub {
     font-size: 0.78rem;
     color: var(--gray3);
-    font-weight: 500;
     margin-left: auto;
 }
 
 /* ── 카드 그리드 ── */
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
-    background: var(--gray2);
-    border: 1px solid var(--gray2);
+.grid-wrap {
+    padding: 20px 32px 40px;
+    background: var(--bg);
 }
 
 /* ── 주제 카드 ── */
 .topic-card {
     background: var(--white);
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
     border: 1px solid var(--gray2);
+    transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+    cursor: pointer;
+    height: 100%;
+}
+.topic-card:hover {
+    box-shadow: 0 12px 36px rgba(29,78,216,0.18);
+    border-color: var(--primary);
+    transform: translateY(-3px);
+}
+.card-img-wrap {
     position: relative;
     overflow: hidden;
+    height: 160px;
 }
-.topic-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 2; transform: translateY(-2px); }
-.topic-card:hover .card-overlay { opacity: 1; }
-
-.card-thumb {
+.card-img-wrap img {
     width: 100%;
-    height: 180px;
+    height: 160px;
     object-fit: cover;
     display: block;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    position: relative;
-    overflow: hidden;
+    transition: transform 0.4s ease;
 }
-
-/* 썸네일 — 번호별 그라데이션 색상 */
-.card-thumb-inner {
-    width: 100%;
-    height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem;
-    color: rgba(255,255,255,0.08);
-    letter-spacing: 4px;
-    position: relative;
-}
-.card-thumb-inner::before {
-    content: '';
+.topic-card:hover .card-img-wrap img { transform: scale(1.05); }
+.card-num {
     position: absolute;
-    inset: 0;
-    background: inherit;
-}
-.card-num-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: var(--red);
+    top: 10px;
+    right: 10px;
+    background: var(--primary);
     color: var(--white);
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 2px;
-    letter-spacing: 0;
-    z-index: 2;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
 }
-.card-overlay {
+.card-img-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(232,0,28,0.08);
-    opacity: 0;
-    transition: opacity 0.2s;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to top, rgba(15,23,42,0.5), transparent);
 }
-
 .card-body {
-    padding: 16px 18px 18px;
+    padding: 14px 16px 16px;
 }
-.card-round-label {
-    font-size: 0.68rem;
+.card-topic-label {
+    font-size: 0.65rem;
     font-weight: 700;
-    color: var(--red);
+    color: var(--primary);
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 5px;
 }
 .card-title {
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     font-weight: 700;
-    color: var(--black);
+    color: var(--dark);
     line-height: 1.35;
-    margin-bottom: 7px;
+    margin-bottom: 6px;
 }
 .card-desc {
-    font-size: 0.78rem;
-    color: var(--gray3);
+    font-size: 0.76rem;
+    color: var(--gray4);
     line-height: 1.55;
-    margin-bottom: 12px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-.card-link {
-    font-size: 0.73rem;
-    font-weight: 700;
-    color: var(--red);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-decoration: none;
+    margin-bottom: 0;
 }
 
-/* ── 디테일 뷰 ── */
-.detail-wrap { background: var(--white); min-height: 100vh; }
+/* ── 버튼 ── */
+.stButton > button {
+    background: var(--primary) !important;
+    color: var(--white) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.3px !important;
+    padding: 9px 16px !important;
+    width: 100% !important;
+    transition: all 0.15s !important;
+}
+.stButton > button:hover {
+    background: var(--primary-dark) !important;
+    box-shadow: 0 4px 16px rgba(29,78,216,0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ── 디테일 히어로 ── */
 .detail-hero {
-    background: var(--black);
-    padding: 32px 40px 28px;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #1E3A8A 100%);
+    padding: 28px 36px 24px;
     position: relative;
     overflow: hidden;
 }
-.detail-hero::before {
+.detail-hero::after {
     content: attr(data-num);
     position: absolute;
-    right: 40px;
-    top: 50%;
+    right: 36px; top: 50%;
     transform: translateY(-50%);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 10rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 9rem;
+    font-weight: 800;
     color: rgba(255,255,255,0.04);
     line-height: 1;
-    pointer-events: none;
 }
-.detail-back {
-    font-size: 0.75rem;
+.detail-eyebrow {
+    font-size: 0.68rem;
     font-weight: 700;
-    color: var(--red);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    margin-bottom: 16px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    padding: 0;
-}
-.detail-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--red);
     letter-spacing: 3px;
     text-transform: uppercase;
+    color: #7DD3FC;
     margin-bottom: 8px;
 }
 .detail-title {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 2.6rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
     color: var(--white);
-    letter-spacing: 1px;
-    line-height: 1.1;
-    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-bottom: 6px;
 }
 .detail-en {
-    font-size: 0.88rem;
-    color: #666;
-    font-weight: 400;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+.detail-kw-wrap {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.detail-kw {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 0.72rem;
+    font-weight: 500;
 }
 
-/* ── 콘텐츠 영역 ── */
-.detail-content {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 0;
-    min-height: calc(100vh - 200px);
-}
-.detail-main { padding: 28px 36px; border-right: 1px solid var(--gray2); }
-.detail-side { padding: 24px 24px; background: var(--gray1); }
-
-/* 탭 */
-.portal-tabs {
+/* ── 탭 ── */
+.ptab-wrap {
+    background: var(--white);
+    border-bottom: 2px solid var(--gray2);
     display: flex;
     gap: 0;
-    border-bottom: 2px solid var(--gray2);
-    margin-bottom: 24px;
+    padding: 0 36px;
+    overflow-x: auto;
 }
-.portal-tab {
-    padding: 10px 22px;
+.ptab {
+    padding: 12px 20px;
     font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--gray3);
-    cursor: pointer;
+    font-weight: 600;
+    color: var(--gray4);
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
+    white-space: nowrap;
+    cursor: pointer;
+    letter-spacing: 0.2px;
     transition: color 0.15s;
 }
-.portal-tab.active { color: var(--red); border-bottom-color: var(--red); }
-.portal-tab:hover  { color: var(--black); }
+.ptab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.ptab:hover  { color: var(--dark); }
 
-/* 뉴스 아이템 */
-.news-row {
+/* ── 메인/사이드 레이아웃 ── */
+.detail-body {
+    background: var(--bg);
+    padding: 24px 36px;
+}
+
+/* ── 뉴스 아이템 ── */
+.news-item {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 8px 0;
+    border: 1px solid var(--gray2);
     display: flex;
     gap: 14px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--gray2);
-    cursor: pointer;
-    transition: background 0.15s;
+    align-items: flex-start;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+    transition: all 0.15s;
 }
-.news-row:hover { background: #fafafa; margin: 0 -14px; padding: 14px; }
-.news-row:last-child { border-bottom: none; }
-.news-row-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
+.news-item:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(29,78,216,0.1); }
+.news-idx {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
     color: var(--gray2);
-    min-width: 32px;
+    min-width: 30px;
     line-height: 1;
     padding-top: 2px;
 }
-.news-row-content { flex: 1; }
-.news-row-flag { font-size: 0.75rem; margin-bottom: 3px; }
-.news-row-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--black);
-    line-height: 1.4;
-    margin-bottom: 4px;
-}
-.news-row-title a { color: var(--black); text-decoration: none; }
-.news-row-title a:hover { color: var(--red); }
-.news-row-meta { font-size: 0.72rem; color: var(--gray3); }
+.news-flag { font-size: 0.72rem; color: var(--gray3); margin-bottom: 3px; }
+.news-title { font-size: 0.9rem; font-weight: 600; color: var(--dark); line-height: 1.4; margin-bottom: 4px; }
+.news-title a { color: var(--dark); text-decoration: none; }
+.news-title a:hover { color: var(--primary); }
+.news-meta  { font-size: 0.72rem; color: var(--gray3); }
 
-/* 논문 아이템 */
-.paper-row {
-    padding: 14px 0;
-    border-bottom: 1px solid var(--gray2);
+/* ── 논문 아이템 ── */
+.paper-item {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 8px 0;
+    border: 1px solid var(--gray2);
+    border-left: 4px solid var(--accent);
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
 }
-.paper-row:last-child { border-bottom: none; }
+.arxiv-item  { border-left-color: #F59E0B; }
+.scholar-item { border-left-color: var(--primary); }
 .paper-badge {
     display: inline-block;
     font-size: 0.62rem;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 2px;
-    margin-bottom: 5px;
-    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
 }
-.paper-badge.arxiv   { background: #fff3e0; color: #e8710a; border: 1px solid #ffcc80; }
-.paper-badge.scholar { background: #e8f0fe; color: #1a73e8; border: 1px solid #aecbfa; }
-.paper-row-title { font-size: 0.88rem; font-weight: 600; color: #1a0dab; line-height: 1.4; margin-bottom: 4px; }
-.paper-row-title a { color: #1a0dab; text-decoration: none; }
-.paper-row-title a:hover { text-decoration: underline; }
-.paper-row-author { font-size: 0.75rem; color: var(--gray3); margin-bottom: 5px; }
-.paper-row-abs { font-size: 0.78rem; color: #444; line-height: 1.6; }
+.badge-arxiv   { background: #FEF3C7; color: #B45309; }
+.badge-scholar { background: #EFF6FF; color: #1D4ED8; }
+.paper-title { font-size: 0.88rem; font-weight: 600; color: #1D4ED8; line-height: 1.4; margin-bottom: 4px; }
+.paper-title a { color: #1D4ED8; text-decoration: none; }
+.paper-title a:hover { text-decoration: underline; }
+.paper-author { font-size: 0.75rem; color: var(--gray4); margin-bottom: 5px; }
+.paper-abs    { font-size: 0.78rem; color: var(--gray4); line-height: 1.65; }
 
-/* 사이드 위젯 */
-.side-widget { margin-bottom: 24px; }
-.side-widget-title {
-    font-family: 'Bebas Neue', 'Barlow', sans-serif;
-    font-size: 1rem;
+/* ── 사이드 위젯 ── */
+.widget {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid var(--gray2);
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+}
+.widget-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dark);
     letter-spacing: 1px;
-    color: var(--black);
-    border-bottom: 2px solid var(--red);
-    padding-bottom: 6px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
     margin-bottom: 12px;
 }
-.kw-tag {
+.kw-chip {
     display: inline-block;
-    background: var(--white);
-    border: 1px solid var(--gray2);
-    border-radius: 2px;
-    padding: 4px 10px;
-    font-size: 0.75rem;
+    background: #EFF6FF;
+    color: var(--primary);
+    border: 1px solid #BFDBFE;
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 0.73rem;
     font-weight: 500;
-    color: var(--black);
     margin: 3px;
 }
-.kw-tag:hover { background: var(--red); color: var(--white); border-color: var(--red); cursor: pointer; }
-
-/* 보고서 섹션 */
-.report-section {
-    background: var(--white);
-    border: 1px solid var(--gray2);
-    border-top: 3px solid var(--red);
-    padding: 24px 28px;
-    margin-top: 24px;
-    border-radius: 0 0 4px 4px;
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--gray2);
+    font-size: 0.8rem;
 }
-.report-section h2 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--black);
-    border-left: 3px solid var(--red);
-    padding-left: 10px;
-    margin: 20px 0 8px;
+.progress-item:last-child { border-bottom: none; }
+.pi-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gray2);
+    flex-shrink: 0;
 }
+.pi-dot.done { background: var(--green); }
 
-/* 선택 체크박스 컨테이너 */
-.select-box {
-    background: #fffbe6;
-    border: 1px solid #ffe082;
-    border-left: 3px solid #f59e0b;
+/* ── 선택 박스 ── */
+.sel-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0;
     padding: 10px 14px;
-    border-radius: 0 4px 4px 0;
     font-size: 0.82rem;
-    color: #7c5a00;
+    color: #1D4ED8;
+    font-weight: 500;
     margin-bottom: 14px;
 }
 
-/* 액션 버튼 */
-.stButton > button {
-    background: var(--red) !important;
-    color: var(--white) !important;
-    border: none !important;
-    border-radius: 2px !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.85rem !important;
-    letter-spacing: 0.5px !important;
-    padding: 10px 20px !important;
-    width: 100% !important;
-    transition: background 0.15s !important;
+/* ── 보고서 ── */
+.report-wrap {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 28px 32px;
+    border: 1px solid var(--gray2);
+    box-shadow: var(--card-shadow);
+    line-height: 1.85;
+    font-size: 0.88rem;
+    color: #334155;
 }
-.stButton > button:hover { background: #c0001a !important; }
 
-/* 탭 패널 */
-.stTabs [data-baseweb="tab-list"] { display: none !important; }
-.stTabs [data-baseweb="tab-panel"] { padding: 0 !important; background: transparent !important; border: none !important; }
+/* 탭 패널 숨김 (커스텀 탭 사용) */
+.stTabs [data-baseweb="tab-list"] { display:none !important; }
+.stTabs [data-baseweb="tab-panel"] { padding:0 !important; background:transparent !important; border:none !important; }
 
-/* textarea */
 textarea {
-    background: #fafafa !important;
-    color: var(--black) !important;
+    background: var(--gray1) !important;
+    color: var(--dark) !important;
     border: 1px solid var(--gray2) !important;
-    border-radius: 2px !important;
+    border-radius: 8px !important;
     font-size: 0.85rem !important;
 }
-
-/* 숨김 처리 */
-#MainMenu, footer, header { visibility: hidden; }
-.stDeployButton { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================================
 # 주제 데이터
 # =====================================================================
-THUMB_COLORS = [
-    "linear-gradient(135deg,#1a1a2e,#e8001c)",
-    "linear-gradient(135deg,#0f3460,#e94560)",
-    "linear-gradient(135deg,#1b262c,#0f3460)",
-    "linear-gradient(135deg,#16213e,#1a1a2e)",
-    "linear-gradient(135deg,#2d132c,#ee4540)",
-    "linear-gradient(135deg,#0d0d0d,#434343)",
-    "linear-gradient(135deg,#141e30,#243b55)",
-    "linear-gradient(135deg,#1f1c18,#c94b4b)",
-    "linear-gradient(135deg,#0f2027,#203a43)",
-    "linear-gradient(135deg,#373b44,#4286f4)",
-    "linear-gradient(135deg,#200122,#6f0000)",
-    "linear-gradient(135deg,#1a1a1a,#e8001c)",
-    "linear-gradient(135deg,#0d1b2a,#1b4332)",
-    "linear-gradient(135deg,#2c3e50,#4ca1af)",
-    "linear-gradient(135deg,#1a1a2e,#e8001c)",
-    "linear-gradient(135deg,#0f3460,#e94560)",
-    "linear-gradient(135deg,#1b262c,#0f3460)",
-    "linear-gradient(135deg,#16213e,#1a1a2e)",
-    "linear-gradient(135deg,#2d132c,#ee4540)",
-    "linear-gradient(135deg,#0d0d0d,#434343)",
-    "linear-gradient(135deg,#141e30,#243b55)",
-    "linear-gradient(135deg,#1f1c18,#c94b4b)",
-    "linear-gradient(135deg,#0f2027,#203a43)",
-    "linear-gradient(135deg,#373b44,#4286f4)",
-]
-
 TOPICS = [
     ("01","배터리 건강 추정의 필요성","Battery State of Health Estimation",
      "배터리 SOH는 전기차·에너지 저장 시스템의 안전성과 성능 관리에 핵심적이다.",
@@ -616,10 +605,10 @@ TOPICS = [
 ]
 
 # =====================================================================
-# 데이터 수집 함수
+# 수집 함수
 # =====================================================================
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_news(keyword, hl, gl, ceid, max_results=6):
+def fetch_news(keyword, hl, gl, ceid, max_results=8):
     url = f"https://news.google.com/rss/search?q={urllib.parse.quote(keyword)}&hl={hl}&gl={gl}&ceid={ceid}"
     try:
         return feedparser.parse(url).entries[:max_results]
@@ -627,7 +616,7 @@ def fetch_news(keyword, hl, gl, ceid, max_results=6):
         return []
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_arxiv(keyword, max_results=5):
+def fetch_arxiv(keyword, max_results=6):
     try:
         query = urllib.parse.quote(keyword)
         url = (f"https://export.arxiv.org/api/query"
@@ -636,12 +625,12 @@ def fetch_arxiv(keyword, max_results=5):
         feed = feedparser.parse(url)
         results = []
         for entry in feed.entries:
-            title   = entry.get("title", "").replace("\n", " ").strip()
-            summary = entry.get("summary", "")[:400].replace("\n", " ").strip()
-            pub     = entry.get("published", "")[:10]
-            link    = entry.get("id", "") or entry.get("link", "")
-            authors_raw = entry.get("authors", [])
-            authors = ", ".join(a.get("name","") for a in authors_raw[:3]) if authors_raw else entry.get("author","")
+            title   = entry.get("title","").replace("\n"," ").strip()
+            summary = entry.get("summary","")[:400].replace("\n"," ").strip()
+            pub     = entry.get("published","")[:10]
+            link    = entry.get("id","") or entry.get("link","")
+            ar      = entry.get("authors",[])
+            authors = ", ".join(a.get("name","") for a in ar[:3]) if ar else entry.get("author","")
             if title:
                 results.append({"title":title,"authors":authors,"abstract":summary,"url":link,"published":pub,"source":"arXiv"})
         return results
@@ -655,46 +644,38 @@ def fetch_scholar(keyword, max_results=4):
         for _ in range(max_results):
             try:
                 pub = next(gen)
-                bib = pub.get("bib", {})
-                results.append({
-                    "title":    bib.get("title","No title"),
-                    "authors":  bib.get("author","Unknown"),
-                    "year":     bib.get("pub_year",""),
-                    "journal":  bib.get("venue",""),
-                    "abstract": bib.get("abstract",""),
-                    "url":      pub.get("pub_url",""),
-                })
+                bib = pub.get("bib",{})
+                results.append({"title":bib.get("title","No title"),"authors":bib.get("author","Unknown"),
+                                 "year":bib.get("pub_year",""),"journal":bib.get("venue",""),
+                                 "abstract":bib.get("abstract",""),"url":pub.get("pub_url","")})
             except StopIteration:
                 break
     except:
         pass
     return results
 
-def build_report(num, ko, en, bg, kw, news_ko, news_en, papers, arxiv):
+def build_report(num, ko, en, bg, kw, sel_news_ko, sel_news_en, sel_papers, sel_arxiv):
     today = datetime.now().strftime("%Y-%m-%d")
     kw_str = " / ".join(kw)
-    n_news = len(news_ko)+len(news_en); n_p = len(papers)+len(arxiv)
-
+    n_news = len(sel_news_ko)+len(sel_news_en); n_p = len(sel_papers)+len(sel_arxiv)
     ref_num=1; refs=[]
-    for p in papers:
+    for p in sel_papers:
         r=f"[{ref_num}] {p['authors']} ({p['year']}). {p['title']}."
         if p.get('journal'): r+=f" {p['journal']}."
         if p.get('url'):     r+=f" {p['url']}"
         refs.append(r); ref_num+=1
-    for p in arxiv:
+    for p in sel_arxiv:
         refs.append(f"[{ref_num}] {p['authors']} ({p['published'][:4]}). {p['title']}. arXiv. {p['url']}")
         ref_num+=1
-    for n in news_ko+news_en:
+    for n in sel_news_ko+sel_news_en:
         refs.append(f"[{ref_num}] {n['title']}. {n['source']} ({n['published']}). {n['link']}")
         ref_num+=1
 
-    scholar_body="".join([f"\n**[{i}] {p['title']}** ({p['year']}) — {p['authors'][:50]}\n\n> {(p['abstract'][:250]+'...') if len(p['abstract'])>250 else p['abstract']}\n" for i,p in enumerate(papers,1)]) or "(없음)"
-    arxiv_body  ="".join([f"\n**[{i}] [{p['title']}]({p['url']})** ({p['published'][:7]}) — {p['authors'][:50]}\n\n> {(p['abstract'][:250]+'...') if len(p['abstract'])>250 else p['abstract']}\n" for i,p in enumerate(arxiv,len(papers)+1)]) or "(없음)"
-    ko_body ="".join([f"\n**[뉴스]** [{n['title']}]({n['link']})\n> {n['source']} | {n['published']}\n" for n in news_ko])
-    en_body ="".join([f"\n**[News]** [{n['title']}]({n['link']})\n> {n['source']} | {n['published']}\n" for n in news_en])
+    scholar_body="".join([f"\n**[{i}] {p['title']}** ({p['year']}) — {p['authors'][:50]}\n\n> {(p['abstract'][:250]+'...') if len(p['abstract'])>250 else p['abstract']}\n" for i,p in enumerate(sel_papers,1)]) or "(없음)"
+    arxiv_body  ="".join([f"\n**[{i}] [{p['title']}]({p['url']})** ({p['published'][:7]}) — {p['authors'][:50]}\n\n> {(p['abstract'][:250]+'...') if len(p['abstract'])>250 else p['abstract']}\n" for i,p in enumerate(sel_arxiv,len(sel_papers)+1)]) or "(없음)"
 
     return f"""# {num}. {ko}
-## 연구 분석 보고서
+## 연구 분석 보고서 — BatteryIQ
 
 **작성일:** {today} | **키워드:** {kw_str}
 **기준 문헌:** Gregory Plett - *Battery Management Systems*
@@ -736,10 +717,10 @@ def build_report(num, ko, en, bg, kw, news_ko, news_en, papers, arxiv):
 ## 3. 최신 기술 동향
 
 ### 3.1 국내 동향
-{"".join([f'**[뉴스]** [{n["title"]}]({n["link"]})\n> {n["source"]} | {n["published"]}\n\n' for n in news_ko]) or "(국내 뉴스 없음)"}
+{"".join([f'**[뉴스]** [{n["title"]}]({n["link"]})\n> {n["source"]} | {n["published"]}\n\n' for n in sel_news_ko]) or "(없음)"}
 
 ### 3.2 해외 동향
-{"".join([f'**[News]** [{n["title"]}]({n["link"]})\n> {n["source"]} | {n["published"]}\n\n' for n in news_en]) or "(해외 뉴스 없음)"}
+{"".join([f'**[News]** [{n["title"]}]({n["link"]})\n> {n["source"]} | {n["published"]}\n\n' for n in sel_news_en]) or "(없음)"}
 
 ---
 
@@ -761,8 +742,6 @@ def build_report(num, ko, en, bg, kw, news_ko, news_en, papers, arxiv):
 | 필터 기반 | EKF / UKF | 높은 정확도 | 전기차 |
 | 데이터 기반 | 머신러닝 / DL | 대용량 데이터 | 클라우드 BMS |
 
-**성능 지표:** RMSE, MAE, 수렴 속도, 노이즈 민감도
-
 ---
 
 ## 6. 결론 및 향후 연구 방향
@@ -778,398 +757,353 @@ def build_report(num, ko, en, bg, kw, news_ko, news_en, papers, arxiv):
 {"".join([f'{r}  \n' for r in refs]) or "(없음)"}
 
 ---
-*Gregory Plett, Battery Management Systems Vol.2 (2015) 기준*
+*BatteryIQ 연구 포털 | Gregory Plett, Battery Management Systems Vol.2 (2015)*
 """
 
 # =====================================================================
 # 세션 초기화
 # =====================================================================
-for k, v in [
-    ("page","home"), ("sel_topic_idx", 0),
-    ("news_ko",[]),("news_en",[]),("papers",[]),("arxiv",[]),
-    ("sel_news",[]),("sel_papers",[]),("sel_arxiv",[]),
-    ("report",""),("active_tab","news"),("step",0)
-]:
-    if k not in st.session_state: st.session_state[k] = v
+for k,v in [("page","home"),("sel_idx",0),
+            ("news_ko",[]),("news_en",[]),("papers",[]),("arxiv",[]),
+            ("sel_news",[]),("sel_papers",[]),("sel_arxiv",[]),
+            ("report",""),("tab","news"),("step",0)]:
+    if k not in st.session_state: st.session_state[k]=v
 
 # =====================================================================
-# 상단 네비 (항상 표시)
+# 네비바
 # =====================================================================
-num_collected = len(st.session_state["news_ko"])+len(st.session_state["news_en"])
-num_papers    = len(st.session_state["papers"])+len(st.session_state["arxiv"])
-
+nc = len(st.session_state["news_ko"])+len(st.session_state["news_en"])
+pc = len(st.session_state["papers"])+len(st.session_state["arxiv"])
 st.markdown(f"""
-<div class="portal-nav">
-    <div class="portal-logo">🔋 <span>BATTERY</span>SIM</div>
-    <div class="portal-nav-links">
-        <a href="#" class="{'active' if st.session_state['page']=='home' else ''}">HOME</a>
-        <a href="#">RESEARCH HUB</a>
-        <a href="#">ABOUT</a>
-        <span style="color:#444;font-size:0.75rem;">📰 {num_collected}건 · 📚 {num_papers}편 수집됨</span>
+<div class="nav">
+    <div class="nav-logo">
+        🔋 BatteryIQ
+        <span class="nav-logo-badge">RESEARCH PORTAL</span>
+    </div>
+    <div class="nav-links">
+        <span>배터리 건강 추정</span>
+        <span>Gregory Plett · Chapter 2-04</span>
+        <span style="color:#7DD3FC;">📰 {nc}건 &nbsp;📚 {pc}편</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# HOME — 카드 그리드
+# HOME
 # =====================================================================
 if st.session_state["page"] == "home":
 
-    # 히어로
     st.markdown("""
-    <div class="portal-hero">
-        <div class="portal-hero-label">Battery Management Systems · Chapter 2-04</div>
-        <div class="portal-hero-title">BATTERY HEALTH<br>ESTIMATION HUB</div>
-        <div class="portal-hero-sub">배터리 건강 추정 24개 핵심 주제 · 최신 논문 · 뉴스 · 전문 보고서 자동 생성</div>
-        <div class="portal-hero-stats">
-            <div class="portal-stat"><div class="portal-stat-num">24</div><div class="portal-stat-label">Research Topics</div></div>
-            <div class="portal-stat"><div class="portal-stat-num">2</div><div class="portal-stat-label">News Sources</div></div>
-            <div class="portal-stat"><div class="portal-stat-num">2</div><div class="portal-stat-label">Paper DBs</div></div>
-            <div class="portal-stat"><div class="portal-stat-num">4</div><div class="portal-stat-label">Languages</div></div>
+    <div class="hero">
+        <div class="hero-eyebrow">Battery Management Systems · Chapter 2-04</div>
+        <div class="hero-title">배터리 <span>건강 추정</span><br>연구 포털</div>
+        <div class="hero-sub">Battery State of Health Estimation — 24개 핵심 주제 · 최신 논문 · 뉴스 · 전문 보고서 자동 생성</div>
+        <div class="hero-stats">
+            <div><div class="hero-stat-num">24</div><div class="hero-stat-label">Topics</div></div>
+            <div><div class="hero-stat-num">2</div><div class="hero-stat-label">News Sources</div></div>
+            <div><div class="hero-stat-num">2</div><div class="hero-stat-label">Paper DBs</div></div>
+            <div><div class="hero-stat-num">Free</div><div class="hero-stat-label">No API Key</div></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 섹션 헤더
     st.markdown("""
-    <div class="section-header">
-        <div class="section-header-line"></div>
-        <div class="section-header-title">ALL RESEARCH TOPICS</div>
-        <div class="section-header-count">총 24개 주제 · 주제를 클릭하면 자료 수집을 시작합니다</div>
+    <div class="sec-header">
+        <div class="sec-header-dot"></div>
+        <div class="sec-header-title">전체 연구 주제</div>
+        <div class="sec-header-sub">주제를 클릭하면 뉴스·논문 수집 및 보고서 생성을 시작합니다</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 카드 그리드 — 4열 × 6행
+    st.markdown('<div class="grid-wrap">', unsafe_allow_html=True)
+
     cols_per_row = 4
     for row_start in range(0, len(TOPICS), cols_per_row):
         row_topics = TOPICS[row_start:row_start+cols_per_row]
         cols = st.columns(cols_per_row, gap="small")
-        for col_idx, (col, topic) in enumerate(zip(cols, row_topics)):
-            t_idx = row_start + col_idx
+        for ci, (col, topic) in enumerate(zip(cols, row_topics)):
+            tidx = row_start + ci
             num, ko, en, desc, kw = topic
-            color = THUMB_COLORS[t_idx % len(THUMB_COLORS)]
-            icon_map = {
-                "01":"⚡","02":"🔬","03":"🔋","04":"📊","05":"💻","06":"📈",
-                "07":"🎯","08":"🔄","09":"🌀","10":"🔗","11":"⚙️","12":"📐",
-                "13":"⚖️","14":"📏","15":"✅","16":"📉","17":"🔧","18":"💡",
-                "19":"🖥️","20":"🚗","21":"⚡","22":"💬","23":"🔭","24":"🌊",
-            }
-            icon = icon_map.get(num, "🔋")
+            img_url = TOPIC_IMAGES[tidx] if tidx < len(TOPIC_IMAGES) else ""
             with col:
                 st.markdown(f"""
                 <div class="topic-card">
-                    <div class="card-thumb-inner" style="background:{color}; height:160px;">
-                        <div style="font-size:3.5rem; opacity:0.15; font-family:'Bebas Neue',sans-serif; letter-spacing:4px; color:white;">{icon}</div>
-                        <div class="card-num-badge">{num}</div>
-                        <div class="card-overlay"></div>
+                    <div class="card-img-wrap">
+                        <img src="{img_url}" alt="{ko}" onerror="this.style.background='linear-gradient(135deg,#1E3A8A,#1D4ED8)';this.style.height='160px';this.remove();">
+                        <div class="card-img-overlay"></div>
+                        <div class="card-num">{num}</div>
                     </div>
                     <div class="card-body">
-                        <div class="card-round-label">TOPIC {num}</div>
+                        <div class="card-topic-label">TOPIC {num}</div>
                         <div class="card-title">{ko}</div>
                         <div class="card-desc">{desc}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                if st.button(f"VIEW DETAILS →", key=f"card_{t_idx}", use_container_width=True):
+                if st.button(f"자세히 보기 →", key=f"c_{tidx}", use_container_width=True):
                     st.session_state["page"] = "detail"
-                    st.session_state["sel_topic_idx"] = t_idx
-                    # 주제 바뀌면 데이터 초기화
+                    st.session_state["sel_idx"] = tidx
                     for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
-                        st.session_state[k2] = [] if k2 != "report" else ""
+                        st.session_state[k2] = [] if k2!="report" else ""
                     st.session_state["step"] = 0
-                    st.session_state["active_tab"] = "news"
+                    st.session_state["tab"] = "news"
                     st.rerun()
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # =====================================================================
-# DETAIL — 개별 주제 뷰
+# DETAIL
 # =====================================================================
 else:
-    t_idx = st.session_state["sel_topic_idx"]
-    num, ko, en, bg, kw = TOPICS[t_idx]
-    color = THUMB_COLORS[t_idx % len(THUMB_COLORS)]
+    tidx = st.session_state["sel_idx"]
+    num, ko, en, bg, kw = TOPICS[tidx]
+    img_url = TOPIC_IMAGES[tidx] if tidx < len(TOPIC_IMAGES) else ""
 
-    # 히어로
     st.markdown(f"""
     <div class="detail-hero" data-num="{num}">
-        <div class="detail-label">BATTERY RESEARCH HUB · TOPIC {num}</div>
+        <div class="detail-eyebrow">BatteryIQ Research Portal · Topic {num} / 24</div>
         <div class="detail-title">{ko}</div>
         <div class="detail-en">{en}</div>
-        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-            {"".join([f'<span style="background:rgba(255,255,255,0.08);color:#aaa;padding:3px 10px;border-radius:2px;font-size:0.72rem;">{k}</span>' for k in kw])}
+        <div class="detail-kw-wrap">
+            {"".join([f'<span class="detail-kw">{k}</span>' for k in kw])}
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 뒤로가기 버튼
-    back_col, _ = st.columns([2, 8])
-    with back_col:
-        if st.button("← HOME으로 돌아가기", key="back_btn"):
+    # 뒤로가기
+    bc, _ = st.columns([2,8])
+    with bc:
+        if st.button("← 홈으로 돌아가기"):
             st.session_state["page"] = "home"
             st.rerun()
 
-    st.markdown("<hr style='margin:0;'>", unsafe_allow_html=True)
+    # 탭 버튼
+    tabs = [("news","📡 뉴스 수집"),("papers","📚 논문 검색"),
+            ("select","✅ 자료 선택"),("report","📄 보고서"),("save","💾 다운로드")]
+    tab_html = '<div class="ptab-wrap">'
+    for tk, tl in tabs:
+        cls = "active" if st.session_state["tab"]==tk else ""
+        tab_html += f'<span class="ptab {cls}">{tl}</span>'
+    tab_html += "</div>"
+    st.markdown(tab_html, unsafe_allow_html=True)
 
-    # 메인 + 사이드 레이아웃
-    main_col, side_col = st.columns([7, 3], gap="medium")
+    tcols = st.columns(len(tabs))
+    for i,(tk,tl) in enumerate(tabs):
+        with tcols[i]:
+            if st.button(tl, key=f"t_{tk}", use_container_width=True):
+                st.session_state["tab"]=tk; st.rerun()
 
-    # ── 사이드바 ──────────────────────────
+    # 메인 + 사이드
+    main_col, side_col = st.columns([7,3], gap="medium")
+
+    # ── 사이드 ──
     with side_col:
-        st.markdown(f"""
-        <div class="side-widget">
-            <div class="side-widget-title">KEYWORDS</div>
-            {"".join([f'<span class="kw-tag">{k}</span>' for k in kw])}
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="side-widget">
-            <div class="side-widget-title">TOPIC INFO</div>
-            <div style="font-size:0.82rem; color:#444; line-height:1.7;">{bg}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="side-widget">
-            <div class="side-widget-title">SEARCH KEYWORD</div>
-            <div style="font-size:0.8rem; color:#1a73e8; font-weight:500; background:#e8f0fe; padding:8px 12px; border-radius:2px;">{en}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # 진행상태
         step = st.session_state["step"]
-        steps = [("뉴스 수집",1),("논문 검색",2),("자료 선택",3),("보고서 생성",4)]
-        st.markdown('<div class="side-widget"><div class="side-widget-title">PROGRESS</div>', unsafe_allow_html=True)
-        for label, threshold in steps:
-            done = step >= threshold
-            color_s = "#e8001c" if done else "#ddd"
-            icon_s  = "●" if done else "○"
-            st.markdown(f"<div style='font-size:0.8rem;color:{color_s};padding:4px 0;border-bottom:1px solid #eee;font-weight:{'700' if done else '400'};'>{icon_s} {label}</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        steps_def = [("뉴스 수집",1),("논문 검색",2),("자료 선택",3),("보고서 생성",4)]
+        prog_html = '<div class="widget"><div class="widget-title">진행 상태</div>'
+        for sl,st_n in steps_def:
+            done = step>=st_n
+            prog_html += f'<div class="progress-item"><div class="pi-dot {"done" if done else ""}"></div><span style="color:{"#10B981" if done else "#94A3B8"};font-weight:{"600" if done else "400"};">{"✓" if done else "○"} {sl}</span></div>'
+        prog_html += "</div>"
+        st.markdown(prog_html, unsafe_allow_html=True)
 
-    # ── 메인 콘텐츠 ──────────────────────
+        kw_html = f'<div class="widget"><div class="widget-title">Keywords</div>{"".join([f\'<span class="kw-chip">{k}</span>\' for k in kw])}</div>'
+        st.markdown(kw_html, unsafe_allow_html=True)
+
+        st.markdown(f'<div class="widget"><div class="widget-title">Topic Overview</div><div style="font-size:0.82rem;color:#64748B;line-height:1.7;">{bg}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="widget"><div class="widget-title">Search Keyword</div><div style="font-size:0.8rem;color:#1D4ED8;font-weight:600;background:#EFF6FF;padding:8px 12px;border-radius:6px;">{en}</div></div>', unsafe_allow_html=True)
+
+        nc_s = len(st.session_state["news_ko"])+len(st.session_state["news_en"])
+        pc_s = len(st.session_state["papers"])+len(st.session_state["arxiv"])
+        sc_s = len(st.session_state["sel_news"])+len(st.session_state["sel_papers"])+len(st.session_state["sel_arxiv"])
+        st.markdown(f"""
+        <div class="widget">
+            <div class="widget-title">수집 현황</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+                <div style="background:#EFF6FF;border-radius:8px;padding:10px 4px;">
+                    <div style="font-size:1.3rem;font-weight:800;color:#1D4ED8;">{nc_s}</div>
+                    <div style="font-size:0.66rem;color:#94A3B8;">뉴스</div>
+                </div>
+                <div style="background:#F0FDF4;border-radius:8px;padding:10px 4px;">
+                    <div style="font-size:1.3rem;font-weight:800;color:#10B981;">{pc_s}</div>
+                    <div style="font-size:0.66rem;color:#94A3B8;">논문</div>
+                </div>
+                <div style="background:#FEF3C7;border-radius:8px;padding:10px 4px;">
+                    <div style="font-size:1.3rem;font-weight:800;color:#D97706;">{sc_s}</div>
+                    <div style="font-size:0.66rem;color:#94A3B8;">선택</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── 메인 ──
     with main_col:
-        # 탭 버튼 (커스텀)
-        tab_labels = [
-            ("news",   "📡 뉴스 수집"),
-            ("papers", "📚 논문 검색"),
-            ("select", "✅ 자료 선택"),
-            ("report", "📄 보고서"),
-            ("save",   "💾 다운로드"),
-        ]
-        tab_html = '<div class="portal-tabs">'
-        for tab_key, tab_label in tab_labels:
-            active_cls = "active" if st.session_state["active_tab"] == tab_key else ""
-            tab_html += f'<div class="portal-tab {active_cls}" onclick="">{tab_label}</div>'
-        tab_html += "</div>"
-        st.markdown(tab_html, unsafe_allow_html=True)
+        active = st.session_state["tab"]
 
-        # 탭 전환 버튼 (스트림릿 실제 동작)
-        tab_cols = st.columns(len(tab_labels))
-        for i, (tk, tl) in enumerate(tab_labels):
-            with tab_cols[i]:
-                if st.button(tl, key=f"tab_{tk}", use_container_width=True):
-                    st.session_state["active_tab"] = tk
-                    st.rerun()
-
-        active = st.session_state["active_tab"]
-
-        # ─── 뉴스 탭 ───
+        # ── 뉴스 ──
         if active == "news":
-            st.markdown("**Google News에서 국내·해외 뉴스를 수집합니다.**")
-            c1, c2 = st.columns([3, 1])
-            with c1:
-                run_news = st.button("🔄 뉴스 수집 시작", type="primary", use_container_width=True)
+            st.markdown("**Google News에서 국내·해외 최신 뉴스를 수집합니다.**")
+            c1,c2 = st.columns([4,1])
+            with c1: run_news = st.button("🔄 뉴스 수집 시작", type="primary", use_container_width=True)
             with c2:
                 if st.button("초기화", use_container_width=True):
-                    st.session_state["news_ko"] = []; st.session_state["news_en"] = []
-                    st.rerun()
+                    st.session_state["news_ko"]=[]; st.session_state["news_en"]=[]; st.rerun()
 
             if run_news:
-                prog = st.progress(0)
+                prog=st.progress(0)
                 prog.progress(20)
-                raw_ko = fetch_news(ko + " 배터리", "ko", "KR", "KR:ko", 8)
-                st.session_state["news_ko"] = [{"title":e.title,"link":e.link,"lang":"ko","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_ko]
+                raw_ko = fetch_news(ko+" 배터리","ko","KR","KR:ko",8)
+                st.session_state["news_ko"]=[{"title":e.title,"link":e.link,"lang":"ko","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_ko]
                 prog.progress(65)
-                raw_en = fetch_news(en, "en", "US", "US:en", 8)
-                st.session_state["news_en"] = [{"title":e.title,"link":e.link,"lang":"en","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_en]
+                raw_en = fetch_news(en,"en","US","US:en",8)
+                st.session_state["news_en"]=[{"title":e.title,"link":e.link,"lang":"en","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_en]
                 prog.progress(100); prog.empty()
-                if st.session_state["step"] < 1: st.session_state["step"] = 1
+                if st.session_state["step"]<1: st.session_state["step"]=1
                 st.rerun()
 
-            ko_list = st.session_state["news_ko"]
-            en_list = st.session_state["news_en"]
-
+            ko_list=st.session_state["news_ko"]; en_list=st.session_state["news_en"]
             if ko_list or en_list:
                 st.success(f"✅ 총 {len(ko_list)+len(en_list)}건 수집 완료")
-                all_items = [("🇰🇷", item) for item in ko_list] + [("🌍", item) for item in en_list]
-                for idx, (flag, item) in enumerate(all_items, 1):
-                    st.markdown(f"""
-                    <div class="news-row">
-                        <div class="news-row-num">{idx:02d}</div>
-                        <div class="news-row-content">
-                            <div class="news-row-flag">{flag} {item['source']}</div>
-                            <div class="news-row-title"><a href="{item['link']}" target="_blank">{item['title']}</a></div>
-                            <div class="news-row-meta">📅 {item['published']}</div>
+                all_items=[("🇰🇷",i) for i in ko_list]+[("🌍",i) for i in en_list]
+                for idx,(flag,item) in enumerate(all_items,1):
+                    st.markdown(f"""<div class="news-item">
+                        <div class="news-idx">{idx:02d}</div>
+                        <div>
+                            <div class="news-flag">{flag} {item['source']}</div>
+                            <div class="news-title"><a href="{item['link']}" target="_blank">{item['title']}</a></div>
+                            <div class="news-meta">📅 {item['published']}</div>
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
             else:
-                st.markdown("""<div style="text-align:center;padding:50px;color:#aaa;border:2px dashed #ddd;border-radius:4px;margin-top:16px;">
-                    <div style="font-size:2rem;margin-bottom:8px;">📰</div>
-                    <div>위 버튼을 클릭해 뉴스를 수집하세요</div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown('<div style="text-align:center;padding:50px;color:#94A3B8;border:2px dashed #E2E8F0;border-radius:12px;margin-top:16px;"><div style="font-size:2.5rem;margin-bottom:8px;">📰</div><div>위 버튼을 클릭해 뉴스를 수집하세요</div></div>', unsafe_allow_html=True)
 
-        # ─── 논문 탭 ───
+        # ── 논문 ──
         elif active == "papers":
-            # arXiv
-            st.markdown('<div style="background:#fff3e0;border-left:3px solid #f59e0b;padding:8px 14px;margin-bottom:12px;font-size:0.82rem;border-radius:0 4px 4px 0;">💡 arXiv — 무료·차단없음·최신 프리프린트</div>', unsafe_allow_html=True)
-            ca1, ca2 = st.columns([3,1])
-            with ca1: run_arxiv = st.button("🔍 arXiv 논문 검색", type="primary", use_container_width=True)
+            st.markdown('<div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px 14px;border-radius:0 8px 8px 0;font-size:0.82rem;color:#92400E;margin-bottom:14px;">💡 <b>arXiv</b> — 무료·차단없음·최신 프리프린트 논문</div>', unsafe_allow_html=True)
+            ca1,ca2=st.columns([4,1])
+            with ca1: run_arxiv=st.button("🔍 arXiv 논문 검색",type="primary",use_container_width=True)
             with ca2:
-                if st.button("초기화 ", use_container_width=True):
-                    st.session_state["arxiv"] = []; st.rerun()
+                if st.button("초기화 ",use_container_width=True):
+                    st.session_state["arxiv"]=[]; st.rerun()
 
             if run_arxiv:
-                with st.spinner("arXiv 검색 중... (최대 10초)"):
-                    results = fetch_arxiv(en, 6)
+                with st.spinner("arXiv 검색 중..."):
+                    results=fetch_arxiv(en,6)
                 if results:
-                    st.session_state["arxiv"] = results
-                    if st.session_state["step"] < 2: st.session_state["step"] = 2
+                    st.session_state["arxiv"]=results
+                    if st.session_state["step"]<2: st.session_state["step"]=2
                     st.rerun()
                 else:
                     st.error("arXiv 검색 결과 없음. 잠시 후 재시도하세요.")
 
-            arxiv_list = st.session_state["arxiv"]
-            if arxiv_list:
-                st.success(f"✅ arXiv {len(arxiv_list)}편 수집")
-                for p in arxiv_list:
-                    abs_t = (p['abstract'][:220]+"...") if len(p['abstract'])>220 else p['abstract']
-                    st.markdown(f"""
-                    <div class="paper-row">
-                        <span class="paper-badge arxiv">arXiv</span>
-                        <div class="paper-row-title"><a href="{p['url']}" target="_blank">{p['title']}</a></div>
-                        <div class="paper-row-author">👤 {p['authors']} &nbsp;|&nbsp; 📅 {p['published']}</div>
-                        <div class="paper-row-abs">{abs_t}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            for p in st.session_state["arxiv"]:
+                abs_t=(p['abstract'][:200]+"...") if len(p['abstract'])>200 else p['abstract']
+                st.markdown(f"""<div class="paper-item arxiv-item">
+                    <span class="paper-badge badge-arxiv">arXiv</span>
+                    <div class="paper-title"><a href="{p['url']}" target="_blank">{p['title']}</a></div>
+                    <div class="paper-author">👤 {p['authors']} | 📅 {p['published']}</div>
+                    <div class="paper-abs">{abs_t}</div>
+                </div>""", unsafe_allow_html=True)
 
-            st.markdown("<hr>", unsafe_allow_html=True)
-
-            # Scholar
-            st.markdown('<div style="background:#fff8e1;border-left:3px solid #f59e0b;padding:8px 14px;margin-bottom:12px;font-size:0.82rem;border-radius:0 4px 4px 0;">⚠️ Google Scholar — 잦은 요청 시 일시 차단될 수 있음</div>', unsafe_allow_html=True)
-            cs1, cs2 = st.columns([3,1])
-            with cs1: run_scholar = st.button("🔍 Google Scholar 검색", type="primary", use_container_width=True)
+            st.markdown("<hr style='margin:20px 0;'>", unsafe_allow_html=True)
+            st.markdown('<div style="background:#FEF2F2;border-left:3px solid #EF4444;padding:8px 14px;border-radius:0 8px 8px 0;font-size:0.82rem;color:#7F1D1D;margin-bottom:14px;">⚠️ <b>Google Scholar</b> — 잦은 요청 시 일시 차단될 수 있음</div>', unsafe_allow_html=True)
+            cs1,cs2=st.columns([4,1])
+            with cs1: run_scholar=st.button("🔍 Google Scholar 검색",type="primary",use_container_width=True)
             with cs2:
-                if st.button("초기화  ", use_container_width=True):
-                    st.session_state["papers"] = []; st.rerun()
+                if st.button("초기화  ",use_container_width=True):
+                    st.session_state["papers"]=[]; st.rerun()
 
             if run_scholar:
-                with st.spinner("Google Scholar 조회 중... (최대 20초)"):
-                    sch = fetch_scholar(en, 4)
-                st.session_state["papers"] = sch
-                if st.session_state["step"] < 2: st.session_state["step"] = 2
+                with st.spinner("Google Scholar 조회 중..."):
+                    sch=fetch_scholar(en,4)
+                st.session_state["papers"]=sch
+                if st.session_state["step"]<2: st.session_state["step"]=2
                 st.rerun()
 
-            scholar_list = st.session_state["papers"]
-            if scholar_list:
-                st.success(f"✅ Google Scholar {len(scholar_list)}편 수집")
-                for p in scholar_list:
-                    abs_t = (p['abstract'][:220]+"...") if len(p['abstract'])>220 else p['abstract']
-                    link_h = f"<a href='{p['url']}' target='_blank' style='color:#e8001c;font-size:0.75rem;'>원문 →</a>" if p.get('url') else ""
-                    st.markdown(f"""
-                    <div class="paper-row">
-                        <span class="paper-badge scholar">Scholar</span>
-                        <div class="paper-row-title">{p['title']} ({p['year']}) {link_h}</div>
-                        <div class="paper-row-author">👤 {p['authors']}{(' | 📔 ' + p['journal']) if p.get('journal') else ''}</div>
-                        <div class="paper-row-abs">{abs_t}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            for p in st.session_state["papers"]:
+                abs_t=(p['abstract'][:200]+"...") if len(p['abstract'])>200 else p['abstract']
+                lh=f"<a href='{p['url']}' target='_blank' style='color:#1D4ED8;font-size:0.75rem;'>원문 →</a>" if p.get('url') else ""
+                st.markdown(f"""<div class="paper-item scholar-item">
+                    <span class="paper-badge badge-scholar">Scholar</span>
+                    <div class="paper-title">{p['title']} ({p['year']}) {lh}</div>
+                    <div class="paper-author">👤 {p['authors']}{(' | 📔 '+p['journal']) if p.get('journal') else ''}</div>
+                    <div class="paper-abs">{abs_t}</div>
+                </div>""", unsafe_allow_html=True)
 
-        # ─── 자료 선택 탭 ───
+        # ── 자료 선택 ──
         elif active == "select":
-            all_news   = st.session_state["news_ko"] + st.session_state["news_en"]
-            all_arxiv  = st.session_state["arxiv"]
-            all_scholar= st.session_state["papers"]
-
-            if not all_news and not all_arxiv and not all_scholar:
+            all_news=st.session_state["news_ko"]+st.session_state["news_en"]
+            all_ax=st.session_state["arxiv"]; all_sc=st.session_state["papers"]
+            if not all_news and not all_ax and not all_sc:
                 st.info("먼저 뉴스와 논문을 수집해주세요.")
             else:
-                sel_n=[]; sel_a=[]; sel_s=[]
+                sn=[]; sa=[]; ss=[]
                 if all_news:
-                    st.markdown('<div class="select-box">📰 보고서에 포함할 뉴스를 선택하세요</div>', unsafe_allow_html=True)
-                    c1, c2 = st.columns(2)
-                    for i, item in enumerate(all_news):
-                        flag = "🇰🇷" if item.get("lang")=="ko" else "🌍"
+                    st.markdown('<div class="sel-box">📰 보고서에 포함할 뉴스를 선택하세요</div>', unsafe_allow_html=True)
+                    c1,c2=st.columns(2)
+                    for i,item in enumerate(all_news):
+                        flag="🇰🇷" if item.get("lang")=="ko" else "🌍"
                         with (c1 if i%2==0 else c2):
-                            if st.checkbox(f"{flag} {item['title'][:50]}{'...' if len(item['title'])>50 else ''}", key=f"sn_{i}"):
-                                sel_n.append(item)
+                            if st.checkbox(f"{flag} {item['title'][:50]}{'...' if len(item['title'])>50 else ''}",key=f"sn_{i}"):
+                                sn.append(item)
 
-                if all_arxiv or all_scholar:
+                if all_ax or all_sc:
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown('<div class="select-box">📚 보고서에 포함할 논문을 선택하세요</div>', unsafe_allow_html=True)
-                    if all_arxiv:
-                        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:#e8710a;margin:8px 0 4px;'>arXiv</div>", unsafe_allow_html=True)
-                        for i, p in enumerate(all_arxiv):
-                            if st.checkbox(f"[arXiv] {p['title'][:55]}{'...' if len(p['title'])>55 else ''} ({p['published'][:7]})", key=f"sa_{i}"):
-                                sel_a.append(p)
-                    if all_scholar:
-                        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:#1a73e8;margin:8px 0 4px;'>Google Scholar</div>", unsafe_allow_html=True)
-                        for i, p in enumerate(all_scholar):
-                            if st.checkbox(f"[Scholar] {p['title'][:55]}{'...' if len(p['title'])>55 else ''} ({p['year']})", key=f"ss_{i}"):
-                                sel_s.append(p)
+                    st.markdown('<div class="sel-box">📚 보고서에 포함할 논문을 선택하세요</div>', unsafe_allow_html=True)
+                    if all_ax:
+                        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:#B45309;margin:8px 0 4px;'>arXiv</div>", unsafe_allow_html=True)
+                        for i,p in enumerate(all_ax):
+                            if st.checkbox(f"[arXiv] {p['title'][:58]}{'...' if len(p['title'])>58 else ''} ({p['published'][:7]})",key=f"sa_{i}"):
+                                sa.append(p)
+                    if all_sc:
+                        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:#1D4ED8;margin:8px 0 4px;'>Google Scholar</div>", unsafe_allow_html=True)
+                        for i,p in enumerate(all_sc):
+                            if st.checkbox(f"[Scholar] {p['title'][:58]}{'...' if len(p['title'])>58 else ''} ({p['year']})",key=f"ss_{i}"):
+                                ss.append(p)
 
-                st.session_state["sel_news"] = sel_n
-                st.session_state["sel_papers"] = sel_s
-                st.session_state["sel_arxiv"] = sel_a
-                total = len(sel_n)+len(sel_a)+len(sel_s)
-
+                st.session_state["sel_news"]=sn; st.session_state["sel_papers"]=ss; st.session_state["sel_arxiv"]=sa
+                total=len(sn)+len(sa)+len(ss)
                 st.markdown("<br>", unsafe_allow_html=True)
-                if total > 0:
-                    st.success(f"✅ 선택 완료: 뉴스 {len(sel_n)}건 + arXiv {len(sel_a)}편 + Scholar {len(sel_s)}편")
-                    if st.session_state["step"] < 3: st.session_state["step"] = 3
+                if total>0:
+                    st.success(f"✅ 선택: 뉴스 {len(sn)}건 + arXiv {len(sa)}편 + Scholar {len(ss)}편")
+                    if st.session_state["step"]<3: st.session_state["step"]=3
 
-                gen = st.button("📄 전문 보고서 자동 생성", type="primary", use_container_width=True, disabled=(total==0))
-                if gen and total > 0:
+                gen=st.button("📄 전문 보고서 자동 생성",type="primary",use_container_width=True,disabled=(total==0))
+                if gen and total>0:
                     with st.spinner("보고서 생성 중..."):
                         time.sleep(0.3)
-                        report = build_report(num, ko, en, bg, kw,
-                                              st.session_state["sel_news"],
-                                              [n for n in st.session_state["sel_news"] if n.get("lang")=="en"],
-                                              st.session_state["sel_papers"],
-                                              st.session_state["sel_arxiv"])
-                        st.session_state["report"] = report
-                        if st.session_state["step"] < 4: st.session_state["step"] = 4
+                        news_ko_sel=[n for n in sn if n.get("lang")=="ko"]
+                        news_en_sel=[n for n in sn if n.get("lang")=="en"]
+                        rpt=build_report(num,ko,en,bg,kw,news_ko_sel,news_en_sel,ss,sa)
+                        st.session_state["report"]=rpt
+                        if st.session_state["step"]<4: st.session_state["step"]=4
                     st.success("✅ 보고서 생성 완료! '보고서' 탭에서 확인하세요.")
 
-        # ─── 보고서 탭 ───
+        # ── 보고서 ──
         elif active == "report":
-            rpt = st.session_state["report"]
+            rpt=st.session_state["report"]
             if rpt:
+                st.markdown(f'<div class="report-wrap">', unsafe_allow_html=True)
                 st.markdown(rpt)
+                st.markdown('</div>', unsafe_allow_html=True)
             else:
-                st.markdown("""<div style="text-align:center;padding:50px;color:#aaa;border:2px dashed #ddd;border-radius:4px;">
-                    <div style="font-size:2rem;margin-bottom:8px;">📄</div>
-                    <div>자료 선택 탭에서 보고서를 생성하세요</div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown('<div style="text-align:center;padding:50px;color:#94A3B8;border:2px dashed #E2E8F0;border-radius:12px;"><div style="font-size:2.5rem;margin-bottom:8px;">📄</div><div>자료 선택 탭에서 보고서를 생성하세요</div></div>', unsafe_allow_html=True)
 
-        # ─── 다운로드 탭 ───
+        # ── 다운로드 ──
         elif active == "save":
-            rpt = st.session_state["report"]
+            rpt=st.session_state["report"]
             if rpt:
                 st.success("✅ 보고서 준비 완료")
-                edited = st.text_area("✏️ 최종 수정", value=rpt, height=400, key=f"edit_{num}")
-                st.session_state["report"] = edited
-                file_base = f"BMS_SOH_{num}_{datetime.now().strftime('%Y%m%d')}"
-                c1, c2, c3 = st.columns(3)
-                with c1: st.download_button("📄 TXT 다운로드", data=edited, file_name=f"{file_base}.txt", mime="text/plain", type="primary", use_container_width=True)
-                with c2: st.download_button("📋 Markdown", data=edited, file_name=f"{file_base}.md", mime="text/markdown", type="primary", use_container_width=True)
+                edited=st.text_area("✏️ 최종 수정",value=rpt,height=400,key=f"e_{num}")
+                st.session_state["report"]=edited
+                st.markdown("<br>", unsafe_allow_html=True)
+                fb=f"BatteryIQ_{num}_{datetime.now().strftime('%Y%m%d')}"
+                c1,c2,c3=st.columns(3)
+                with c1: st.download_button("📄 TXT 다운로드",data=edited,file_name=f"{fb}.txt",mime="text/plain",type="primary",use_container_width=True)
+                with c2: st.download_button("📋 Markdown",data=edited,file_name=f"{fb}.md",mime="text/markdown",type="primary",use_container_width=True)
                 with c3:
-                    if st.button("🖨️ 인쇄/PDF", use_container_width=True):
+                    if st.button("🖨️ 인쇄/PDF",use_container_width=True):
                         st.info("Ctrl+P → PDF로 저장")
             else:
-                st.markdown("""<div style="text-align:center;padding:50px;color:#aaa;border:2px dashed #ddd;border-radius:4px;">
-                    <div style="font-size:2rem;margin-bottom:8px;">💾</div>
-                    <div>보고서를 먼저 생성해주세요</div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown('<div style="text-align:center;padding:50px;color:#94A3B8;border:2px dashed #E2E8F0;border-radius:12px;"><div style="font-size:2.5rem;margin-bottom:8px;">💾</div><div>보고서를 먼저 생성해주세요</div></div>', unsafe_allow_html=True)
