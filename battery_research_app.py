@@ -1025,17 +1025,17 @@ st.markdown("""
 # =====================================================================
 if st.session_state["page"] == "home":
 
-    # ── HERO (YouTube 영상) ──
+    # ── HERO (직접 재생 MP4 영상) ──
     st.markdown("""
     <div class="hero-section">
         <div class="hero-video-wrap">
-            <iframe
-                src="https://www.youtube.com/embed/iBkbVHIpYCM?autoplay=1&mute=1&loop=1&playlist=iBkbVHIpYCM&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3"
-                frameborder="0"
-                allow="autoplay; encrypted-media"
-                allowfullscreen
-                style="position:absolute;top:50%;left:50%;width:177.78vh;min-width:100%;height:100%;min-height:56.25vw;transform:translate(-50%,-50%);">
-            </iframe>
+            <video
+                autoplay muted loop playsinline
+                style="position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;
+                       width:auto;height:auto;transform:translate(-50%,-50%);object-fit:cover;">
+                <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/4065688/4065688-hd_1920_1080_25fps.mp4" type="video/mp4">
+            </video>
         </div>
         <div class="hero-overlay"></div>
         <div class="hero-content">
