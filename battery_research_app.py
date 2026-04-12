@@ -1025,7 +1025,7 @@ st.markdown("""
 # =====================================================================
 if st.session_state["page"] == "home":
 
-    # ── HERO (직접 재생 MP4 영상) ──
+    # ── HERO (배터리/EV 관련 MP4 영상) ──
     st.markdown("""
     <div class="hero-section">
         <div class="hero-video-wrap">
@@ -1033,8 +1033,9 @@ if st.session_state["page"] == "home":
                 autoplay muted loop playsinline
                 style="position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;
                        width:auto;height:auto;transform:translate(-50%,-50%);object-fit:cover;">
-                <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4">
-                <source src="https://videos.pexels.com/video-files/4065688/4065688-hd_1920_1080_25fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/7996892/7996892-uhd_2560_1440_25fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/6272342/6272342-hd_1920_1080_30fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/5191385/5191385-hd_1920_1080_30fps.mp4" type="video/mp4">
             </video>
         </div>
         <div class="hero-overlay"></div>
