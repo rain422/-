@@ -908,7 +908,8 @@ else:
         prog_html += "</div>"
         st.markdown(prog_html, unsafe_allow_html=True)
 
-        kw_html = f'<div class="widget"><div class="widget-title">Keywords</div>{"".join([f\'<span class="kw-chip">{k}</span>\' for k in kw])}</div>'
+        kw_chips = "".join([f'<span class="kw-chip">{k}</span>' for k in kw])
+        kw_html = f'<div class="widget"><div class="widget-title">Keywords</div>{kw_chips}</div>'
         st.markdown(kw_html, unsafe_allow_html=True)
 
         st.markdown(f'<div class="widget"><div class="widget-title">Topic Overview</div><div style="font-size:0.82rem;color:#64748B;line-height:1.7;">{bg}</div></div>', unsafe_allow_html=True)
