@@ -1033,9 +1033,8 @@ if st.session_state["page"] == "home":
                 autoplay muted loop playsinline
                 style="position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;
                        width:auto;height:auto;transform:translate(-50%,-50%);object-fit:cover;">
-                <source src="https://videos.pexels.com/video-files/7996892/7996892-uhd_2560_1440_25fps.mp4" type="video/mp4">
-                <source src="https://videos.pexels.com/video-files/6272342/6272342-hd_1920_1080_30fps.mp4" type="video/mp4">
-                <source src="https://videos.pexels.com/video-files/5191385/5191385-hd_1920_1080_30fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/13814690/13814690-hd_1920_1080_100fps.mp4" type="video/mp4">
+                <source src="https://videos.pexels.com/video-files/13814690/13814690-uhd_2560_1440_100fps.mp4" type="video/mp4">
             </video>
         </div>
         <div class="hero-overlay"></div>
