@@ -1025,16 +1025,15 @@ st.markdown("""
 # =====================================================================
 if st.session_state["page"] == "home":
 
-    # ── HERO (배터리/EV 관련 MP4 영상) ──
+    # ── HERO (GitHub 호스팅 영상) ──
     st.markdown("""
-    <div class="hero-section">
+    <div class="hero-section" style="background:#000;">
         <div class="hero-video-wrap">
             <video
                 autoplay muted loop playsinline
                 style="position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;
                        width:auto;height:auto;transform:translate(-50%,-50%);object-fit:cover;">
-                <source src="https://videos.pexels.com/video-files/13814690/13814690-hd_1920_1080_100fps.mp4" type="video/mp4">
-                <source src="https://videos.pexels.com/video-files/13814690/13814690-uhd_2560_1440_100fps.mp4" type="video/mp4">
+                <source src="https://raw.githubusercontent.com/rain422/-/main/13814690_1920_1080_100fps.mp4" type="video/mp4">
             </video>
         </div>
         <div class="hero-overlay"></div>
