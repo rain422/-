@@ -388,7 +388,7 @@ textarea { background: #1a1a1a !important; color: var(--white) !important; borde
     letter-spacing: 0.5px;
 }
 
-/* ── TECH 섹션 ── */
+/* ── TECH 섹션 — LG 에너지솔루션 스타일 ── */
 .tech-intro {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -396,60 +396,106 @@ textarea { background: #1a1a1a !important; color: var(--white) !important; borde
     margin-bottom: 72px;
     align-items: end;
 }
-.tech-grid {
+/* 분할 패널 그리드 */
+.tech-panels {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: rgba(255,255,255,0.06);
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
 }
-.tech-card {
-    background: var(--dark2);
-    padding: 36px 32px;
-    transition: background 0.3s;
-    cursor: default;
+.tech-panel {
     position: relative;
+    height: 480px;
     overflow: hidden;
+    display: flex;
+    align-items: flex-end;
 }
-.tech-card::before {
-    content: '';
+.tech-panel-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+    filter: brightness(0.55);
+}
+.tech-panel:hover .tech-panel-img { transform: scale(1.04); filter: brightness(0.65); }
+.tech-panel-bg {
+    position: absolute;
+    inset: 0;
+}
+.tech-panel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.85) 0%,
+        rgba(0,0,0,0.3) 50%,
+        rgba(0,0,0,0.05) 100%
+    );
+}
+.tech-panel-content {
+    position: relative;
+    z-index: 2;
+    padding: 36px 40px;
+    width: 100%;
+}
+.tech-panel-num {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 10px;
+}
+.tech-panel-num span { color: var(--red); }
+.tech-panel-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+}
+.tech-panel-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    font-weight: 400;
+    margin-bottom: 14px;
+}
+.tech-panel-desc {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.7;
+    font-weight: 300;
+    display: none;
+    max-width: 380px;
+}
+.tech-panel:hover .tech-panel-desc { display: block; }
+.tech-panel:hover .tech-panel-subtitle { display: none; }
+.tech-panel-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 16px;
+    transition: color 0.2s;
+}
+.tech-panel:hover .tech-panel-arrow { color: var(--white); }
+.tech-panel-line {
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 2px;
+    height: 3px;
     background: var(--red);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.3s;
+    transition: transform 0.4s ease;
 }
-.tech-card:hover { background: var(--dark3); }
-.tech-card:hover::before { transform: scaleX(1); }
-.tech-card-icon {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-    display: block;
-}
-.tech-card-num {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--red);
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-.tech-card-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 12px;
-    line-height: 1.3;
-    letter-spacing: -0.2px;
-}
-.tech-card-desc {
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.4);
-    line-height: 1.7;
-    font-weight: 300;
-}
+.tech-panel:hover .tech-panel-line { transform: scaleX(1); }
 
 /* ── NEWS 섹션 ── */
 .news-header {
@@ -828,14 +874,50 @@ TOPICS = [
      ["비선형 칼만","UKF/CKF","파티클 필터","비선형 추정","알고리즘 비교"]),
 ]
 
-# 주요 기술 6개 (TECH 섹션용)
+# 주요 기술 6개 (TECH 섹션용) — (num, title, subtitle, desc, 배경색, 이미지URL)
 TECH_HIGHLIGHTS = [
-    ("⚡","01","배터리 건강 추정의 필요성","SOH 추정은 전기차·ESS 안전 운용을 위한 핵심 기술로, 과충전·과방전 방지와 잔여 수명 예측에 활용됩니다."),
-    ("🔬","07","칼만 필터 파라미터 추정","재귀적 베이지안 추정 프레임워크인 칼만 필터를 활용하여 배터리 SOC·SOH를 실시간으로 최적 추정합니다."),
-    ("🔄","08","EKF 파라미터 추정","야코비안 행렬을 통한 선형화로 비선형 배터리 등가 회로 모델에 확장 칼만 필터를 적용합니다."),
-    ("🎯","09","SPKF 파라미터 추정","시그마 포인트 통계 전파를 활용해 EKF 대비 향상된 정확도와 수렴 성능을 달성합니다."),
-    ("📊","10","조인트·듀얼 추정","상태변수(SOC)와 파라미터(SOH)를 단일 필터 또는 이중 필터 구조로 동시에 추정하는 기법입니다."),
-    ("🚗","20","HEV·EV 시뮬레이션","실제 주행 사이클(UDDS, WLTP)을 적용한 배터리 SOH 추정 시뮬레이션으로 알고리즘 성능을 검증합니다."),
+    (
+        "01", "배터리 건강 추정의 필요성",
+        "안전한 배터리 운용의 시작",
+        "SOH(State of Health) 추정은 배터리의 현재 용량을 초기 정격 용량 대비 비율로 나타냅니다. 과충전·과방전 방지, 잔여 수명 예측, 교체 시점 결정에 필수적인 기술입니다.",
+        "linear-gradient(135deg, #005C4B 0%, #007A5E 100%)",
+        "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=900&h=600&fit=crop&auto=format"
+    ),
+    (
+        "07", "칼만 필터 파라미터 추정",
+        "노이즈 속에서도 정확한 추정",
+        "칼만 필터는 센서 노이즈가 있는 환경에서 배터리 SOC·SOH를 최적으로 추정하는 재귀 알고리즘입니다. 예측(Predict)과 업데이트(Update) 두 단계를 반복하며 실시간 추정을 수행합니다.",
+        "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+        "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=900&h=600&fit=crop&auto=format"
+    ),
+    (
+        "08", "EKF 파라미터 추정",
+        "비선형 모델을 위한 확장 칼만 필터",
+        "배터리의 OCV-SOC 특성은 비선형입니다. EKF는 야코비안(Jacobian) 행렬로 비선형 함수를 순간적으로 선형화하여 칼만 필터를 적용합니다. SOC·내부 저항의 동시 추정이 가능합니다.",
+        "linear-gradient(135deg, #0f2027 0%, #203a43 100%)",
+        "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=900&h=600&fit=crop&auto=format"
+    ),
+    (
+        "09", "SPKF 파라미터 추정",
+        "시그마 포인트로 더 높은 정확도",
+        "SPKF(Sigma-Point Kalman Filter)는 UKF라고도 불리며, 비선형 변환을 시그마 포인트의 통계적 전파로 근사합니다. 야코비안 계산 없이 EKF보다 높은 추정 정확도를 달성합니다.",
+        "linear-gradient(135deg, #200122 0%, #6f0000 100%)",
+        "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=900&h=600&fit=crop&auto=format"
+    ),
+    (
+        "10", "조인트·듀얼 추정",
+        "SOC와 SOH를 동시에 추정",
+        "조인트 추정(Joint Estimation)은 SOC와 SOH를 단일 확장 상태 벡터로 묶어 하나의 필터로 추정합니다. 듀얼 추정(Dual Estimation)은 두 개의 분리된 필터를 병렬로 운용합니다.",
+        "linear-gradient(135deg, #134E5E 0%, #71B280 100%)",
+        "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=900&h=600&fit=crop&auto=format"
+    ),
+    (
+        "20", "HEV·EV 시뮬레이션",
+        "실제 주행 환경에서의 검증",
+        "HEV는 UDDS·HWFET, EV는 WLTP·EPA 표준 주행 사이클을 적용하여 실제 차량 운행 환경을 재현합니다. 시뮬레이션을 통해 각 추정 알고리즘의 실차 적용 성능을 비교·검증합니다.",
+        "linear-gradient(135deg, #0f3460 0%, #16213e 100%)",
+        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=900&h=600&fit=crop&auto=format"
+    ),
 ]
 
 # 뉴스 이미지 (주제별)
@@ -1033,32 +1115,39 @@ if st.session_state["page"] == "home":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── 주요 기술 섹션 ──
+    # ── 주요 기술 섹션 (LG 에너지솔루션 스타일) ──
     st.markdown("""
-    <div class="section section-dark2">
+    <div class="section section-dark2" style="padding-bottom:0;">
         <div class="tech-intro">
             <div>
                 <div class="section-label">주요 기술</div>
                 <div class="section-title">배터리 건강 추정에<br>필요한 핵심 기술</div>
             </div>
             <div>
-                <div class="section-desc">칼만 필터, 최소제곱법, 머신러닝까지 — 배터리 SOH 추정에 사용되는 6가지 핵심 기술을 탐색하세요.</div>
+                <div class="section-desc">칼만 필터부터 EV 시뮬레이션까지 — 배터리 SOH 추정의 6가지 핵심 기술을 탐색하세요. 패널에 마우스를 올리면 상세 설명을 볼 수 있습니다.</div>
             </div>
         </div>
-        <div class="tech-grid">
+    </div>
+    <div class="tech-panels">
     """, unsafe_allow_html=True)
 
-    for icon, num, title, desc in TECH_HIGHLIGHTS:
+    for num, title, subtitle, desc, bg_grad, img_url in TECH_HIGHLIGHTS:
         st.markdown(f"""
-        <div class="tech-card">
-            <span class="tech-card-icon">{icon}</span>
-            <div class="tech-card-num">TOPIC {num}</div>
-            <div class="tech-card-title">{title}</div>
-            <div class="tech-card-desc">{desc}</div>
+        <div class="tech-panel">
+            <div class="tech-panel-line"></div>
+            <img class="tech-panel-img" src="{img_url}" alt="{title}">
+            <div class="tech-panel-overlay"></div>
+            <div class="tech-panel-content">
+                <div class="tech-panel-num">TOPIC <span>{num}</span></div>
+                <div class="tech-panel-title">{title}</div>
+                <div class="tech-panel-subtitle">{subtitle}</div>
+                <div class="tech-panel-desc">{desc}</div>
+                <div class="tech-panel-arrow">자세히 보기 →</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # ── 최신 뉴스 섹션 ──
     st.markdown("""
