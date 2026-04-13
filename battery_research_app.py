@@ -1055,16 +1055,29 @@ if st.session_state["page"] == "home":
     </style>
     """, unsafe_allow_html=True)
 
-    # 배너 표시
+    # 배너 표시 (버튼 배너 안에 포함)
     st.markdown("""
+    <style>
+    .pill-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 50px;
+        padding: 13px 36px;
+        font-size: 0.88rem; font-weight: 400;
+        letter-spacing: 0.3px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(4px);
+    }
+    .pill-btn:hover {
+        background: rgba(255,255,255,0.15) !important;
+        color: var(--white) !important;
+        border-color: rgba(255,255,255,0.55) !important;
+        transform: translateY(-2px);
+    }
+    </style>
     <div class="dark-banner">
-        <!-- 영상 자리 — 업로드 후 아래 주석 해제 -->
-        <!--
-        <video autoplay muted loop playsinline>
-            <source src="여기에_영상_URL_입력.mp4" type="video/mp4">
-        </video>
-        -->
-        <!-- 임시 배경 그라데이션 -->
         <div style="position:absolute;inset:0;
             background:linear-gradient(135deg,#0D1B2A 0%,#1C2E40 40%,#0D1B2A 100%);">
         </div>
@@ -1083,17 +1096,18 @@ if st.session_state["page"] == "home":
                 SOH 추정 기술은 전기차 안전과 에너지 효율의 핵심입니다.<br>
                 24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
             </div>
+            <span class="pill-btn">핵심 주제 바로가기 &nbsp;→</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 핵심 주제 바로가기 버튼 영역
+    # 실제 클릭 버튼 (배너 바로 아래, 스트림릿 동작용 — 최소화)
     if "show_topic_nav" not in st.session_state:
         st.session_state["show_topic_nav"] = False
 
-    _, bc, _ = st.columns([1, 2, 1])
+    _, bc, _ = st.columns([3, 2, 3])
     with bc:
-        if st.button("📋 핵심 주제 바로가기 →", key="topic_nav_btn", use_container_width=True):
+        if st.button("핵심 주제 바로가기 →", key="topic_nav_btn", use_container_width=True):
             st.session_state["show_topic_nav"] = not st.session_state["show_topic_nav"]
             st.rerun()
 
