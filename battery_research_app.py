@@ -1114,7 +1114,7 @@ if st.session_state["page"] == "home":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── 주요 기술 섹션 (LG 에너지솔루션 스타일) ──
+    # ── 주요 기술 섹션 (클릭 가능한 LG 스타일 패널) ──
     st.markdown("""
     <div class="section section-dark2" style="padding-bottom:0;">
         <div class="tech-intro">
@@ -1123,30 +1123,71 @@ if st.session_state["page"] == "home":
                 <div class="section-title">배터리 건강 추정에<br>필요한 핵심 기술</div>
             </div>
             <div>
-                <div class="section-desc">칼만 필터부터 EV 시뮬레이션까지 — 배터리 SOH 추정의 6가지 핵심 기술을 탐색하세요. 패널에 마우스를 올리면 상세 설명을 볼 수 있습니다.</div>
+                <div class="section-desc">칼만 필터부터 EV 시뮬레이션까지 — 6가지 핵심 기술을 탐색하세요.<br>패널을 클릭하면 관련 뉴스와 논문을 바로 확인할 수 있습니다.</div>
             </div>
         </div>
     </div>
-    <div class="tech-panels">
+    <style>
+    /* 패널 위 버튼 완전 투명 오버레이 */
+    .panel-btn-wrap { position: relative; }
+    .panel-btn-wrap .stButton { position: absolute; inset: 0; z-index: 10; }
+    .panel-btn-wrap .stButton > button {
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+        border: none !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
-    for num, title, subtitle, desc, bg_grad, img_url in TECH_HIGHLIGHTS:
-        st.markdown(f"""
-        <div class="tech-panel">
-            <div class="tech-panel-line"></div>
-            <img class="tech-panel-img" src="{img_url}" alt="{title}">
-            <div class="tech-panel-overlay"></div>
-            <div class="tech-panel-content">
-                <div class="tech-panel-num">TOPIC <span>{num}</span></div>
-                <div class="tech-panel-title">{title}</div>
-                <div class="tech-panel-subtitle">{subtitle}</div>
-                <div class="tech-panel-desc">{desc}</div>
-                <div class="tech-panel-arrow">자세히 보기 →</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    # 패널 인덱스 → TOPICS 리스트 인덱스 매핑
+    TECH_TOPIC_IDX = {
+        "01": 0,  "07": 6,  "08": 7,
+        "09": 8,  "10": 9,  "20": 19,
+    }
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # 2열씩 나눠서 패널 렌더링
+    panels_per_row = 2
+    panel_list = list(TECH_HIGHLIGHTS)
+
+    for row_start in range(0, len(panel_list), panels_per_row):
+        row = panel_list[row_start:row_start + panels_per_row]
+        cols = st.columns(panels_per_row)
+        for col, (num, title, subtitle, desc, bg_grad, img_url) in zip(cols, row):
+            with col:
+                # 패널 HTML
+                st.markdown(f"""
+                <div class="tech-panel" style="width:100%;cursor:pointer;">
+                    <div class="tech-panel-line"></div>
+                    <img class="tech-panel-img" src="{img_url}" alt="{title}">
+                    <div class="tech-panel-overlay"></div>
+                    <div class="tech-panel-content">
+                        <div class="tech-panel-num">TOPIC <span>{num}</span></div>
+                        <div class="tech-panel-title">{title}</div>
+                        <div class="tech-panel-subtitle">{subtitle}</div>
+                        <div class="tech-panel-desc">{desc}</div>
+                        <div class="tech-panel-arrow">자세히 보기 →</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                # 투명 클릭 버튼
+                if st.button(f"열기_{num}", key=f"tech_panel_{num}", use_container_width=True):
+                    tidx = TECH_TOPIC_IDX.get(num, 0)
+                    st.session_state["page"] = "detail"
+                    st.session_state["sel_idx"] = tidx
+                    st.session_state["tab"] = "news"
+                    st.session_state["step"] = 0
+                    for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
+                        st.session_state[k2] = [] if k2 != "report" else ""
+                    # 뉴스 자동 수집 트리거
+                    st.session_state["auto_fetch_news"] = True
+                    st.rerun()
+
+    st.markdown("<div style='height:1px;'></div>", unsafe_allow_html=True)
 
     # ── 최신 뉴스 섹션 ──
     st.markdown("""
@@ -1340,11 +1381,70 @@ else:
 
     with mc:
         active = st.session_state["tab"]
+
+        # 패널 클릭 시 뉴스 자동 수집
+        if st.session_state.get("auto_fetch_news") and active == "news":
+            st.session_state["auto_fetch_news"] = False
+            with st.spinner("뉴스 자동 수집 중..."):
+                raw_ko = fetch_news(ko+" 배터리","ko","KR","KR:ko",8)
+                st.session_state["news_ko"] = [{"title":e.title,"link":e.link,"lang":"ko","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_ko]
+                raw_en = fetch_news(en,"en","US","US:en",8)
+                st.session_state["news_en"] = [{"title":e.title,"link":e.link,"lang":"en","published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw_en]
+                if st.session_state["step"] < 1: st.session_state["step"] = 1
+
         st.markdown('<div style="padding:28px 0;">', unsafe_allow_html=True)
 
         if active=="news":
+            # ── 표지 화면: 대표 뉴스 카드 ──
+            all_items = [("🇰🇷",i) for i in st.session_state["news_ko"]] + [("🌍",i) for i in st.session_state["news_en"]]
+
+            if all_items:
+                # 대표 뉴스 (첫 번째) 표지 카드
+                feat_flag, feat = all_items[0]
+                # 주제별 대표 이미지 (TECH_HIGHLIGHTS에서 찾기)
+                cover_img = next((img for n,_,_,_,_,img in TECH_HIGHLIGHTS if n==num), "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1200&h=500&fit=crop")
+
+                st.markdown(f"""
+                <div style="position:relative;width:100%;height:320px;border-radius:4px;overflow:hidden;margin-bottom:28px;cursor:pointer;">
+                    <img src="{cover_img}" style="width:100%;height:320px;object-fit:cover;filter:brightness(0.45);">
+                    <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);"></div>
+                    <div style="position:absolute;bottom:0;left:0;padding:32px 36px;max-width:65%;">
+                        <div style="font-size:0.62rem;font-weight:700;letter-spacing:3px;color:#C8001E;text-transform:uppercase;margin-bottom:10px;">
+                            {feat_flag} 주요 뉴스 · TOPIC {num}
+                        </div>
+                        <div style="font-size:1.15rem;font-weight:700;color:#fff;line-height:1.45;margin-bottom:10px;letter-spacing:-0.3px;">
+                            <a href="{feat['link']}" target="_blank" style="color:#fff;text-decoration:none;">{feat['title']}</a>
+                        </div>
+                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">
+                            {feat['source']} &nbsp;·&nbsp; {feat['published'][:16]}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # 나머지 뉴스 그리드 (2~4번째)
+                if len(all_items) > 1:
+                    sub_items = all_items[1:4]
+                    cols_news = st.columns(len(sub_items))
+                    for col_n, (flag, item) in zip(cols_news, sub_items):
+                        with col_n:
+                            st.markdown(f"""
+                            <div style="background:#111;border:1px solid rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;margin-bottom:16px;">
+                                <div style="padding:18px 18px 16px;">
+                                    <div style="font-size:0.6rem;font-weight:700;color:#C8001E;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">{flag} 뉴스</div>
+                                    <div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.9);line-height:1.45;margin-bottom:8px;">
+                                        <a href="{item['link']}" target="_blank" style="color:rgba(255,255,255,0.9);text-decoration:none;">{item['title'][:80]}{'...' if len(item['title'])>80 else ''}</a>
+                                    </div>
+                                    <div style="font-size:0.7rem;color:rgba(255,255,255,0.3);">{item['source']} · {item['published'][:10]}</div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:20px 0;'>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:14px;'>전체 뉴스 {len(all_items)}건</div>", unsafe_allow_html=True)
+
             c1,c2=st.columns([4,1])
-            with c1: run_news=st.button("🔄 뉴스 수집",type="primary",use_container_width=True)
+            with c1: run_news=st.button("🔄 뉴스 새로고침",type="primary",use_container_width=True)
             with c2:
                 if st.button("초기화",use_container_width=True):
                     st.session_state["news_ko"]=[]; st.session_state["news_en"]=[]; st.rerun()
@@ -1359,10 +1459,10 @@ else:
                 p.progress(100); p.empty()
                 if st.session_state["step"]<1: st.session_state["step"]=1
                 st.rerun()
-            items=[("🇰🇷",i) for i in st.session_state["news_ko"]]+[("🌍",i) for i in st.session_state["news_en"]]
-            if items:
-                st.success(f"✅ {len(items)}건 수집")
-                for idx,(flag,item) in enumerate(items,1):
+
+            # 전체 뉴스 리스트
+            if all_items:
+                for idx,(flag,item) in enumerate(all_items,1):
                     st.markdown(f'<div class="nitem"><div class="nidx">{idx:02d}</div><div><div class="nflag">{flag} {item["source"]}</div><div class="nitem-title"><a href="{item["link"]}" target="_blank">{item["title"]}</a></div><div class="nmeta">📅 {item["published"]}</div></div></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div style="text-align:center;padding:50px;color:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.06);">위 버튼을 클릭해 뉴스를 수집하세요</div>', unsafe_allow_html=True)
