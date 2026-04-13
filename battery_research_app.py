@@ -968,6 +968,204 @@ if st.session_state["page"] == "home":
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
+    # ── LG 스타일 다크 배너 (영상 배경) ──
+    st.markdown("""
+    <style>
+    .dark-banner {
+        position: relative;
+        width: 100%;
+        min-height: 520px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--navy);
+    }
+    .dark-banner video {
+        position: absolute;
+        inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        filter: brightness(0.28);
+    }
+    .dark-banner-overlay {
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at center, rgba(0,180,160,0.08) 0%, rgba(13,27,42,0.6) 70%);
+    }
+    .dark-banner-body {
+        position: relative; z-index: 2;
+        text-align: center;
+        padding: 100px 48px;
+        max-width: 900px;
+    }
+    .dark-banner-label {
+        font-size: 0.68rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: var(--teal); margin-bottom: 24px;
+        display: flex; align-items: center;
+        justify-content: center; gap: 10px;
+    }
+    .dark-banner-label::before,
+    .dark-banner-label::after {
+        content: ''; display: block;
+        width: 32px; height: 1px; background: var(--teal);
+    }
+    .dark-banner-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        font-weight: 800; color: var(--white);
+        line-height: 1.25; letter-spacing: -1px;
+        margin-bottom: 20px;
+    }
+    .dark-banner-title span { color: var(--teal); }
+    .dark-banner-desc {
+        font-size: 1rem; color: rgba(255,255,255,0.55);
+        font-weight: 300; line-height: 1.8;
+        margin-bottom: 40px;
+    }
+    .topic-nav-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: transparent;
+        color: var(--white);
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 2px;
+        padding: 14px 36px;
+        font-size: 0.88rem; font-weight: 600;
+        cursor: pointer; letter-spacing: 0.5px;
+        transition: all 0.2s; text-decoration: none;
+    }
+    .topic-nav-btn:hover {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: var(--white);
+    }
+    /* 주제 네비게이터 그리드 */
+    .topic-nav-grid {
+        background: var(--navy);
+        padding: 72px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        background-color: rgba(255,255,255,0.06);
+    }
+    .topic-nav-cell {
+        background: var(--navy2);
+        padding: 24px 22px;
+        cursor: pointer;
+        transition: background 0.2s, border-left 0.2s;
+        position: relative;
+    }
+    .topic-nav-cell:hover { background: #243548; }
+    .topic-nav-cell:hover .tnc-title { color: var(--teal); }
+    .tnc-num {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.65rem; font-weight: 700;
+        color: var(--teal); letter-spacing: 2px;
+        margin-bottom: 8px; text-transform: uppercase;
+    }
+    .tnc-title {
+        font-size: 0.88rem; font-weight: 600;
+        color: var(--white); line-height: 1.4;
+        transition: color 0.2s;
+    }
+    .tnc-arrow {
+        position: absolute; right: 18px; top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.15);
+        font-size: 0.9rem; transition: all 0.2s;
+    }
+    .topic-nav-cell:hover .tnc-arrow {
+        color: var(--teal);
+        transform: translateY(-50%) translateX(3px);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 배너 표시
+    st.markdown("""
+    <div class="dark-banner">
+        <!-- 영상 자리 — 업로드 후 아래 주석 해제 -->
+        <!--
+        <video autoplay muted loop playsinline>
+            <source src="여기에_영상_URL_입력.mp4" type="video/mp4">
+        </video>
+        -->
+        <!-- 임시 배경 그라데이션 -->
+        <div style="position:absolute;inset:0;
+            background:linear-gradient(135deg,#0D1B2A 0%,#1C2E40 40%,#0D1B2A 100%);">
+        </div>
+        <div style="position:absolute;inset:0;
+            background:radial-gradient(ellipse at 30% 50%,rgba(0,180,160,0.12) 0%,transparent 60%),
+                       radial-gradient(ellipse at 70% 50%,rgba(0,150,136,0.08) 0%,transparent 60%);">
+        </div>
+        <div class="dark-banner-overlay"></div>
+        <div class="dark-banner-body">
+            <div class="dark-banner-label">Battery Intelligence Research</div>
+            <div class="dark-banner-title">
+                배터리의 <span>건강 상태</span>를 알면<br>
+                미래 에너지를 설계할 수 있습니다
+            </div>
+            <div class="dark-banner-desc">
+                SOH 추정 기술은 전기차 안전과 에너지 효율의 핵심입니다.<br>
+                24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 핵심 주제 바로가기 버튼 영역
+    if "show_topic_nav" not in st.session_state:
+        st.session_state["show_topic_nav"] = False
+
+    _, bc, _ = st.columns([1, 2, 1])
+    with bc:
+        if st.button("📋 핵심 주제 바로가기 →", key="topic_nav_btn", use_container_width=True):
+            st.session_state["show_topic_nav"] = not st.session_state["show_topic_nav"]
+            st.rerun()
+
+    # 24개 주제 그리드 (펼치면 보임)
+    if st.session_state["show_topic_nav"]:
+        st.markdown('<div style="background:#0D1B2A;padding:56px 72px 72px;">', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center;margin-bottom:48px;">
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                        color:#00B4A0;margin-bottom:14px;display:flex;align-items:center;
+                        justify-content:center;gap:10px;">
+                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
+                24개 핵심 주제
+                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
+            </div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.8rem;font-weight:800;
+                        color:#fff;letter-spacing:-0.5px;">
+                배터리 건강 추정 연구 주제 전체 보기
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 4열 그리드
+        cols_per_row = 4
+        for row_start in range(0, len(TOPICS), cols_per_row):
+            row_topics = TOPICS[row_start:row_start+cols_per_row]
+            cols = st.columns(cols_per_row, gap="small")
+            for col, (num,ko,en,desc,kw) in zip(cols, row_topics):
+                i = TOPICS.index((num,ko,en,desc,kw))
+                with col:
+                    st.markdown(f"""
+                    <div class="topic-nav-cell">
+                        <div class="tnc-num">TOPIC {num}</div>
+                        <div class="tnc-title">{ko}</div>
+                        <div class="tnc-arrow">→</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"이동_{num}", key=f"tnav_{num}", use_container_width=True):
+                        st.session_state.update({"page":"detail","sel_idx":i,"tab":"news","step":0,"auto_fetch":True,"show_topic_nav":False})
+                        for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
+                            st.session_state[k2]=[] if k2!="report" else ""
+                        st.rerun()
+            st.markdown("<div style='height:1px;background:rgba(255,255,255,0.05);'></div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
     # 푸터
     st.markdown("""
     <div class="footer">
