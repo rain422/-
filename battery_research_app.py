@@ -750,66 +750,135 @@ for k,v in [("page","home"),("sel_idx",0),
 nc=len(st.session_state["news_ko"])+len(st.session_state["news_en"])
 pc=len(st.session_state["papers"])+len(st.session_state["arxiv"])
 
-st.markdown(f"""
-<div class="gnb">
-    <div class="gnb-logo">
-        <div class="gnb-logo-mark">🔋</div>
-        BatteryIQ
-    </div>
-    <ul class="gnb-menu">
-        <li id="gnb-overview">연구 개요</li>
-        <li>핵심 기술</li>
-        <li>뉴스룸</li>
-        <li>24개 주제</li>
-    </ul>
-    <div class="gnb-right">Gregory Plett · Chapter 2-04 &nbsp;|&nbsp; 📰{nc}건 📚{pc}편</div>
-</div>
+st.markdown("""
 <style>
-/* GNB 위에 투명 버튼 오버레이 */
-.gnb-btn-row {{
-    position: fixed; top:0; left:0; right:0; height:68px;
-    display:flex; align-items:center;
-    padding:0 52px; gap:36px;
-    z-index:10000; pointer-events:none;
-}}
-.gnb-btn-row .stButton {{
-    pointer-events:all;
-    min-width:80px;
-}}
-.gnb-btn-row .stButton > button {{
-    background:transparent !important;
-    color:transparent !important;
-    border:none !important;
-    height:68px !important;
-    padding:0 !important;
-    font-size:0 !important;
-    box-shadow:none !important;
-    min-width:80px;
-    cursor:pointer !important;
-}}
-/* 로고 자리 공간 */
-.gnb-btn-spacer {{ min-width:160px; pointer-events:none; }}
+/* GNB 전체를 Streamlit 버튼으로 구성 */
+.gnb-wrap {
+    position: fixed; top:0; left:0; right:0; height:64px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #E2E8F0;
+    z-index: 9999;
+    display: flex; align-items: center;
+}
+/* 로고 영역 */
+.gnb-logo-fixed {
+    position: fixed; top:0; left:0;
+    height:64px; width:180px;
+    display:flex; align-items:center; padding:0 24px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-weight:800; font-size:1.1rem; color:#0D1B2A;
+    gap:10px; z-index:10000;
+    background:rgba(255,255,255,0.96);
+}
+.gnb-logo-mark {
+    width:30px; height:30px; background:#00B4A0;
+    border-radius:6px; display:flex; align-items:center;
+    justify-content:center; font-size:0.9rem; color:white;
+}
+/* 우측 정보 */
+.gnb-right-fixed {
+    position:fixed; top:0; right:24px;
+    height:64px; display:flex; align-items:center;
+    font-size:0.75rem; color:#9EA5AF; z-index:10000;
+}
+/* 네비 버튼들 — 중앙 정렬 */
+[data-testid="stHorizontalBlock"]:has(button[kind="secondary"].gnb-btn) {
+    position: fixed !important;
+    top: 0 !important; left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 64px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    z-index: 10000 !important;
+    background: transparent !important;
+}
+/* 모든 GNB 버튼 스타일 */
+.gnb-btn-style button {
+    background: transparent !important;
+    color: #6B7280 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    padding: 20px 20px !important;
+    height: 64px !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: none !important;
+    transition: color 0.15s !important;
+    width: auto !important;
+}
+.gnb-btn-style button:hover {
+    color: #00B4A0 !important;
+    background: transparent !important;
+    border-bottom: 2px solid #00B4A0 !important;
+}
+/* 페이지 상단 여백 (GNB 높이만큼) */
+.main-content-pad { margin-top: 64px; }
+/* Streamlit 기본 상단 숨김 */
+#MainMenu, footer, header { visibility: hidden; }
+.stDeployButton { display: none; }
+/* 기존 block-container 패딩 제거 */
+.block-container { padding: 0 !important; max-width: 100% !important; }
+[data-testid="stAppViewBlockContainer"] { padding: 0 !important; max-width: 100% !important; }
 </style>
-<div class="gnb-btn-row">
-    <div class="gnb-btn-spacer"></div>
+
+<div class="gnb-logo-fixed">
+    <div class="gnb-logo-mark">🔋</div>
+    BatteryIQ
+</div>
+<div class="gnb-right-fixed">Gregory Plett · Chapter 2-04</div>
+<div class="gnb-wrap"></div>
 """, unsafe_allow_html=True)
 
-gnb_c1,gnb_c2,gnb_c3,gnb_c4,_ = st.columns([1.2,1.2,1,1.2,6])
-with gnb_c1:
-    if st.button("연구 개요", key="gnb_ov"):
-        st.session_state["page"]="overview"; st.rerun()
-with gnb_c2:
-    if st.button("핵심 기술", key="gnb_tech"):
-        st.session_state["page"]="home"; st.rerun()
-with gnb_c3:
-    if st.button("뉴스룸", key="gnb_news"):
-        st.session_state["page"]="home"; st.rerun()
-with gnb_c4:
-    if st.button("24개 주제", key="gnb_topics"):
-        st.session_state["page"]="home"
-        st.session_state["show_topic_nav"]=True; st.rerun()
+# 실제 작동하는 GNB 네비 버튼
+st.markdown('<div class="main-content-pad"></div>', unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)
+# GNB 버튼 행 — CSS로 fixed 포지션으로 올림
+gnb_container = st.container()
+with gnb_container:
+    st.markdown("""
+    <style>
+    /* 첫 번째 컨테이너를 GNB 위치로 올리기 */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"]:first-child
+    > div:first-child {
+        position: fixed !important;
+        top: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 10001 !important;
+        background: transparent !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    g1, g2, g3, g4 = st.columns([1, 1, 1, 1])
+    
+    with g1:
+        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
+        if st.button("연구 개요", key="gnb_ov", use_container_width=False):
+            st.session_state["page"] = "overview"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with g2:
+        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
+        if st.button("핵심 기술", key="gnb_tech", use_container_width=False):
+            st.session_state["page"] = "home"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with g3:
+        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
+        if st.button("뉴스룸", key="gnb_news", use_container_width=False):
+            st.session_state["page"] = "home"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with g4:
+        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
+        if st.button("24개 주제", key="gnb_topics", use_container_width=False):
+            st.session_state["page"] = "home"
+            st.session_state["show_topic_nav"] = True; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================================
 # HOME
