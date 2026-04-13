@@ -740,7 +740,8 @@ for k,v in [("page","home"),("sel_idx",0),
             ("news_ko",[]),("news_en",[]),("papers",[]),("arxiv",[]),
             ("sel_news",[]),("sel_papers",[]),("sel_arxiv",[]),
             ("report",""),("tab","news"),("step",0),
-            ("auto_fetch",False),("home_ko",[]),("home_en",[])]:
+            ("auto_fetch",False),("home_ko",[]),("home_en",[]),
+            ("show_topic_nav",False),("overview_tab","competitiveness")]:
     if k not in st.session_state: st.session_state[k]=v
 
 # =====================================================================
@@ -748,6 +749,7 @@ for k,v in [("page","home"),("sel_idx",0),
 # =====================================================================
 nc=len(st.session_state["news_ko"])+len(st.session_state["news_en"])
 pc=len(st.session_state["papers"])+len(st.session_state["arxiv"])
+
 st.markdown(f"""
 <div class="gnb">
     <div class="gnb-logo">
@@ -755,11 +757,34 @@ st.markdown(f"""
         BatteryIQ
     </div>
     <ul class="gnb-menu">
-        <li>연구 개요</li><li>핵심 기술</li><li>뉴스룸</li><li>24개 주제</li>
+        <li id="nav-overview">연구 개요</li>
+        <li>핵심 기술</li>
+        <li>뉴스룸</li>
+        <li>24개 주제</li>
     </ul>
     <div class="gnb-right">Gregory Plett · Chapter 2-04 &nbsp;|&nbsp; 📰{nc}건 📚{pc}편</div>
 </div>
 """, unsafe_allow_html=True)
+
+# GNB 실제 클릭 버튼 (투명 오버레이)
+gnb_cols = st.columns([2,1,1,1,1,3])
+with gnb_cols[1]:
+    if st.button("연구 개요", key="gnb_overview"):
+        st.session_state["page"] = "overview"
+        st.rerun()
+with gnb_cols[2]:
+    if st.button("핵심 기술", key="gnb_tech"):
+        st.session_state["page"] = "home"
+        st.rerun()
+with gnb_cols[3]:
+    if st.button("뉴스룸", key="gnb_news"):
+        st.session_state["page"] = "home"
+        st.rerun()
+with gnb_cols[4]:
+    if st.button("24개 주제", key="gnb_topics"):
+        st.session_state["page"] = "home"
+        st.session_state["show_topic_nav"] = True
+        st.rerun()
 
 # =====================================================================
 # HOME
@@ -1159,7 +1184,7 @@ if st.session_state["page"] == "home":
 # =====================================================================
 # DETAIL
 # =====================================================================
-else:
+elif st.session_state["page"] == "detail":
     tidx = st.session_state["sel_idx"]
     num,ko,en,bg,kw = TOPICS[tidx]
 
@@ -1408,5 +1433,538 @@ else:
     <div class="footer">
         <div class="footer-logo">🔋 Battery<span>IQ</span></div>
         <div class="footer-copy">Battery Management Systems · Gregory Plett · Chapter 2-04</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =====================================================================
+# OVERVIEW — 연구 개요 페이지
+# =====================================================================
+elif st.session_state["page"] == "overview":
+
+    # 연구 개요 CSS
+    st.markdown("""
+    <style>
+    /* 개요 히어로 */
+    .ov-hero {
+        background: var(--navy);
+        padding: 130px 72px 72px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .ov-hero-label {
+        font-size:0.68rem; font-weight:700; letter-spacing:3px;
+        text-transform:uppercase; color:var(--teal); margin-bottom:14px;
+        display:flex; align-items:center; gap:10px;
+    }
+    .ov-hero-label::before { content:''; display:block; width:24px; height:1px; background:var(--teal); }
+    .ov-hero-title {
+        font-family:'Plus Jakarta Sans',sans-serif;
+        font-size:clamp(2rem,4vw,3.2rem); font-weight:800;
+        color:var(--white); letter-spacing:-1px; line-height:1.15;
+        margin-bottom:14px;
+    }
+    .ov-hero-desc { font-size:0.95rem; color:rgba(255,255,255,0.5); font-weight:300; line-height:1.8; max-width:600px; }
+
+    /* 섹션 탭 */
+    .ov-tab-bar {
+        background:var(--white); border-bottom:2px solid var(--gray2);
+        display:flex; padding:0 72px; overflow-x:auto; position:sticky; top:68px; z-index:90;
+    }
+    .ov-tab {
+        padding:18px 28px; font-size:0.88rem; font-weight:500;
+        color:var(--gray5); border-bottom:2px solid transparent;
+        margin-bottom:-2px; cursor:pointer; white-space:nowrap;
+        transition:all 0.2s; letter-spacing:0.2px;
+    }
+    .ov-tab.on { color:var(--teal); border-bottom-color:var(--teal); font-weight:700; }
+
+    /* 경쟁력 카드 */
+    .comp-card {
+        background:var(--gray1); border:1px solid var(--gray2);
+        border-radius:8px; padding:28px 24px;
+        border-top:3px solid var(--teal);
+        transition:all 0.2s;
+    }
+    .comp-card:hover { box-shadow:0 8px 28px rgba(0,180,160,0.12); transform:translateY(-3px); }
+    .comp-icon { font-size:2rem; margin-bottom:14px; }
+    .comp-title { font-size:1rem; font-weight:700; color:var(--navy); margin-bottom:8px; letter-spacing:-0.2px; }
+    .comp-desc { font-size:0.82rem; color:var(--gray5); line-height:1.7; }
+
+    /* 성능 지표 */
+    .perf-bar-wrap { margin:8px 0; }
+    .perf-label { display:flex; justify-content:space-between; font-size:0.8rem; color:var(--gray5); margin-bottom:5px; }
+    .perf-bar-bg { background:var(--gray2); border-radius:20px; height:8px; overflow:hidden; }
+    .perf-bar-fill { height:8px; border-radius:20px; background:var(--teal); transition:width 1s ease; }
+
+    /* 배터리 종류 */
+    .battery-type-card {
+        background:var(--white); border:1px solid var(--gray2);
+        border-radius:8px; overflow:hidden;
+        transition:all 0.25s; cursor:default;
+    }
+    .battery-type-card:hover { box-shadow:0 8px 28px rgba(0,180,160,0.1); border-color:var(--teal); }
+    .btc-img { width:100%; height:200px; object-fit:cover; filter:brightness(0.85); }
+    .btc-body { padding:20px 22px; }
+    .btc-title { font-size:1.1rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
+    .btc-sub { font-size:0.8rem; color:var(--teal); font-weight:600; margin-bottom:10px; }
+    .btc-desc { font-size:0.8rem; color:var(--gray5); line-height:1.7; }
+
+    /* 공정 흐름 */
+    .process-step {
+        display:flex; flex-direction:column; align-items:center;
+        text-align:center; flex:1;
+    }
+    .process-icon-wrap {
+        width:72px; height:72px; border-radius:50%;
+        background:var(--gray1); border:2px solid var(--gray2);
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.6rem; margin-bottom:12px;
+        transition:all 0.2s;
+    }
+    .process-step:hover .process-icon-wrap { background:var(--teal); border-color:var(--teal); }
+    .process-step-title { font-size:0.85rem; font-weight:700; color:var(--navy); margin-bottom:5px; }
+    .process-step-desc { font-size:0.75rem; color:var(--gray4); line-height:1.55; }
+    .process-arrow { color:var(--gray3); font-size:1.4rem; padding:0 4px; margin-top:24px; flex-shrink:0; }
+
+    /* 혁신 기술 */
+    .innov-card {
+        background:var(--white); border:1px solid var(--gray2);
+        border-radius:8px; padding:24px;
+        display:flex; gap:18px; align-items:flex-start;
+        transition:all 0.2s;
+    }
+    .innov-card:hover { border-color:var(--teal); box-shadow:0 4px 16px rgba(0,180,160,0.1); }
+    .innov-icon-box {
+        width:48px; height:48px; border-radius:10px;
+        background:#E6F7F5; display:flex; align-items:center;
+        justify-content:center; font-size:1.3rem; flex-shrink:0;
+    }
+    .innov-title { font-size:0.92rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
+    .innov-desc { font-size:0.8rem; color:var(--gray5); line-height:1.65; }
+
+    /* 산업별 적용 */
+    .industry-grid {
+        display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:40px;
+    }
+    .industry-card {
+        background:var(--gray1); border:1px solid var(--gray2);
+        border-radius:12px; padding:28px 28px 24px;
+        display:flex; justify-content:space-between;
+        align-items:flex-end; min-height:220px;
+        position:relative; overflow:hidden;
+        transition:all 0.25s; cursor:default;
+    }
+    .industry-card:hover { border-color:var(--teal); box-shadow:0 8px 32px rgba(0,180,160,0.1); }
+    .industry-card:hover .ind-arrow { color:var(--teal); }
+    .ind-label { font-size:1.15rem; font-weight:700; color:var(--navy); margin-bottom:4px; }
+    .ind-arrow { font-size:0.85rem; color:var(--gray4); font-weight:600; transition:color 0.2s; }
+    .ind-img { width:200px; height:150px; object-fit:contain; opacity:0.85; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 히어로
+    st.markdown("""
+    <div class="ov-hero">
+        <div class="ov-hero-label">Battery Health Estimation Research</div>
+        <div class="ov-hero-title">배터리 건강 추정<br>연구 개요</div>
+        <div class="ov-hero-desc">
+            SOH 추정 기술의 경쟁력부터 배터리 종류, 핵심 공정,
+            혁신 기술, 산업별 적용까지 — 배터리 건강 추정의 모든 것을 탐구합니다.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 뒤로가기
+    bc, _ = st.columns([2, 8])
+    with bc:
+        if st.button("← 홈으로", key="ov_back"):
+            st.session_state["page"] = "home"; st.rerun()
+
+    # 섹션 탭
+    ov_tabs = [
+        ("competitiveness", "경쟁력"),
+        ("battery_type", "배터리 종류"),
+        ("performance", "성능 지표"),
+        ("process", "핵심 공정"),
+        ("innovation", "혁신 기술"),
+        ("industry", "산업별 적용"),
+    ]
+    tab_html = '<div class="ov-tab-bar">'
+    for tk, tl in ov_tabs:
+        cls = "on" if st.session_state["overview_tab"] == tk else ""
+        tab_html += f'<span class="ov-tab {cls}">{tl}</span>'
+    tab_html += "</div>"
+    st.markdown(tab_html, unsafe_allow_html=True)
+
+    # 탭 버튼
+    tcols = st.columns(len(ov_tabs))
+    for i, (tk, tl) in enumerate(ov_tabs):
+        with tcols[i]:
+            if st.button(tl, key=f"ovt_{tk}", use_container_width=True):
+                st.session_state["overview_tab"] = tk; st.rerun()
+
+    ov_active = st.session_state["overview_tab"]
+
+    st.markdown('<div style="padding:56px 72px 80px; background:white;">', unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 1. 경쟁력
+    # ─────────────────────────────────────
+    if ov_active == "competitiveness":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">배터리 건강 추정의 가치</div>
+            <div class="sec-title">왜 SOH 추정이 중요한가</div>
+            <div class="sec-desc">배터리 건강 상태 추정은 전기차와 에너지 저장 시스템의 안전·수명·성능을 결정짓는 핵심 기술입니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        competitiveness = [
+            ("🛡️", "안전성 확보", "과충전·과방전을 실시간으로 방지하여 배터리 열폭주 등 위험 상황을 사전에 예방합니다. SOH 기반 보호 로직은 BMS의 핵심 기능입니다."),
+            ("🔮", "수명 예측 (RUL)", "잔여 유용 수명(RUL)을 정확히 예측하여 배터리 교체 시점을 최적화하고 유지보수 비용을 절감합니다."),
+            ("⚡", "성능 최적화", "실시간 SOH 데이터를 활용한 에너지 관리 전략으로 EV 주행거리와 충전 효율을 극대화합니다."),
+            ("♻️", "배터리 재사용", "SOH 정확도가 높을수록 2차 활용(Second-life) 가능 배터리를 선별하여 순환경제를 실현합니다."),
+            ("💰", "비용 절감", "정확한 SOH 추정으로 불필요한 조기 교체를 방지하고, 운영 효율을 높여 총 소유 비용(TCO)을 절감합니다."),
+            ("📡", "실시간 모니터링", "칼만 필터 기반 알고리즘으로 주행 중에도 배터리 상태를 실시간으로 추정하여 즉각 대응이 가능합니다."),
+        ]
+
+        c1, c2, c3 = st.columns(3, gap="medium")
+        for i, (icon, title, desc) in enumerate(competitiveness):
+            with [c1, c2, c3][i % 3]:
+                st.markdown(f"""
+                <div class="comp-card" style="margin-bottom:20px;">
+                    <div class="comp-icon">{icon}</div>
+                    <div class="comp-title">{title}</div>
+                    <div class="comp-desc">{desc}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # 경쟁력 비교표
+        st.markdown("""
+        <hr style="border-color:#EEF0F3;margin:48px 0 36px;">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#0D1B2A;margin-bottom:24px;letter-spacing:-0.5px;">
+            SOH 추정 방법별 비교
+        </div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead>
+                <tr style="background:#0D1B2A;color:white;">
+                    <th style="padding:14px 18px;text-align:left;font-weight:600;">방법</th>
+                    <th style="padding:14px 18px;text-align:center;font-weight:600;">정확도</th>
+                    <th style="padding:14px 18px;text-align:center;font-weight:600;">실시간성</th>
+                    <th style="padding:14px 18px;text-align:center;font-weight:600;">계산량</th>
+                    <th style="padding:14px 18px;text-align:center;font-weight:600;">노이즈 강인성</th>
+                    <th style="padding:14px 18px;text-align:left;font-weight:600;">주요 적용</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom:1px solid #EEF0F3;">
+                    <td style="padding:14px 18px;font-weight:600;color:#0D1B2A;">쿨롱 카운팅</td>
+                    <td style="padding:14px 18px;text-align:center;">⭐⭐</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;text-align:center;color:#00B4A0;">낮음</td>
+                    <td style="padding:14px 18px;text-align:center;">❌</td>
+                    <td style="padding:14px 18px;color:#6B7280;">간단한 BMS</td>
+                </tr>
+                <tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;">
+                    <td style="padding:14px 18px;font-weight:600;color:#0D1B2A;">OCV 기반</td>
+                    <td style="padding:14px 18px;text-align:center;">⭐⭐⭐</td>
+                    <td style="padding:14px 18px;text-align:center;">❌</td>
+                    <td style="padding:14px 18px;text-align:center;color:#00B4A0;">낮음</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;color:#6B7280;">초기화 시점</td>
+                </tr>
+                <tr style="border-bottom:1px solid #EEF0F3;">
+                    <td style="padding:14px 18px;font-weight:600;color:#0D1B2A;">EKF</td>
+                    <td style="padding:14px 18px;text-align:center;">⭐⭐⭐⭐</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;text-align:center;color:#F59E0B;">중간</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;color:#6B7280;">EV BMS</td>
+                </tr>
+                <tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;">
+                    <td style="padding:14px 18px;font-weight:600;color:#00B4A0;">SPKF/UKF ★</td>
+                    <td style="padding:14px 18px;text-align:center;">⭐⭐⭐⭐⭐</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;text-align:center;color:#F59E0B;">중간</td>
+                    <td style="padding:14px 18px;text-align:center;">✅✅</td>
+                    <td style="padding:14px 18px;color:#6B7280;">고성능 EV</td>
+                </tr>
+                <tr style="border-bottom:1px solid #EEF0F3;">
+                    <td style="padding:14px 18px;font-weight:600;color:#0D1B2A;">머신러닝</td>
+                    <td style="padding:14px 18px;text-align:center;">⭐⭐⭐⭐⭐</td>
+                    <td style="padding:14px 18px;text-align:center;">✅</td>
+                    <td style="padding:14px 18px;text-align:center;color:#EF4444;">높음</td>
+                    <td style="padding:14px 18px;text-align:center;">✅✅</td>
+                    <td style="padding:14px 18px;color:#6B7280;">클라우드 BMS</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 2. 배터리 종류
+    # ─────────────────────────────────────
+    elif ov_active == "battery_type":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">배터리 폼팩터</div>
+            <div class="sec-title">배터리 종류별 특성</div>
+            <div class="sec-desc">SOH 추정은 배터리 폼팩터에 따라 다른 접근이 필요합니다. 각 배터리 종류의 특성을 이해하는 것이 출발점입니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        battery_types = [
+            ("원통형 배터리", "Cylindrical Cell", "높은 에너지 밀도·구조적 안정성",
+             "4680, 2170, 18650 등 표준화된 규격으로 생산되며, 테슬라 등 주요 EV에 적용됩니다. 단단한 구조로 팽창 제어가 용이하며 SOH 추정 시 임피던스 변화 추적이 중요합니다.",
+             ["✅ 높은 에너지 밀도", "✅ 구조적 안정성", "✅ 자동화 생산", "⚡ 주요 적용: EV·ESS"],
+             "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=250&fit=crop"),
+            ("파우치형 배터리", "Pouch Cell", "슬림한 디자인·높은 설계 자유도",
+             "얇고 유연한 구조로 공간 효율이 높습니다. 에너지 밀도가 높지만 팽창(Swelling) 관리가 SOH 추정의 핵심 과제입니다. 스마트폰·태블릿·EV에 폭넓게 적용됩니다.",
+             ["✅ 높은 에너지 밀도", "✅ 설계 자유도", "⚠️ 팽창 모니터링 필요", "⚡ 주요 적용: EV·스마트기기"],
+             "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&h=250&fit=crop"),
+            ("각형 배터리", "Prismatic Cell", "견고한 구조·안정적 성능",
+             "금속 케이스를 사용하여 구조적으로 견고합니다. 모듈 조립이 용이하고 냉각 설계에 유리합니다. 내부 저항 변화를 통한 SOH 추정이 효과적입니다.",
+             ["✅ 구조적 견고성", "✅ 모듈 조립 용이", "✅ 냉각 효율", "⚡ 주요 적용: EV·ESS"],
+             "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=250&fit=crop"),
+        ]
+
+        for bt_title, bt_en, bt_sub, bt_desc, bt_features, bt_img in battery_types:
+            st.markdown(f"""
+            <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:40px;
+                        margin-bottom:48px;padding-bottom:48px;border-bottom:1px solid #EEF0F3;">
+                <div style="border-radius:8px;overflow:hidden;">
+                    <img src="{bt_img}" style="width:100%;height:220px;object-fit:cover;display:block;">
+                </div>
+                <div>
+                    <div style="font-size:0.68rem;font-weight:700;letter-spacing:3px;
+                                text-transform:uppercase;color:#00B4A0;margin-bottom:10px;">{bt_en}</div>
+                    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;
+                                font-weight:800;color:#0D1B2A;margin-bottom:6px;letter-spacing:-0.5px;">{bt_title}</div>
+                    <div style="font-size:0.85rem;color:#00B4A0;font-weight:600;margin-bottom:14px;">{bt_sub}</div>
+                    <div style="font-size:0.85rem;color:#6B7280;line-height:1.75;margin-bottom:18px;">{bt_desc}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        {"".join([f'<span style="background:#E6F7F5;color:#00796B;border:1px solid #99DDD7;border-radius:20px;padding:4px 12px;font-size:0.75rem;font-weight:500;">{f}</span>' for f in bt_features])}
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 3. 성능 지표
+    # ─────────────────────────────────────
+    elif ov_active == "performance":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">Performance Metrics</div>
+            <div class="sec-title">SOH 추정 성능 지표</div>
+            <div class="sec-desc">배터리 건강 추정 알고리즘의 성능은 다양한 지표로 평가됩니다. 각 알고리즘의 특성과 적용 환경에 따라 지표가 달라집니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        perf_data = [
+            ("칼만 필터 (KF)", [("정확도 (RMSE)", 72), ("실시간 처리", 95), ("노이즈 강인성", 80), ("계산 효율", 92), ("수렴 속도", 85)]),
+            ("확장 칼만 필터 (EKF)", [("정확도 (RMSE)", 84), ("실시간 처리", 88), ("노이즈 강인성", 85), ("계산 효율", 80), ("수렴 속도", 82)]),
+            ("SPKF / UKF", [("정확도 (RMSE)", 93), ("실시간 처리", 82), ("노이즈 강인성", 92), ("계산 효율", 72), ("수렴 속도", 88)]),
+            ("머신러닝 기반", [("정확도 (RMSE)", 96), ("실시간 처리", 75), ("노이즈 강인성", 90), ("계산 효율", 55), ("수렴 속도", 70)]),
+        ]
+
+        for method, metrics in perf_data:
+            st.markdown(f"""
+            <div style="background:#F7F8FA;border:1px solid #EEF0F3;border-radius:8px;
+                        padding:24px 28px;margin-bottom:20px;">
+                <div style="font-size:0.98rem;font-weight:700;color:#0D1B2A;
+                            margin-bottom:18px;letter-spacing:-0.2px;">{method}</div>
+            """, unsafe_allow_html=True)
+            for label, val in metrics:
+                color = "#00B4A0" if val >= 90 else ("#F59E0B" if val >= 75 else "#EF4444")
+                st.markdown(f"""
+                <div class="perf-bar-wrap">
+                    <div class="perf-label">
+                        <span>{label}</span>
+                        <span style="color:{color};font-weight:600;">{val}%</span>
+                    </div>
+                    <div class="perf-bar-bg">
+                        <div class="perf-bar-fill" style="width:{val}%;background:{color};"></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("""
+        <hr style="border-color:#EEF0F3;margin:36px 0;">
+        <div style="background:#E6F7F5;border:1px solid #99DDD7;border-radius:8px;padding:20px 24px;">
+            <div style="font-size:0.88rem;font-weight:700;color:#00796B;margin-bottom:8px;">💡 성능 지표 해석 가이드</div>
+            <div style="font-size:0.82rem;color:#00796B;line-height:1.7;">
+                • <b>정확도 (RMSE)</b>: 낮을수록 좋음. 일반적으로 SOH 추정 RMSE < 2% 목표<br>
+                • <b>실시간 처리</b>: BMS 임베디드 시스템 적용을 위한 연산 속도 기준<br>
+                • <b>노이즈 강인성</b>: 센서 노이즈·온도 변화·초기값 오차에 대한 안정성<br>
+                • <b>계산 효율</b>: 마이크로컨트롤러 수준의 제한된 자원에서 동작 가능 여부
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 4. 핵심 공정
+    # ─────────────────────────────────────
+    elif ov_active == "process":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">SOH Estimation Process</div>
+            <div class="sec-title">SOH 추정 핵심 공정</div>
+            <div class="sec-desc">배터리 건강 상태 추정은 데이터 수집부터 모델링, 필터링, 검증까지 체계적인 공정을 따릅니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        processes = [
+            ("📡", "센서 데이터 수집", "전압·전류·온도를 고정밀 센서로 실시간 수집. 샘플링 주기와 정밀도가 추정 정확도에 직접 영향을 미칩니다."),
+            ("🔧", "등가 회로 모델링", "배터리를 RC 회로로 모델링. R₀(내부저항), R₁C₁(분극), OCV 등 파라미터를 정의합니다."),
+            ("📐", "파라미터 식별", "최소제곱법(OLS·WLS·TLS)으로 측정 데이터에서 모델 파라미터를 추정합니다."),
+            ("🎯", "상태 추정 (필터)", "EKF·SPKF 등 칼만 필터로 SOC·SOH를 실시간 추정. 노이즈를 제거하며 최적 추정을 수행합니다."),
+            ("✅", "검증 및 보정", "RMSE·MAE로 추정 정확도를 평가하고, 온도·노화 보정을 통해 모델을 지속 업데이트합니다."),
+        ]
+
+        st.markdown('<div style="display:flex;align-items:flex-start;gap:0;margin-bottom:48px;">', unsafe_allow_html=True)
+        for i, (icon, title, desc) in enumerate(processes):
+            arrow = "→" if i < len(processes)-1 else ""
+            st.markdown(f"""
+            <div class="process-step" style="padding:0 8px;">
+                <div class="process-icon-wrap">{icon}</div>
+                <div class="process-step-title">{title}</div>
+                <div class="process-step-desc">{desc}</div>
+            </div>
+            {"<div class='process-arrow'>" + arrow + "</div>" if arrow else ""}
+            """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # 상세 공정 설명
+        st.markdown("""
+        <hr style="border-color:#EEF0F3;margin:40px 0 36px;">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.3rem;font-weight:800;
+                    color:#0D1B2A;margin-bottom:24px;">주요 공정 상세</div>
+        """, unsafe_allow_html=True)
+
+        details = [
+            ("등가 회로 모델 (ECM)", "배터리를 전기 회로로 단순화하여 실시간 계산이 가능하도록 합니다.",
+             ["R₀ : 순수 내부 저항 (즉각적 전압 강하)", "R₁C₁ : 전기화학적 분극 (시정수 τ=R₁C₁)", "OCV : 개방 회로 전압 (SOC의 함수)", "측정 전압 V = OCV - I·R₀ - V_RC"]),
+            ("칼만 필터 추정 공정", "예측(Predict)과 업데이트(Update) 두 단계를 반복하여 최적 추정을 수행합니다.",
+             ["예측 단계: x̂⁻ = f(x̂, u) — 상태 전파", "예측 단계: P⁻ = F·P·Fᵀ + Q — 오차 공분산 전파", "업데이트: K = P⁻·Hᵀ·(H·P⁻·Hᵀ + R)⁻¹ — 칼만 이득", "업데이트: x̂ = x̂⁻ + K·(y - h(x̂⁻)) — 상태 보정"]),
+        ]
+
+        for d_title, d_desc, d_items in details:
+            st.markdown(f"""
+            <div style="background:#F7F8FA;border:1px solid #EEF0F3;border-left:3px solid #00B4A0;
+                        border-radius:0 8px 8px 0;padding:22px 24px;margin-bottom:16px;">
+                <div style="font-size:0.95rem;font-weight:700;color:#0D1B2A;margin-bottom:8px;">{d_title}</div>
+                <div style="font-size:0.82rem;color:#6B7280;margin-bottom:12px;">{d_desc}</div>
+                {"".join([f'<div style="font-size:0.8rem;color:#0D1B2A;padding:4px 0;border-bottom:1px solid #EEF0F3;font-family:monospace;">▸ {item}</div>' for item in d_items])}
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 5. 혁신 기술
+    # ─────────────────────────────────────
+    elif ov_active == "innovation":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">Innovation Technology</div>
+            <div class="sec-title">SOH 추정 혁신 기술</div>
+            <div class="sec-desc">배터리 건강 추정 분야는 AI·디지털 트윈·클라우드 기술과 결합하여 빠르게 진화하고 있습니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        innovations = [
+            ("🤖", "AI/머신러닝 기반 SOH 추정",
+             "딥러닝(LSTM·Transformer)과 물리 기반 모델을 결합한 하이브리드 방법으로 기존 필터 기반 대비 정확도를 크게 향상시킵니다.",
+             ["LSTM 기반 시계열 예측", "Physics-Informed Neural Network", "온라인 학습으로 개인화 모델", "이상 탐지 및 조기 경고"]),
+            ("🌐", "디지털 트윈 (Digital Twin)",
+             "실제 배터리와 동기화된 가상 모델을 실시간으로 운영하여 SOH 추정 정확도와 예측 범위를 획기적으로 확장합니다.",
+             ["실시간 물리·전기화학 모델 연동", "가속 열화 시뮬레이션", "수명 예측 정밀도 향상", "가상 환경 테스트"]),
+            ("☁️", "클라우드 BMS",
+             "차량 군집 데이터를 클라우드에서 통합 분석하여 집단 지성형 SOH 추정 모델을 지속 개선합니다.",
+             ["실시간 OTA 모델 업데이트", "Fleet 빅데이터 분석", "엣지-클라우드 연산 분산", "개인화 SOH 보정"]),
+            ("⚡", "전고체 배터리 대응",
+             "차세대 전고체 배터리는 기존 액체 전해질 배터리와 전혀 다른 열화 메커니즘을 가져 새로운 SOH 추정 방법론이 필요합니다.",
+             ["계면 저항 변화 추적", "리튬 덴드라이트 감지", "고온 내구성 기반 추정", "새로운 ECM 파라미터 정의"]),
+            ("📡", "EIS 기반 진단",
+             "전기화학 임피던스 분광법(EIS)을 활용하여 배터리 내부 상태를 비침습적으로 정밀 진단합니다.",
+             ["주파수 대역별 내부 상태 분리", "온라인 EIS 측정 기술", "SOH·SOP 동시 추정", "고령화 메커니즘 분석"]),
+            ("🔗", "조인트·듀얼 추정 고도화",
+             "SOC와 SOH를 동시에 추정하는 조인트·듀얼 필터 구조를 고도화하여 파라미터 식별 정확도를 극대화합니다.",
+             ["적응형 노이즈 추정", "다중 모델 전환 전략", "강인한 초기화 방법", "실시간 파라미터 업데이트"]),
+        ]
+
+        c1, c2 = st.columns(2, gap="medium")
+        for i, (icon, title, desc, items) in enumerate(innovations):
+            with (c1 if i % 2 == 0 else c2):
+                items_html = "".join([f'<div style="font-size:0.75rem;color:#00796B;padding:3px 0;">▸ {item}</div>' for item in items])
+                st.markdown(f"""
+                <div class="innov-card" style="margin-bottom:16px;">
+                    <div class="innov-icon-box">{icon}</div>
+                    <div>
+                        <div class="innov-title">{title}</div>
+                        <div class="innov-desc" style="margin-bottom:10px;">{desc}</div>
+                        {items_html}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # 6. 산업별 적용
+    # ─────────────────────────────────────
+    elif ov_active == "industry":
+        st.markdown("""
+        <div style="margin-bottom:48px;">
+            <div class="sec-label">Industry Applications</div>
+            <div class="sec-title">산업별 적용</div>
+            <div class="sec-desc">배터리 건강 추정 기술은 전기차부터 에너지 저장 시스템까지 다양한 산업에 핵심 기술로 적용됩니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        industries = [
+            ("승용 EV", "가장 높은 정확도가 요구되는 분야. 주행거리 예측과 충전 최적화에 SOH 추정이 직접 활용됩니다.",
+             ["WLTP·EPA 기준 주행거리 보장", "충전 전략 최적화", "배터리 보증 관리", "잔여가치 예측"],
+             "🚗", "#E6F7F5"),
+            ("상용 EV (트럭·버스)", "대용량 배터리팩의 SOH를 정밀 관리하여 물류·대중교통의 안정적 운행을 보장합니다.",
+             ["대용량 배터리팩 관리", "장거리 노선 최적화", "급속충전 내구성 관리", "차량군(Fleet) 통합 관리"],
+             "🚛", "#EFF6FF"),
+            ("ESS (에너지 저장 시스템)", "태양광·풍력 연계 ESS에서 SOH 기반 충방전 전략으로 에너지 효율과 수명을 극대화합니다.",
+             ["재생에너지 연계 최적화", "Peak Shaving 전략", "계통 안정화 기여", "수명 예측 기반 유지보수"],
+             "🏭", "#F0FDF4"),
+            ("LEV (경량 전동 모빌리티)", "전동 킥보드·자전거·오토바이의 소용량 배터리에도 경량화된 SOH 추정 알고리즘이 적용됩니다.",
+             ["경량 BMS 알고리즘", "공유 모빌리티 배터리 관리", "배터리 교환 스테이션 연동", "사용자 주행 패턴 분석"],
+             "🛵", "#FFF7ED"),
+            ("로봇·중장비", "산업용 로봇과 건설 장비에서 극한 환경의 배터리를 안전하게 관리합니다.",
+             ["극한 환경 내구성 관리", "작업 사이클 최적화", "예측 정비 스케줄링", "안전 차단 로직"],
+             "🤖", "#FDF2F8"),
+            ("항공·드론", "무인기(UAV) 배터리의 SOH를 비행 중 실시간 추정하여 안전한 귀환을 보장합니다.",
+             ["비행 중 실시간 SOH 추정", "안전 착륙 트리거", "경량 알고리즘 적용", "비행 시간 예측"],
+             "✈️", "#F0F9FF"),
+        ]
+
+        c1, c2 = st.columns(2, gap="medium")
+        for i, (title, desc, features, icon, bg) in enumerate(industries):
+            with (c1 if i % 2 == 0 else c2):
+                feat_html = "".join([f'<div style="font-size:0.78rem;color:#6B7280;padding:5px 0;border-bottom:1px solid #EEF0F3;">✓ {f}</div>' for f in features])
+                st.markdown(f"""
+                <div style="background:{bg};border:1px solid #E2E8F0;border-radius:12px;
+                            padding:28px;margin-bottom:16px;transition:all 0.25s;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                        <div style="font-size:2rem;">{icon}</div>
+                        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;
+                                    font-weight:800;color:#0D1B2A;">{title}</div>
+                    </div>
+                    <div style="font-size:0.83rem;color:#6B7280;line-height:1.7;margin-bottom:16px;">{desc}</div>
+                    <div>{feat_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 푸터
+    st.markdown("""
+    <div class="footer">
+        <div class="footer-logo">🔋 Battery<span>IQ</span></div>
+        <div class="footer-copy">Battery Management Systems · Gregory Plett · Chapter 2-04 · 배터리 건강 추정 연구 포털</div>
     </div>
     """, unsafe_allow_html=True)
