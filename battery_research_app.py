@@ -1818,7 +1818,7 @@ elif st.session_state["page"] == "overview":
                 comps = [
                     ("01", "안전성 확보",
                      "과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.",
-                     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=320&fit=crop&auto=format"),
+                     "https://images.unsplash.com/photo-1597852074816-d933c7d2b988?w=600&h=320&fit=crop&auto=format"),
                     ("02", "수명 예측 (RUL)",
                      "잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.",
                      "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=320&fit=crop&auto=format"),
@@ -1827,13 +1827,13 @@ elif st.session_state["page"] == "overview":
                      "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=320&fit=crop&auto=format"),
                     ("04", "배터리 재사용",
                      "2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.",
-                     "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&h=320&fit=crop&auto=format"),
+                     "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=320&fit=crop&auto=format"),
                     ("05", "비용 절감",
                      "불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.",
                      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=320&fit=crop&auto=format"),
                     ("06", "실시간 모니터링",
                      "주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.",
-                     "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=600&h=320&fit=crop&auto=format"),
+                     "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=320&fit=crop&auto=format"),
                 ]
 
                 c1, c2, c3 = st.columns(3, gap="small")
@@ -1864,21 +1864,25 @@ elif st.session_state["page"] == "overview":
                     ("원통형",
                      "Cylindrical Cell",
                      "4680·2170·18650 등 표준 셀 전 규격에 SOH 추정 적용. 단단한 케이스 구조로 임피던스 변화 추적이 용이합니다.",
-                     "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=500&h=380&fit=crop&auto=format&sat=-60&bri=10"),
+                     "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&h=400&fit=crop&auto=format"),
                     ("파우치형",
                      "Pouch Cell",
                      "스마트기기·EV 파우치 셀의 팽창(Swelling) 추적에 특화된 SOH 추정 알고리즘을 적용합니다.",
-                     "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&h=380&fit=crop&auto=format&sat=-40"),
+                     "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=400&fit=crop&auto=format"),
                     ("각형",
                      "Prismatic Cell",
                      "ESS·EV 각형 셀 모듈 단위의 SOH를 정밀 관리. 내부 저항 변화 추적으로 정확도를 높입니다.",
-                     "https://images.unsplash.com/photo-1609191939689-e2df31d94cff?w=500&h=380&fit=crop&auto=format&sat=-50"),
+                     "https://images.unsplash.com/photo-1509391366636-9f59292a414c?w=800&h=400&fit=crop&auto=format"),
                 ]
                 for r_title, r_en, r_desc, r_img in ranges:
                     st.markdown(f"""
                     <div class="range-card">
-                        <div class="range-card-img-wrap">
-                            <img class="range-card-img" src="{r_img}" alt="{r_title}">
+                        <div style="overflow:hidden;height:220px;">
+                            <img src="{r_img}" alt="{r_title}"
+                                 style="width:100%;height:220px;object-fit:cover;display:block;
+                                        filter:brightness(0.85);transition:transform 0.4s ease;"
+                                 onmouseover="this.style.transform='scale(1.05)'"
+                                 onmouseout="this.style.transform='scale(1)'">
                         </div>
                         <div class="range-card-body">
                             <div class="range-card-title">{r_title}</div>
