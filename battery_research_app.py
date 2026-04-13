@@ -797,8 +797,11 @@ if st.session_state["page"] == "home":
     <div class="sec sec-white">
         <div class="sec-label">왜 배터리 건강 추정인가</div>
         <div class="why-grid">
-            <div class="why-img-wrap">
-                <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=900&h=600&fit=crop" alt="Battery">
+            <div class="why-img-wrap" style="position:relative;overflow:hidden;border-radius:4px;box-shadow:0 20px 60px rgba(0,180,160,0.12);">
+                <video autoplay muted loop playsinline
+                    style="width:100%;height:460px;object-fit:cover;display:block;">
+                    <source src="https://raw.githubusercontent.com/rain422/-/main/KakaoTalk_20260413_165858691.mp4" type="video/mp4">
+                </video>
             </div>
             <div>
                 <div class="sec-title" style="margin-bottom:36px;">배터리 수명과 안전을<br>결정하는 핵심 기술</div>
