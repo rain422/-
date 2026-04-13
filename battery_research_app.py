@@ -1678,26 +1678,61 @@ elif st.session_state["page"] == "overview":
 
     ov_nav_items = [
         ("competitiveness", "경쟁력"),
-        ("battery_type", "배터리 종류"),
-        ("performance", "성능 지표"),
-        ("process", "핵심 공정"),
-        ("innovation", "혁신 기술"),
-        ("industry", "산업별 적용"),
+        ("performance",     "알고리즘 성능"),
+        ("process",         "핵심 공정"),
+        ("innovation",      "혁신 기술"),
+        ("industry",        "산업별 적용"),
     ]
 
+    # 현재 탭이 삭제된 battery_type이면 competitiveness로 리셋
+    if st.session_state["overview_tab"] == "battery_type":
+        st.session_state["overview_tab"] = "competitiveness"
+
     with side_col:
-        st.markdown("""
-        <div class="ov-sidenav">
-            <div class="ov-sidenav-title">연구 개요</div>
-        """, unsafe_allow_html=True)
+        # LG 스타일 사이드 네비 + 스크롤 자동 하이라이트 JS
+        nav_ids = [tk for tk, _ in ov_nav_items]
+        active_idx = next((i for i,(_tk,_) in enumerate(ov_nav_items) if _tk == st.session_state["overview_tab"]), 0)
+        nav_html = '<div class="ov-sidenav" id="ov-sidenav"><div class="ov-sidenav-title">연구 개요</div>'
         for tk, tl in ov_nav_items:
             cls = "on" if st.session_state["overview_tab"] == tk else ""
-            st.markdown(f'<div class="ov-sidenav-item {cls}">{tl}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            nav_html += f'<div class="ov-sidenav-item {cls}" data-section="{tk}" id="nav-{tk}">{tl}</div>'
+        nav_html += '</div>'
+
+        # 스크롤 감지 JS — 섹션 위치 기반으로 사이드바 자동 하이라이트
+        scroll_js = f"""
+        <script>
+        (function() {{
+            const sectionIds = {nav_ids};
+            function updateNav() {{
+                const scrollY = window.scrollY || document.documentElement.scrollTop;
+                const winH = window.innerHeight;
+                let current = sectionIds[0];
+                sectionIds.forEach(id => {{
+                    const el = document.getElementById('sec-' + id);
+                    if (el) {{
+                        const rect = el.getBoundingClientRect();
+                        if (rect.top <= winH * 0.4) current = id;
+                    }}
+                }});
+                document.querySelectorAll('.ov-sidenav-item').forEach(item => {{
+                    item.classList.remove('on');
+                    if (item.getAttribute('data-section') === current) {{
+                        item.classList.add('on');
+                    }}
+                }});
+            }}
+            window.addEventListener('scroll', updateNav, {{passive: true}});
+            updateNav();
+        }})();
+        </script>
+        """
+        st.markdown(nav_html + scroll_js, unsafe_allow_html=True)
 
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
         if st.button("← 홈으로", key="ov_back"):
             st.session_state["page"] = "home"; st.rerun()
+        # 탭 전환용 실제 버튼 (사이드 네비 아래 투명하게)
+        st.markdown('<style>.stButton>button{font-size:0.82rem;text-align:left;padding:10px 16px;border-radius:4px;}</style>', unsafe_allow_html=True)
         for tk, tl in ov_nav_items:
             if st.button(tl, key=f"ovnav_{tk}", use_container_width=True):
                 st.session_state["overview_tab"] = tk; st.rerun()
@@ -1706,7 +1741,7 @@ elif st.session_state["page"] == "overview":
 
     with content_col:
 
-        # ── 탭 바 (경쟁력 → 세부 항목 변경용)
+        # ── 탭 바 (경쟁력 → 세부 항목)
         if ov == "competitiveness":
             comp_tabs = [("overview","핵심 경쟁력"), ("compare","알고리즘 비교")]
             tb_html = '<div class="ov-tab-bar">'
@@ -1720,6 +1755,9 @@ elif st.session_state["page"] == "overview":
                 with tc2[i]:
                     if st.button(tl, key=f"csub_{tk}", use_container_width=True):
                         st.session_state["comp_sub"] = tk; st.rerun()
+
+        # 섹션 ID 마커 (스크롤 감지용)
+        st.markdown(f'<div id="sec-{ov}" style="height:0;"></div>', unsafe_allow_html=True)
 
         # ────────────────────────────────────
         # 1. 경쟁력
@@ -1852,46 +1890,6 @@ elif st.session_state["page"] == "overview":
                         </div>
                         """, unsafe_allow_html=True)
 
-                # SOH 적용 범위 — 고급 흰 배경 제품 카드
-                st.markdown("""
-                <div class="ov-sec ov-sec-gray" style="margin-top:0;">
-                    <div class="ov-sec-label">다양한 배터리 라인업 대응</div>
-                    <div class="ov-sec-title">SOH 추정 적용 범위</div>
-                    <div style="display:flex;gap:16px;margin-top:32px;">
-                """, unsafe_allow_html=True)
-
-                ranges = [
-                    ("원통형",
-                     "Cylindrical Cell",
-                     "4680·2170·18650 등 표준 셀 전 규격에 SOH 추정 적용. 단단한 케이스 구조로 임피던스 변화 추적이 용이합니다.",
-                     "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&h=400&fit=crop&auto=format"),
-                    ("파우치형",
-                     "Pouch Cell",
-                     "스마트기기·EV 파우치 셀의 팽창(Swelling) 추적에 특화된 SOH 추정 알고리즘을 적용합니다.",
-                     "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=400&fit=crop&auto=format"),
-                    ("각형",
-                     "Prismatic Cell",
-                     "ESS·EV 각형 셀 모듈 단위의 SOH를 정밀 관리. 내부 저항 변화 추적으로 정확도를 높입니다.",
-                     "https://images.unsplash.com/photo-1509391366636-9f59292a414c?w=800&h=400&fit=crop&auto=format"),
-                ]
-                for r_title, r_en, r_desc, r_img in ranges:
-                    st.markdown(f"""
-                    <div class="range-card">
-                        <div style="overflow:hidden;height:220px;">
-                            <img src="{r_img}" alt="{r_title}"
-                                 style="width:100%;height:220px;object-fit:cover;display:block;
-                                        filter:brightness(0.85);transition:transform 0.4s ease;"
-                                 onmouseover="this.style.transform='scale(1.05)'"
-                                 onmouseout="this.style.transform='scale(1)'">
-                        </div>
-                        <div class="range-card-body">
-                            <div class="range-card-title">{r_title}</div>
-                            <div class="range-card-sub">{r_en}</div>
-                            <div class="range-card-desc">{r_desc}</div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.markdown("</div></div>", unsafe_allow_html=True)
 
             else:  # compare
                 st.markdown("""
@@ -1922,95 +1920,16 @@ elif st.session_state["page"] == "overview":
         # ────────────────────────────────────
         # 2. 배터리 종류
         # ────────────────────────────────────
-        elif ov == "battery_type":
-            if "bt_sub" not in st.session_state: st.session_state["bt_sub"] = "cylindrical"
-            bt_tabs = [("cylindrical","원통형"),("pouch","파우치형"),("prismatic","각형")]
-            tb_html = '<div class="ov-tab-bar">'
-            for tk,tl in bt_tabs:
-                cls2 = "on" if st.session_state["bt_sub"]==tk else ""
-                tb_html += f'<span class="ov-tab {cls2}">{tl}</span>'
-            tb_html += "</div>"
-            st.markdown(tb_html, unsafe_allow_html=True)
-            tc2=st.columns(len(bt_tabs))
-            for i,(tk,tl) in enumerate(bt_tabs):
-                with tc2[i]:
-                    if st.button(tl,key=f"btsub_{tk}",use_container_width=True):
-                        st.session_state["bt_sub"]=tk; st.rerun()
-
-            bt = st.session_state["bt_sub"]
-            battery_info = {
-                "cylindrical": {
-                    "en":"Cylindrical Cell","title":"원통형 배터리",
-                    "sub":"높은 에너지 밀도·구조적 안정성·설계 유연성",
-                    "desc":"4680부터 46120까지 다양한 규격의 원통형 배터리를 통해, 폭넓은 애플리케이션 적용이 가능합니다. 단단한 케이스 구조로 SOH 추정 시 임피던스 변화 추적이 용이합니다.",
-                    "img":"https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=700&h=360&fit=crop",
-                    "features":[("높은 에너지 밀도","고에너지 밀도와 구조적 안정성으로 다양한 애플리케이션에 최적화"),("표준화 규격","4680·2170·18650 등 표준 규격으로 생산 자동화 및 품질 관리 용이"),("SOH 추정 특성","임피던스 변화와 OCV 곡선으로 SOH를 정밀 추정")],
-                    "specs":[("규격","4680 / 4695 / 46120"),("에너지 밀도","300 Wh/kg 이상"),("사이클 수명","1,000+ 사이클"),("주요 적용","EV·ESS·전동공구")],
-                },
-                "pouch": {
-                    "en":"Pouch Cell","title":"파우치형 배터리",
-                    "sub":"슬림한 디자인·강한 에너지·설계 자유도",
-                    "desc":"초슬림·고밀도 구조로 제품 성능과 디자인 자유도를 극대화합니다. 팽창(Swelling) 현상 모니터링이 SOH 추정의 핵심 과제입니다.",
-                    "img":"https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=700&h=360&fit=crop",
-                    "features":[("설계 자유도","형상 자유도가 높아 다양한 기기 적용 가능"),("고에너지 밀도","단위 무게당 최고 수준의 에너지 밀도"),("SOH 추정 특성","팽창률·두께 변화로 용량 열화를 직접 감지")],
-                    "specs":[("두께","다양한 맞춤 설계"),("에너지 밀도","280~320 Wh/kg"),("사이클 수명","800+ 사이클"),("주요 적용","EV·스마트기기")],
-                },
-                "prismatic": {
-                    "en":"Prismatic Cell","title":"각형 배터리",
-                    "sub":"견고한 구조·안정적 성능·우수한 냉각",
-                    "desc":"금속 케이스의 견고한 구조로 모듈 조립이 용이하고 냉각 설계에 유리합니다. 내부 저항 변화를 통한 SOH 추정이 효과적입니다.",
-                    "img":"https://images.unsplash.com/photo-1518770660439-4636190af475?w=700&h=360&fit=crop",
-                    "features":[("구조적 견고성","금속 케이스로 외부 충격에 강함"),("냉각 효율","면 접촉 냉각으로 열관리 우수"),("SOH 추정 특성","R₀ 내부저항 변화 추적으로 SOH 추정")],
-                    "specs":[("규격","맞춤형 설계"),("에너지 밀도","250~300 Wh/kg"),("사이클 수명","1,500+ 사이클"),("주요 적용","ESS·상용 EV")],
-                },
-            }
-            info = battery_info[bt]
-            st.markdown(f"""
-            <div class="ov-sec ov-sec-white">
-                <div style="font-size:0.68rem;font-weight:700;letter-spacing:3px;
-                            text-transform:uppercase;color:var(--teal);margin-bottom:10px;">{info['en']}</div>
-                <div class="ov-sec-title">{info['title']}</div>
-                <div class="ov-sec-desc">{info['sub']}</div>
-                <div style="border-radius:8px;overflow:hidden;margin-bottom:36px;">
-                    <img src="{info['img']}" style="width:100%;height:280px;object-fit:cover;display:block;filter:brightness(0.88);">
-                </div>
-                <div style="font-size:0.9rem;color:#6B7280;line-height:1.8;margin-bottom:36px;">{info['desc']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # 핵심 경쟁력 + 스펙
-            f1, f2 = st.columns([3,2], gap="medium")
-            with f1:
-                st.markdown('<div style="padding:0 0 24px;"><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:16px;border-bottom:2px solid #00B4A0;padding-bottom:8px;">핵심 경쟁력</div>', unsafe_allow_html=True)
-                for feat_title, feat_desc in info["features"]:
-                    st.markdown(f"""
-                    <div style="padding:16px 0;border-bottom:1px solid #EEF0F3;">
-                        <div style="font-size:0.85rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">{feat_title}</div>
-                        <div style="font-size:0.78rem;color:#6B7280;line-height:1.6;">{feat_desc}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-            with f2:
-                st.markdown('<div style="background:#F0F4F8;border-radius:8px;padding:24px;"><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:16px;">주요 스펙</div>', unsafe_allow_html=True)
-                for spec_k, spec_v in info["specs"]:
-                    st.markdown(f"""
-                    <div style="display:flex;justify-content:space-between;
-                                padding:10px 0;border-bottom:1px solid #E2E8F0;">
-                        <span style="font-size:0.78rem;color:#9EA5AF;">{spec_k}</span>
-                        <span style="font-size:0.8rem;font-weight:600;color:#0D1B2A;">{spec_v}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-
         # ────────────────────────────────────
-        # 3. 성능 지표
+        # 2. 알고리즘 성능
         # ────────────────────────────────────
         elif ov == "performance":
             st.markdown("""
             <div class="ov-sec ov-sec-white">
-                <div class="ov-sec-label">Performance Metrics</div>
-                <div class="ov-sec-title">SOH 추정 성능 지표</div>
-                <div class="ov-sec-desc">각 알고리즘의 정확도·실시간성·효율을 5가지 핵심 지표로 평가합니다.</div>
+                <div class="ov-sec-label">Algorithm Performance</div>
+                <div class="ov-sec-title">알고리즘 성능 비교</div>
+                <div class="ov-sec-desc">Gregory Plett Chapter 2-04에서 다루는 핵심 SOH 추정 알고리즘의 성능을 5가지 지표로 비교합니다.
+                EV BMS 실적용을 위한 알고리즘 선택의 기준이 됩니다.</div>
             </div>
             """, unsafe_allow_html=True)
 
