@@ -1735,47 +1735,156 @@ elif st.session_state["page"] == "overview":
                     <div class="ov-sec-desc">배터리 건강 상태(SOH) 추정은 고에너지·고안전성 배터리 시스템 구현의 핵심 기술로,
                     과충전·과방전 방지와 잔여 수명 예측에 필수적입니다.</div>
                 </div>
+                <style>
+                .comp-photo-card {
+                    background: var(--white);
+                    border: 1px solid var(--gray2);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    margin-bottom: 14px;
+                    transition: all 0.25s;
+                }
+                .comp-photo-card:hover {
+                    box-shadow: 0 12px 36px rgba(0,180,160,0.14);
+                    border-color: var(--teal);
+                    transform: translateY(-4px);
+                }
+                .comp-photo-card:hover .comp-photo-img { transform: scale(1.05); filter: brightness(0.95); }
+                .comp-photo-img-wrap { overflow: hidden; height: 160px; }
+                .comp-photo-img {
+                    width: 100%; height: 160px;
+                    object-fit: cover; display: block;
+                    filter: brightness(0.88);
+                    transition: transform 0.4s ease, filter 0.3s;
+                }
+                .comp-photo-body { padding: 20px 20px 22px; }
+                .comp-photo-num {
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    font-size: 2rem; font-weight: 800;
+                    color: var(--teal); opacity: 0.18;
+                    line-height: 1; margin-bottom: 8px;
+                }
+                .comp-photo-title {
+                    font-size: 0.92rem; font-weight: 700;
+                    color: var(--navy); margin-bottom: 8px;
+                    letter-spacing: -0.2px;
+                }
+                .comp-photo-desc {
+                    font-size: 0.78rem; color: var(--gray5); line-height: 1.7;
+                }
+                /* 배터리 적용 범위 고급 카드 */
+                .range-card {
+                    background: var(--white);
+                    border: 1px solid var(--gray2);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    transition: all 0.25s;
+                    flex: 1;
+                }
+                .range-card:hover {
+                    box-shadow: 0 12px 40px rgba(0,180,160,0.13);
+                    border-color: var(--teal);
+                }
+                .range-card-img-wrap {
+                    background: #F8FFFE;
+                    display: flex; align-items: center;
+                    justify-content: center;
+                    height: 200px; padding: 24px;
+                    border-bottom: 1px solid var(--gray2);
+                }
+                .range-card-img {
+                    max-width: 100%; max-height: 160px;
+                    object-fit: contain; display: block;
+                    transition: transform 0.4s ease;
+                }
+                .range-card:hover .range-card-img { transform: scale(1.06); }
+                .range-card-body { padding: 22px 22px 24px; }
+                .range-card-title {
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    font-size: 1.05rem; font-weight: 800;
+                    color: var(--navy); margin-bottom: 6px;
+                    letter-spacing: -0.3px;
+                }
+                .range-card-sub {
+                    font-size: 0.75rem; color: var(--teal);
+                    font-weight: 600; margin-bottom: 10px;
+                    letter-spacing: 0.5px;
+                }
+                .range-card-desc { font-size: 0.78rem; color: var(--gray5); line-height: 1.65; }
+                </style>
                 """, unsafe_allow_html=True)
 
+                # 경쟁력 6개 — 사진 포함 카드
                 comps = [
-                    ("01", "🛡️ 안전성 확보", "과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다."),
-                    ("02", "🔮 수명 예측 (RUL)", "잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다."),
-                    ("03", "⚡ 성능 최적화", "실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다."),
-                    ("04", "♻️ 배터리 재사용", "2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다."),
-                    ("05", "💰 비용 절감", "불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다."),
-                    ("06", "📡 실시간 모니터링", "주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다."),
+                    ("01", "안전성 확보",
+                     "과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.",
+                     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=320&fit=crop&auto=format"),
+                    ("02", "수명 예측 (RUL)",
+                     "잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.",
+                     "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=320&fit=crop&auto=format"),
+                    ("03", "성능 최적화",
+                     "실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다.",
+                     "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=320&fit=crop&auto=format"),
+                    ("04", "배터리 재사용",
+                     "2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.",
+                     "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&h=320&fit=crop&auto=format"),
+                    ("05", "비용 절감",
+                     "불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.",
+                     "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=320&fit=crop&auto=format"),
+                    ("06", "실시간 모니터링",
+                     "주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.",
+                     "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=600&h=320&fit=crop&auto=format"),
                 ]
 
                 c1, c2, c3 = st.columns(3, gap="small")
-                for i, (num, title, desc) in enumerate(comps):
-                    with [c1,c2,c3][i%3]:
+                for i, (num, title, desc, img) in enumerate(comps):
+                    with [c1, c2, c3][i % 3]:
                         st.markdown(f"""
-                        <div class="ov-comp-box" style="margin-bottom:12px;">
-                            <div class="ov-comp-num">{num}</div>
-                            <div class="ov-comp-title">{title}</div>
-                            <div class="ov-comp-desc">{desc}</div>
+                        <div class="comp-photo-card">
+                            <div class="comp-photo-img-wrap">
+                                <img class="comp-photo-img" src="{img}" alt="{title}">
+                            </div>
+                            <div class="comp-photo-body">
+                                <div class="comp-photo-num">{num}</div>
+                                <div class="comp-photo-title">{title}</div>
+                                <div class="comp-photo-desc">{desc}</div>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
 
-                # 핵심 특성 3가지 큰 박스
+                # SOH 적용 범위 — 고급 흰 배경 제품 카드
                 st.markdown("""
                 <div class="ov-sec ov-sec-gray" style="margin-top:0;">
                     <div class="ov-sec-label">다양한 배터리 라인업 대응</div>
                     <div class="ov-sec-title">SOH 추정 적용 범위</div>
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E2E8F0;margin-top:28px;">
+                    <div style="display:flex;gap:16px;margin-top:32px;">
                 """, unsafe_allow_html=True)
 
                 ranges = [
-                    ("원통형", "4680·2170·18650 등\n표준 셀 전 규격 적용", "⚡"),
-                    ("파우치형", "스마트기기·EV 파우치\n셀 팽창 추적 특화", "📱"),
-                    ("각형", "ESS·EV 각형 셀\n모듈 단위 관리", "🔲"),
+                    ("원통형",
+                     "Cylindrical Cell",
+                     "4680·2170·18650 등 표준 셀 전 규격에 SOH 추정 적용. 단단한 케이스 구조로 임피던스 변화 추적이 용이합니다.",
+                     "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=500&h=380&fit=crop&auto=format&sat=-60&bri=10"),
+                    ("파우치형",
+                     "Pouch Cell",
+                     "스마트기기·EV 파우치 셀의 팽창(Swelling) 추적에 특화된 SOH 추정 알고리즘을 적용합니다.",
+                     "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&h=380&fit=crop&auto=format&sat=-40"),
+                    ("각형",
+                     "Prismatic Cell",
+                     "ESS·EV 각형 셀 모듈 단위의 SOH를 정밀 관리. 내부 저항 변화 추적으로 정확도를 높입니다.",
+                     "https://images.unsplash.com/photo-1609191939689-e2df31d94cff?w=500&h=380&fit=crop&auto=format&sat=-50"),
                 ]
-                for icon, title, desc in ranges:
+                for r_title, r_en, r_desc, r_img in ranges:
                     st.markdown(f"""
-                    <div style="background:white;padding:28px;text-align:center;">
-                        <div style="font-size:2rem;margin-bottom:10px;">{icon}</div>
-                        <div style="font-size:0.92rem;font-weight:700;color:#0D1B2A;margin-bottom:8px;">{title}</div>
-                        <div style="font-size:0.78rem;color:#6B7280;line-height:1.6;">{desc}</div>
+                    <div class="range-card">
+                        <div class="range-card-img-wrap">
+                            <img class="range-card-img" src="{r_img}" alt="{r_title}">
+                        </div>
+                        <div class="range-card-body">
+                            <div class="range-card-title">{r_title}</div>
+                            <div class="range-card-sub">{r_en}</div>
+                            <div class="range-card-desc">{r_desc}</div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                 st.markdown("</div></div>", unsafe_allow_html=True)
