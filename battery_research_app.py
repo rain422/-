@@ -1441,643 +1441,413 @@ elif st.session_state["page"] == "detail":
 # =====================================================================
 
 # =====================================================================
-# OVERVIEW — LG에너지솔루션 46시리즈 스타일 연구 개요
+# OVERVIEW — LG 스타일 단일 스크롤 페이지
 # =====================================================================
 elif st.session_state["page"] == "overview":
 
     st.markdown("""
     <style>
-    /* ── 전체 레이아웃 ── */
-    .ov-wrap { background: var(--white); }
-
-    /* ── 페이지 히어로 ── */
-    .ov-page-hero {
+    /* ── 히어로 ── */
+    .ov-hero {
         background: var(--navy);
-        padding: 120px 72px 60px;
+        padding: 120px 0 60px 300px;
     }
-    .ov-page-hero-crumb {
-        font-size: 0.72rem; color: rgba(255,255,255,0.35);
-        margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
-    }
-    .ov-page-hero-title {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: clamp(2rem,4vw,3rem); font-weight: 800;
-        color: var(--white); letter-spacing: -1px; line-height: 1.15;
-    }
+    .ov-hero-crumb { font-size:0.72rem; color:rgba(255,255,255,0.3); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+    .ov-hero-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(2rem,4vw,3rem); font-weight:800; color:var(--white); letter-spacing:-1px; line-height:1.15; }
 
-    /* ── 좌측 고정 사이드 네비 ── */
-    .ov-layout {
-        display: flex;
-        min-height: 100vh;
-    }
+    /* ── 전체 레이아웃: 사이드 고정 + 콘텐츠 ── */
+    .ov-layout-wrap { display:flex; align-items:flex-start; position:relative; }
+
+    /* ── 고정 사이드 네비 ── */
     .ov-sidenav {
-        width: 220px;
+        width: 260px;
         flex-shrink: 0;
-        background: var(--white);
-        border-right: 1px solid var(--gray2);
-        padding: 36px 0;
         position: sticky;
         top: 68px;
-        height: fit-content;
         align-self: flex-start;
-    }
-    .ov-sidenav-title {
-        font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
-        text-transform: uppercase; color: var(--teal);
-        padding: 0 28px; margin-bottom: 16px;
-    }
-    .ov-sidenav-item {
-        display: block; padding: 12px 28px;
-        font-size: 0.88rem; font-weight: 500;
-        color: var(--gray4); cursor: pointer;
-        border-left: 2px solid transparent;
-        transition: all 0.15s;
-    }
-    .ov-sidenav-item.on {
-        color: var(--navy); font-weight: 700;
-        border-left-color: var(--teal);
-        background: #F7F8FA;
-    }
-    .ov-sidenav-item:hover { color: var(--navy); }
-
-    .ov-content { flex: 1; padding: 0; }
-
-    /* ── 탭 바 (서브 탭) ── */
-    .ov-tab-bar {
-        display: flex; gap: 0;
-        border-bottom: 2px solid var(--gray2);
-        padding: 0 56px;
+        padding: 40px 0 40px 40px;
         background: var(--white);
-        position: sticky; top: 68px; z-index: 80;
+        border-right: 1px solid var(--gray2);
+        min-height: calc(100vh - 68px);
+        z-index: 50;
     }
-    .ov-tab {
-        padding: 16px 22px; font-size: 0.85rem; font-weight: 500;
-        color: var(--gray4); border-bottom: 2px solid transparent;
-        margin-bottom: -2px; cursor: pointer; white-space: nowrap;
-        transition: all 0.15s; letter-spacing: 0.2px;
+    .ov-sidenav-label {
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+        text-transform: uppercase; color: var(--teal); margin-bottom: 20px;
     }
-    .ov-tab.on { color: var(--navy); border-bottom-color: var(--navy); font-weight: 700; }
+    .ov-nav-link {
+        display: block; padding: 12px 20px 12px 0;
+        font-size: 0.9rem; font-weight: 400; color: var(--gray4);
+        cursor: pointer; text-decoration: none;
+        border-bottom: 1px solid var(--gray2);
+        transition: all 0.2s;
+    }
+    .ov-nav-link:last-child { border-bottom: none; }
+    .ov-nav-link:hover { color: var(--navy); padding-left: 6px; }
+    .ov-nav-link.active { color: var(--navy); font-weight: 700; border-left: 2px solid var(--teal); padding-left: 8px; }
 
-    /* ── 섹션 공통 ── */
-    .ov-sec { padding: 60px 56px; }
-    .ov-sec-gray { background: #F0F4F8; }
-    .ov-sec-white { background: var(--white); }
-    .ov-sec-navy { background: var(--navy); color: var(--white); }
+    /* ── 콘텐츠 영역 ── */
+    .ov-content { flex: 1; overflow: hidden; }
+
+    /* ── 각 섹션 ── */
+    .ov-section { padding: 80px 72px; border-bottom: 1px solid var(--gray2); }
+    .ov-section-gray { background: #F0F4F8; }
+    .ov-section-white { background: var(--white); }
+    .ov-section-navy { background: var(--navy); }
 
     .ov-sec-label {
-        font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
-        text-transform: uppercase; color: var(--teal); margin-bottom: 12px;
+        font-size:0.68rem; font-weight:700; letter-spacing:3px;
+        text-transform:uppercase; color:var(--teal); margin-bottom:12px;
+        display:flex; align-items:center; gap:8px;
     }
-    .ov-sec-title {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 1.7rem; font-weight: 800;
-        color: var(--navy); letter-spacing: -0.5px;
-        line-height: 1.25; margin-bottom: 14px;
-    }
-    .ov-sec-title.white { color: var(--white); }
-    .ov-sec-desc {
-        font-size: 0.88rem; color: var(--gray5);
-        line-height: 1.8; font-weight: 300; max-width: 600px;
-        margin-bottom: 36px;
-    }
-    .ov-sec-desc.white { color: rgba(255,255,255,0.6); }
+    .ov-sec-label::before { content:''; display:block; width:20px; height:1px; background:var(--teal); }
+    .ov-sec-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:1.8rem; font-weight:800; color:var(--navy); letter-spacing:-0.5px; line-height:1.2; margin-bottom:14px; }
+    .ov-sec-title.white { color:var(--white); }
+    .ov-sec-desc { font-size:0.88rem; color:var(--gray5); line-height:1.8; max-width:640px; margin-bottom:40px; }
 
     /* ── 경쟁력 카드 ── */
-    .ov-comp-box {
-        background: var(--white); border-radius: 12px;
-        padding: 28px 24px; border: 1px solid var(--gray2);
-        transition: all 0.2s; height: 100%;
+    .comp-photo-card {
+        background:var(--white); border:1px solid var(--gray2); border-radius:12px;
+        overflow:hidden; margin-bottom:14px; transition:all 0.25s;
     }
-    .ov-comp-box:hover {
-        box-shadow: 0 8px 28px rgba(0,180,160,0.12);
-        border-color: var(--teal); transform: translateY(-3px);
-    }
-    .ov-comp-num {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 2.5rem; font-weight: 800;
-        color: var(--teal); opacity: 0.2;
-        line-height: 1; margin-bottom: 12px;
-    }
-    .ov-comp-title { font-size: 0.95rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-    .ov-comp-desc { font-size: 0.8rem; color: var(--gray5); line-height: 1.7; }
+    .comp-photo-card:hover { box-shadow:0 10px 32px rgba(0,180,160,0.13); border-color:var(--teal); transform:translateY(-3px); }
+    .comp-photo-card:hover .cpp-img { transform:scale(1.05); filter:brightness(0.95); }
+    .cpp-img-wrap { overflow:hidden; height:150px; }
+    .cpp-img { width:100%; height:150px; object-fit:cover; display:block; filter:brightness(0.85); transition:transform 0.4s, filter 0.3s; }
+    .cpp-body { padding:18px 20px; }
+    .cpp-num { font-family:'Plus Jakarta Sans',sans-serif; font-size:2rem; font-weight:800; color:var(--teal); opacity:0.18; line-height:1; margin-bottom:8px; }
+    .cpp-title { font-size:0.9rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
+    .cpp-desc { font-size:0.78rem; color:var(--gray5); line-height:1.65; }
 
-    /* ── 배터리 종류 타입탭 ── */
-    .bt-type-tabs {
-        display: flex; gap: 0; border-bottom: 2px solid var(--gray2);
-        margin-bottom: 40px;
-    }
-    .bt-type-tab {
-        padding: 12px 28px; font-size: 0.9rem; font-weight: 600;
-        color: var(--gray4); border-bottom: 3px solid transparent;
-        margin-bottom: -2px; cursor: pointer; transition: all 0.15s;
-    }
-    .bt-type-tab.on {
-        color: var(--navy); border-bottom-color: var(--navy);
-        background: rgba(0,0,0,0.03);
-    }
-
-    /* ── 성능 지표 바 ── */
-    .ov-bar-row {
-        display: flex; align-items: center; gap: 16px;
-        padding: 14px 0; border-bottom: 1px solid var(--gray2);
-    }
-    .ov-bar-label { font-size: 0.82rem; color: var(--navy); font-weight: 500; min-width: 160px; }
-    .ov-bar-bg { flex: 1; background: var(--gray2); border-radius: 20px; height: 8px; }
-    .ov-bar-fill { height: 8px; border-radius: 20px; background: var(--teal); }
-    .ov-bar-val { font-size: 0.8rem; font-weight: 700; color: var(--teal); min-width: 36px; text-align: right; }
+    /* ── 알고리즘 성능 바 ── */
+    .alg-card { background:var(--white); border:1px solid var(--gray2); border-radius:8px; padding:22px 26px; margin-bottom:14px; }
+    .alg-name { font-size:0.92rem; font-weight:700; color:var(--navy); margin-bottom:16px; }
+    .alg-bar-row { display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid #EEF0F3; }
+    .alg-bar-label { font-size:0.8rem; color:var(--navy); font-weight:500; min-width:140px; }
+    .alg-bar-bg { flex:1; background:var(--gray2); border-radius:20px; height:7px; overflow:hidden; }
+    .alg-bar-fill { height:7px; border-radius:20px; }
+    .alg-bar-val { font-size:0.78rem; font-weight:700; min-width:34px; text-align:right; }
 
     /* ── 공정 단계 ── */
-    .ov-process-row {
-        display: flex; gap: 0; align-items: stretch;
-        margin-bottom: 2px;
-    }
-    .ov-process-step {
-        flex: 1; background: var(--white);
-        border: 1px solid var(--gray2); padding: 28px 22px;
-        text-align: center; transition: all 0.2s; position: relative;
-    }
-    .ov-process-step:hover { border-color: var(--teal); }
-    .ov-process-step:hover .ov-ps-icon { background: var(--teal); color: white; }
-    .ov-ps-icon {
-        width: 56px; height: 56px; border-radius: 50%;
-        background: #E6F7F5; display: flex; align-items: center;
-        justify-content: center; font-size: 1.4rem;
-        margin: 0 auto 14px; transition: all 0.2s;
-    }
-    .ov-ps-title { font-size: 0.85rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .ov-ps-desc { font-size: 0.74rem; color: var(--gray4); line-height: 1.55; }
-    .ov-process-arrow {
-        display: flex; align-items: center; padding: 0;
-        color: var(--gray3); font-size: 1.2rem;
-        background: #F7F8FA; border-top: 1px solid var(--gray2);
-        border-bottom: 1px solid var(--gray2);
-        padding: 0 6px;
-    }
+    .process-flow { display:flex; gap:0; margin-top:36px; }
+    .process-step { flex:1; background:var(--white); border:1px solid var(--gray2); padding:28px 20px; text-align:center; transition:all 0.2s; }
+    .process-step:hover { border-color:var(--teal); }
+    .process-step:hover .ps-icon-box { background:var(--teal); color:white; }
+    .ps-icon-box { width:52px; height:52px; border-radius:50%; background:#E6F7F5; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin:0 auto 12px; transition:all 0.2s; }
+    .ps-title { font-size:0.83rem; font-weight:700; color:var(--navy); margin-bottom:5px; }
+    .ps-desc { font-size:0.73rem; color:var(--gray4); line-height:1.5; }
+    .ps-arrow { display:flex; align-items:center; color:var(--gray3); font-size:1.3rem; flex-shrink:0; background:#F7F8FA; border-top:1px solid var(--gray2); border-bottom:1px solid var(--gray2); padding:0 4px; }
 
-    /* ── 혁신 기술 카드 ── */
-    .ov-innov-card {
-        background: var(--white); border: 1px solid var(--gray2);
-        border-radius: 8px; padding: 24px;
-        display: flex; gap: 18px;
-        transition: all 0.2s; margin-bottom: 12px;
-    }
-    .ov-innov-card:hover { border-color: var(--teal); box-shadow: 0 4px 16px rgba(0,180,160,0.1); }
-    .ov-innov-icon {
-        width: 52px; height: 52px; border-radius: 10px;
-        background: #E6F7F5; display: flex; align-items: center;
-        justify-content: center; font-size: 1.4rem; flex-shrink: 0;
-    }
-    .ov-innov-title { font-size: 0.92rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .ov-innov-desc { font-size: 0.8rem; color: var(--gray5); line-height: 1.65; }
-    .ov-innov-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .ov-innov-tag {
-        background: #E6F7F5; color: #00796B; border-radius: 20px;
-        padding: 2px 10px; font-size: 0.72rem; font-weight: 500;
-    }
+    /* ── 공정 상세 박스 ── */
+    .proc-detail { background:#F0F4F8; border-left:3px solid var(--teal); border-radius:0 8px 8px 0; padding:22px 24px; margin-bottom:14px; }
+    .proc-detail-title { font-size:0.92rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
+    .proc-detail-desc { font-size:0.8rem; color:var(--gray5); margin-bottom:12px; }
+    .proc-detail-item { font-size:0.78rem; color:#334155; padding:5px 0; border-bottom:1px solid #E2E8F0; font-family:monospace; }
+
+    /* ── 혁신 기술 ── */
+    .innov-card { background:var(--white); border:1px solid var(--gray2); border-radius:8px; padding:22px; display:flex; gap:16px; margin-bottom:12px; transition:all 0.2s; }
+    .innov-card:hover { border-color:var(--teal); box-shadow:0 4px 16px rgba(0,180,160,0.1); }
+    .innov-icon { width:48px; height:48px; border-radius:10px; background:#E6F7F5; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .innov-title { font-size:0.9rem; font-weight:700; color:var(--navy); margin-bottom:5px; }
+    .innov-desc { font-size:0.78rem; color:var(--gray5); line-height:1.65; }
+    .innov-tag { background:#E6F7F5; color:#00796B; border-radius:20px; padding:2px 9px; font-size:0.7rem; font-weight:500; margin:3px 3px 0 0; display:inline-block; }
 
     /* ── 산업별 카드 ── */
-    .ov-ind-card {
-        background: #F0F4F8; border: 1px solid var(--gray2);
-        border-radius: 16px; padding: 28px;
-        display: flex; justify-content: space-between;
-        align-items: flex-end; min-height: 180px;
-        transition: all 0.25s; cursor: default;
-        position: relative; overflow: hidden;
-    }
-    .ov-ind-card:hover {
-        border-color: var(--teal);
-        box-shadow: 0 8px 32px rgba(0,180,160,0.12);
-    }
-    .ov-ind-card:hover .ov-ind-arrow { color: var(--teal); }
-    .ov-ind-name { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
-    .ov-ind-desc { font-size: 0.78rem; color: var(--gray5); line-height: 1.6; max-width: 200px; }
-    .ov-ind-arrow { font-size: 0.8rem; color: var(--gray4); font-weight: 600; transition: color 0.2s; margin-top: 8px; display: block; }
-    .ov-ind-icon { font-size: 3.5rem; opacity: 0.7; }
+    .ind-card { background:#F0F4F8; border:1px solid var(--gray2); border-radius:14px; padding:28px; display:flex; justify-content:space-between; align-items:flex-end; min-height:170px; transition:all 0.25s; margin-bottom:14px; }
+    .ind-card:hover { border-color:var(--teal); box-shadow:0 8px 28px rgba(0,180,160,0.11); }
+    .ind-name { font-size:1.1rem; font-weight:800; color:var(--navy); margin-bottom:6px; }
+    .ind-desc { font-size:0.78rem; color:var(--gray5); line-height:1.6; max-width:200px; }
+    .ind-arrow { font-size:0.78rem; color:var(--gray4); font-weight:600; margin-top:10px; display:block; transition:color 0.2s; }
+    .ind-card:hover .ind-arrow { color:var(--teal); }
+    .ind-icon-big { font-size:3.5rem; opacity:0.7; }
 
     /* ── 비교 테이블 ── */
-    .ov-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-top: 28px; }
-    .ov-table thead tr { background: var(--navy); color: white; }
-    .ov-table th { padding: 14px 16px; text-align: left; font-weight: 600; }
-    .ov-table td { padding: 13px 16px; border-bottom: 1px solid #EEF0F3; color: var(--gray5); }
-    .ov-table tr:nth-child(even) td { background: #F7F8FA; }
-    .ov-table tr.highlight td { color: var(--navy); font-weight: 600; }
-    .ov-table .teal { color: var(--teal); font-weight: 700; }
+    .ov-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+    .ov-table thead tr { background:var(--navy); color:white; }
+    .ov-table th { padding:13px 15px; text-align:left; font-weight:600; }
+    .ov-table td { padding:12px 15px; border-bottom:1px solid #EEF0F3; color:var(--gray5); }
+    .ov-table tr:nth-child(even) td { background:#F7F8FA; }
+    .ov-table .teal { color:var(--teal); font-weight:700; }
+    .ov-table .hl td { color:var(--navy); font-weight:600; }
+
+    /* ── 홈 버튼 ── */
+    .stButton>button { font-size:0.82rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
-    # 페이지 히어로
+    # 홈 버튼
+    bc, _ = st.columns([2,8])
+    with bc:
+        if st.button("← 홈으로", key="ov_back"):
+            st.session_state["page"]="home"; st.rerun()
+
+    # 히어로
     st.markdown("""
-    <div class="ov-page-hero">
-        <div class="ov-page-hero-crumb">BatteryIQ <span>›</span> 연구 개요</div>
-        <div class="ov-page-hero-title">배터리 건강 추정<br>연구 개요</div>
+    <div class="ov-hero">
+        <div class="ov-hero-crumb">BatteryIQ <span>›</span> 연구 개요</div>
+        <div class="ov-hero-title">배터리 건강 추정<br>연구 개요</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 사이드네비 + 콘텐츠 2단 레이아웃
-    side_col, content_col = st.columns([2, 8], gap="small")
+    # ── 전체 레이아웃 시작 ──
+    side_col, content_col = st.columns([28, 72], gap="small")
 
-    ov_nav_items = [
-        ("competitiveness", "경쟁력"),
-        ("performance",     "알고리즘 성능"),
-        ("process",         "핵심 공정"),
-        ("innovation",      "혁신 기술"),
-        ("industry",        "산업별 적용"),
-    ]
-
-    # 현재 탭이 삭제된 battery_type이면 competitiveness로 리셋
-    if st.session_state["overview_tab"] == "battery_type":
-        st.session_state["overview_tab"] = "competitiveness"
-
+    # ─── 사이드 네비 ───────────────────────────────────
     with side_col:
-        # LG 스타일 사이드 네비 + 스크롤 자동 하이라이트 JS
-        nav_ids = [tk for tk, _ in ov_nav_items]
-        active_idx = next((i for i,(_tk,_) in enumerate(ov_nav_items) if _tk == st.session_state["overview_tab"]), 0)
-        nav_html = '<div class="ov-sidenav" id="ov-sidenav"><div class="ov-sidenav-title">연구 개요</div>'
-        for tk, tl in ov_nav_items:
-            cls = "on" if st.session_state["overview_tab"] == tk else ""
-            nav_html += f'<div class="ov-sidenav-item {cls}" data-section="{tk}" id="nav-{tk}">{tl}</div>'
-        nav_html += '</div>'
+        st.markdown("""
+        <div class="ov-sidenav">
+            <div class="ov-sidenav-label">연구 개요</div>
+            <a class="ov-nav-link active" href="#sec-competitiveness" onclick="smoothTo('sec-competitiveness')">경쟁력</a>
+            <a class="ov-nav-link" href="#sec-performance" onclick="smoothTo('sec-performance')">알고리즘 성능</a>
+            <a class="ov-nav-link" href="#sec-process" onclick="smoothTo('sec-process')">핵심 공정</a>
+            <a class="ov-nav-link" href="#sec-innovation" onclick="smoothTo('sec-innovation')">혁신 기술</a>
+            <a class="ov-nav-link" href="#sec-industry" onclick="smoothTo('sec-industry')">산업별 적용</a>
+        </div>
 
-        # 스크롤 감지 JS — 섹션 위치 기반으로 사이드바 자동 하이라이트
-        scroll_js = f"""
         <script>
-        (function() {{
-            const sectionIds = {nav_ids};
-            function updateNav() {{
-                const scrollY = window.scrollY || document.documentElement.scrollTop;
-                const winH = window.innerHeight;
-                let current = sectionIds[0];
-                sectionIds.forEach(id => {{
-                    const el = document.getElementById('sec-' + id);
-                    if (el) {{
-                        const rect = el.getBoundingClientRect();
-                        if (rect.top <= winH * 0.4) current = id;
-                    }}
-                }});
-                document.querySelectorAll('.ov-sidenav-item').forEach(item => {{
-                    item.classList.remove('on');
-                    if (item.getAttribute('data-section') === current) {{
-                        item.classList.add('on');
-                    }}
-                }});
-            }}
-            window.addEventListener('scroll', updateNav, {{passive: true}});
-            updateNav();
-        }})();
+        function smoothTo(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        // 스크롤 시 자동 하이라이트
+        (function() {
+            const sections = ['sec-competitiveness','sec-performance','sec-process','sec-innovation','sec-industry'];
+            const navLinks = document.querySelectorAll('.ov-nav-link');
+            function onScroll() {
+                let current = sections[0];
+                sections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        const top = el.getBoundingClientRect().top;
+                        if (top <= window.innerHeight * 0.35) current = id;
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            window.addEventListener('scroll', onScroll, {passive: true});
+        })();
         </script>
-        """
-        st.markdown(nav_html + scroll_js, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-        if st.button("← 홈으로", key="ov_back"):
-            st.session_state["page"] = "home"; st.rerun()
-        # 탭 전환용 실제 버튼 (사이드 네비 아래 투명하게)
-        st.markdown('<style>.stButton>button{font-size:0.82rem;text-align:left;padding:10px 16px;border-radius:4px;}</style>', unsafe_allow_html=True)
-        for tk, tl in ov_nav_items:
-            if st.button(tl, key=f"ovnav_{tk}", use_container_width=True):
-                st.session_state["overview_tab"] = tk; st.rerun()
-
-    ov = st.session_state["overview_tab"]
-
+    # ─── 콘텐츠 ────────────────────────────────────────
     with content_col:
 
-        # ── 탭 바 (경쟁력 → 세부 항목)
-        if ov == "competitiveness":
-            comp_tabs = [("overview","핵심 경쟁력"), ("compare","알고리즘 비교")]
-            tb_html = '<div class="ov-tab-bar">'
-            for tk, tl in comp_tabs:
-                cls2 = "on" if st.session_state.get("comp_sub","overview") == tk else ""
-                tb_html += f'<span class="ov-tab {cls2}">{tl}</span>'
-            tb_html += "</div>"
-            st.markdown(tb_html, unsafe_allow_html=True)
-            tc2 = st.columns(len(comp_tabs))
-            for i,(tk,tl) in enumerate(comp_tabs):
-                with tc2[i]:
-                    if st.button(tl, key=f"csub_{tk}", use_container_width=True):
-                        st.session_state["comp_sub"] = tk; st.rerun()
-
-        # 섹션 ID 마커 (스크롤 감지용)
-        st.markdown(f'<div id="sec-{ov}" style="height:0;"></div>', unsafe_allow_html=True)
-
-        # ────────────────────────────────────
+        # ══════════════════════════════════════
         # 1. 경쟁력
-        # ────────────────────────────────────
-        if ov == "competitiveness":
-            comp_sub = st.session_state.get("comp_sub","overview")
+        # ══════════════════════════════════════
+        st.markdown('<div id="sec-competitiveness"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="ov-section ov-section-white">
+            <div class="ov-sec-label">Core Competitiveness</div>
+            <div class="ov-sec-title">경쟁력</div>
+            <div class="ov-sec-desc">배터리 건강 상태(SOH) 추정은 전기차·ESS 안전 운용의 핵심 기술입니다.
+            정확한 SOH 추정은 안전성·수명·성능·비용 모든 면에서 경쟁력을 결정합니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-            if comp_sub == "overview":
-                st.markdown("""
-                <div class="ov-sec ov-sec-white">
-                    <div class="ov-sec-label">Core Competitiveness</div>
-                    <div class="ov-sec-title">핵심 경쟁력</div>
-                    <div class="ov-sec-desc">배터리 건강 상태(SOH) 추정은 고에너지·고안전성 배터리 시스템 구현의 핵심 기술로,
-                    과충전·과방전 방지와 잔여 수명 예측에 필수적입니다.</div>
-                </div>
-                <style>
-                .comp-photo-card {
-                    background: var(--white);
-                    border: 1px solid var(--gray2);
-                    border-radius: 12px;
-                    overflow: hidden;
-                    margin-bottom: 14px;
-                    transition: all 0.25s;
-                }
-                .comp-photo-card:hover {
-                    box-shadow: 0 12px 36px rgba(0,180,160,0.14);
-                    border-color: var(--teal);
-                    transform: translateY(-4px);
-                }
-                .comp-photo-card:hover .comp-photo-img { transform: scale(1.05); filter: brightness(0.95); }
-                .comp-photo-img-wrap { overflow: hidden; height: 160px; }
-                .comp-photo-img {
-                    width: 100%; height: 160px;
-                    object-fit: cover; display: block;
-                    filter: brightness(0.88);
-                    transition: transform 0.4s ease, filter 0.3s;
-                }
-                .comp-photo-body { padding: 20px 20px 22px; }
-                .comp-photo-num {
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    font-size: 2rem; font-weight: 800;
-                    color: var(--teal); opacity: 0.18;
-                    line-height: 1; margin-bottom: 8px;
-                }
-                .comp-photo-title {
-                    font-size: 0.92rem; font-weight: 700;
-                    color: var(--navy); margin-bottom: 8px;
-                    letter-spacing: -0.2px;
-                }
-                .comp-photo-desc {
-                    font-size: 0.78rem; color: var(--gray5); line-height: 1.7;
-                }
-                /* 배터리 적용 범위 고급 카드 */
-                .range-card {
-                    background: var(--white);
-                    border: 1px solid var(--gray2);
-                    border-radius: 12px;
-                    overflow: hidden;
-                    transition: all 0.25s;
-                    flex: 1;
-                }
-                .range-card:hover {
-                    box-shadow: 0 12px 40px rgba(0,180,160,0.13);
-                    border-color: var(--teal);
-                }
-                .range-card-img-wrap {
-                    background: #F8FFFE;
-                    display: flex; align-items: center;
-                    justify-content: center;
-                    height: 200px; padding: 24px;
-                    border-bottom: 1px solid var(--gray2);
-                }
-                .range-card-img {
-                    max-width: 100%; max-height: 160px;
-                    object-fit: contain; display: block;
-                    transition: transform 0.4s ease;
-                }
-                .range-card:hover .range-card-img { transform: scale(1.06); }
-                .range-card-body { padding: 22px 22px 24px; }
-                .range-card-title {
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    font-size: 1.05rem; font-weight: 800;
-                    color: var(--navy); margin-bottom: 6px;
-                    letter-spacing: -0.3px;
-                }
-                .range-card-sub {
-                    font-size: 0.75rem; color: var(--teal);
-                    font-weight: 600; margin-bottom: 10px;
-                    letter-spacing: 0.5px;
-                }
-                .range-card-desc { font-size: 0.78rem; color: var(--gray5); line-height: 1.65; }
-                </style>
-                """, unsafe_allow_html=True)
-
-                # 경쟁력 6개 — 사진 포함 카드
-                comps = [
-                    ("01", "안전성 확보",
-                     "과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.",
-                     "https://images.unsplash.com/photo-1597852074816-d933c7d2b988?w=600&h=320&fit=crop&auto=format"),
-                    ("02", "수명 예측 (RUL)",
-                     "잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.",
-                     "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=320&fit=crop&auto=format"),
-                    ("03", "성능 최적화",
-                     "실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다.",
-                     "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=320&fit=crop&auto=format"),
-                    ("04", "배터리 재사용",
-                     "2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.",
-                     "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=320&fit=crop&auto=format"),
-                    ("05", "비용 절감",
-                     "불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.",
-                     "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=320&fit=crop&auto=format"),
-                    ("06", "실시간 모니터링",
-                     "주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.",
-                     "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=320&fit=crop&auto=format"),
-                ]
-
-                c1, c2, c3 = st.columns(3, gap="small")
-                for i, (num, title, desc, img) in enumerate(comps):
-                    with [c1, c2, c3][i % 3]:
-                        st.markdown(f"""
-                        <div class="comp-photo-card">
-                            <div class="comp-photo-img-wrap">
-                                <img class="comp-photo-img" src="{img}" alt="{title}">
-                            </div>
-                            <div class="comp-photo-body">
-                                <div class="comp-photo-num">{num}</div>
-                                <div class="comp-photo-title">{title}</div>
-                                <div class="comp-photo-desc">{desc}</div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-
-            else:  # compare
-                st.markdown("""
-                <div class="ov-sec ov-sec-white">
-                    <div class="ov-sec-label">Algorithm Comparison</div>
-                    <div class="ov-sec-title">알고리즘 비교</div>
-                    <div class="ov-sec-desc">SOH 추정 방법별 정확도·실시간성·계산량을 비교하여 최적 알고리즘을 선택하세요.</div>
-                </div>
-                """, unsafe_allow_html=True)
-                st.markdown("""
-                <div style="padding:0 56px 56px;">
-                <table class="ov-table">
-                <thead><tr>
-                    <th>방법</th><th>정확도</th><th>실시간성</th>
-                    <th>계산량</th><th>노이즈 강인성</th><th>주요 적용</th>
-                </tr></thead><tbody>
-                <tr><td>쿨롱 카운팅</td><td>⭐⭐</td><td>✅</td><td class="teal">낮음</td><td>❌</td><td>간단한 BMS</td></tr>
-                <tr><td>OCV 기반</td><td>⭐⭐⭐</td><td>❌</td><td class="teal">낮음</td><td>✅</td><td>초기화 시점</td></tr>
-                <tr><td>최소제곱법 (OLS)</td><td>⭐⭐⭐</td><td>✅</td><td class="teal">낮음</td><td>보통</td><td>용량 추정</td></tr>
-                <tr><td>WLS / TLS</td><td>⭐⭐⭐⭐</td><td>✅</td><td>보통</td><td>✅</td><td>정밀 용량 추정</td></tr>
-                <tr><td>EKF</td><td>⭐⭐⭐⭐</td><td>✅</td><td>보통</td><td>✅</td><td>EV BMS</td></tr>
-                <tr class="highlight"><td><b style="color:#00B4A0;">SPKF / UKF ★</b></td><td>⭐⭐⭐⭐⭐</td><td>✅</td><td>보통</td><td>✅✅</td><td>고성능 EV</td></tr>
-                <tr><td>머신러닝</td><td>⭐⭐⭐⭐⭐</td><td>보통</td><td style="color:#EF4444;">높음</td><td>✅✅</td><td>클라우드 BMS</td></tr>
-                </tbody></table>
+        comps = [
+            ("01","안전성 확보","과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.",
+             "https://images.unsplash.com/photo-1597852074816-d933c7d2b988?w=600&h=300&fit=crop&auto=format"),
+            ("02","수명 예측 (RUL)","잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.",
+             "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=300&fit=crop&auto=format"),
+            ("03","성능 최적화","실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다.",
+             "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=300&fit=crop&auto=format"),
+            ("04","배터리 재사용","2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.",
+             "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=300&fit=crop&auto=format"),
+            ("05","비용 절감","불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.",
+             "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=300&fit=crop&auto=format"),
+            ("06","실시간 모니터링","주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.",
+             "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=300&fit=crop&auto=format"),
+        ]
+        c1,c2,c3 = st.columns(3, gap="small")
+        for i,(num,title,desc,img) in enumerate(comps):
+            with [c1,c2,c3][i%3]:
+                st.markdown(f"""
+                <div class="comp-photo-card">
+                    <div class="cpp-img-wrap"><img class="cpp-img" src="{img}" alt="{title}"></div>
+                    <div class="cpp-body">
+                        <div class="cpp-num">{num}</div>
+                        <div class="cpp-title">{title}</div>
+                        <div class="cpp-desc">{desc}</div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # ────────────────────────────────────
-        # 2. 배터리 종류
-        # ────────────────────────────────────
-        # ────────────────────────────────────
+        # 알고리즘 비교표
+        st.markdown("""
+        <div class="ov-section ov-section-gray">
+            <div class="ov-sec-label">Algorithm Comparison</div>
+            <div class="ov-sec-title">알고리즘 비교</div>
+            <div class="ov-sec-desc">SOH 추정 방법별 정확도·실시간성·계산량을 비교하여 최적 알고리즘을 선택하세요.</div>
+            <table class="ov-table">
+            <thead><tr>
+                <th>방법</th><th>정확도</th><th>실시간성</th>
+                <th>계산량</th><th>노이즈 강인성</th><th>주요 적용</th>
+            </tr></thead><tbody>
+            <tr><td>쿨롱 카운팅</td><td>⭐⭐</td><td>✅</td><td class="teal">낮음</td><td>❌</td><td>간단한 BMS</td></tr>
+            <tr><td>OCV 기반</td><td>⭐⭐⭐</td><td>❌</td><td class="teal">낮음</td><td>✅</td><td>초기화 시점</td></tr>
+            <tr><td>최소제곱법 (OLS/WLS/TLS)</td><td>⭐⭐⭐</td><td>✅</td><td class="teal">낮음</td><td>보통</td><td>용량 추정</td></tr>
+            <tr><td>EKF</td><td>⭐⭐⭐⭐</td><td>✅</td><td>보통</td><td>✅</td><td>EV BMS</td></tr>
+            <tr class="hl"><td><b style="color:#00B4A0;">SPKF / UKF ★</b></td><td>⭐⭐⭐⭐⭐</td><td>✅</td><td>보통</td><td>✅✅</td><td>고성능 EV</td></tr>
+            <tr><td>머신러닝</td><td>⭐⭐⭐⭐⭐</td><td>보통</td><td style="color:#EF4444;">높음</td><td>✅✅</td><td>클라우드 BMS</td></tr>
+            </tbody></table>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ══════════════════════════════════════
         # 2. 알고리즘 성능
-        # ────────────────────────────────────
-        elif ov == "performance":
-            st.markdown("""
-            <div class="ov-sec ov-sec-white">
-                <div class="ov-sec-label">Algorithm Performance</div>
-                <div class="ov-sec-title">알고리즘 성능 비교</div>
-                <div class="ov-sec-desc">Gregory Plett Chapter 2-04에서 다루는 핵심 SOH 추정 알고리즘의 성능을 5가지 지표로 비교합니다.
-                EV BMS 실적용을 위한 알고리즘 선택의 기준이 됩니다.</div>
-            </div>
-            """, unsafe_allow_html=True)
+        # ══════════════════════════════════════
+        st.markdown('<div id="sec-performance"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="ov-section ov-section-white">
+            <div class="ov-sec-label">Algorithm Performance</div>
+            <div class="ov-sec-title">알고리즘 성능</div>
+            <div class="ov-sec-desc">Gregory Plett Chapter 2-04의 핵심 SOH 추정 알고리즘을 5가지 지표로 비교합니다.
+            EV BMS 실적용을 위한 알고리즘 선택의 기준이 됩니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-            methods = [
-                ("칼만 필터 (KF)", [("정확도",72),("실시간성",95),("노이즈 강인성",80),("계산 효율",92),("수렴 속도",85)]),
-                ("확장 칼만 필터 (EKF)", [("정확도",84),("실시간성",88),("노이즈 강인성",85),("계산 효율",80),("수렴 속도",82)]),
-                ("SPKF / UKF", [("정확도",93),("실시간성",82),("노이즈 강인성",92),("계산 효율",72),("수렴 속도",88)]),
-                ("머신러닝 기반", [("정확도",96),("실시간성",75),("노이즈 강인성",90),("계산 효율",55),("수렴 속도",70)]),
-            ]
-            for method, bars in methods:
-                st.markdown(f"""
-                <div style="background:#F7F8FA;border:1px solid #EEF0F3;border-radius:8px;
-                            padding:22px 26px;margin-bottom:16px;">
-                    <div style="font-size:0.92rem;font-weight:700;color:#0D1B2A;margin-bottom:16px;">{method}</div>
-                """, unsafe_allow_html=True)
-                for label, val in bars:
+        methods = [
+            ("칼만 필터 (KF)",[("정확도",72),("실시간성",95),("노이즈 강인성",80),("계산 효율",92),("수렴 속도",85)],"#6B7280"),
+            ("확장 칼만 필터 (EKF)",[("정확도",84),("실시간성",88),("노이즈 강인성",85),("계산 효율",80),("수렴 속도",82)],"#F59E0B"),
+            ("SPKF / UKF",[("정확도",93),("실시간성",82),("노이즈 강인성",92),("계산 효율",72),("수렴 속도",88)],"#00B4A0"),
+            ("머신러닝 기반",[("정확도",96),("실시간성",75),("노이즈 강인성",90),("계산 효율",55),("수렴 속도",70)],"#3B82F6"),
+        ]
+        ac1,ac2 = st.columns(2, gap="small")
+        for i,(method,bars,accent) in enumerate(methods):
+            with (ac1 if i%2==0 else ac2):
+                bar_html = ""
+                for label,val in bars:
                     clr = "#00B4A0" if val>=88 else ("#F59E0B" if val>=72 else "#EF4444")
-                    st.markdown(f"""
-                    <div class="ov-bar-row">
-                        <div class="ov-bar-label">{label}</div>
-                        <div class="ov-bar-bg"><div class="ov-bar-fill" style="width:{val}%;background:{clr};"></div></div>
-                        <div class="ov-bar-val" style="color:{clr};">{val}%</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-
-        # ────────────────────────────────────
-        # 4. 핵심 공정
-        # ────────────────────────────────────
-        elif ov == "process":
-            st.markdown("""
-            <div class="ov-sec ov-sec-white">
-                <div class="ov-sec-label">Estimation Process</div>
-                <div class="ov-sec-title">SOH 추정 핵심 공정</div>
-                <div class="ov-sec-desc">센서 수집부터 검증까지 — 배터리 건강 추정의 5단계 공정을 탐색하세요.</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            steps = [
-                ("📡","센서 데이터 수집","전압·전류·온도 고정밀 실시간 수집"),
-                ("🔧","등가 회로 모델링","R₀·R₁C₁·OCV 파라미터 정의"),
-                ("📐","파라미터 식별","OLS·WLS·TLS로 파라미터 추정"),
-                ("🎯","상태 추정 (필터)","EKF·SPKF로 SOC·SOH 실시간 추정"),
-                ("✅","검증 및 보정","RMSE·MAE 평가 및 모델 업데이트"),
-            ]
-            step_html = '<div class="ov-process-row">'
-            for i, (icon, title, desc) in enumerate(steps):
-                step_html += f"""
-                <div class="ov-process-step">
-                    <div class="ov-ps-icon">{icon}</div>
-                    <div class="ov-ps-title">{title}</div>
-                    <div class="ov-ps-desc">{desc}</div>
-                </div>"""
-                if i < len(steps)-1:
-                    step_html += '<div class="ov-process-arrow">›</div>'
-            step_html += "</div>"
-            st.markdown(f'<div style="padding:0 56px 40px;">{step_html}</div>', unsafe_allow_html=True)
-
-            # 상세
-            details = [
-                ("등가 회로 모델 (ECM)", "배터리를 RC 회로로 모델링하여 실시간 계산을 가능하게 합니다.",
-                 ["R₀ : 순수 내부 저항 — 즉각 전압 강하","R₁C₁ : 전기화학 분극 — 시정수 τ=R₁C₁",
-                  "OCV : 개방 회로 전압 — SOC의 비선형 함수","V = OCV - I·R₀ - V_RC"]),
-                ("칼만 필터 추정 공정", "예측-업데이트 반복으로 노이즈를 제거하며 최적 추정합니다.",
-                 ["예측: x̂⁻ = f(x̂, u) — 상태 전파","예측: P⁻ = F·P·Fᵀ + Q — 오차 공분산",
-                  "업데이트: K = P⁻Hᵀ(HP⁻Hᵀ+R)⁻¹ — 칼만 이득","업데이트: x̂ = x̂⁻ + K(y - h(x̂⁻)) — 상태 보정"]),
-            ]
-            for d_title, d_desc, d_items in details:
-                items_html = "".join([f'<div style="font-size:0.79rem;color:#334155;padding:5px 0;border-bottom:1px solid #EEF0F3;font-family:monospace;">▸ {it}</div>' for it in d_items])
+                    bar_html += f"""
+                    <div class="alg-bar-row">
+                        <div class="alg-bar-label">{label}</div>
+                        <div class="alg-bar-bg"><div class="alg-bar-fill" style="width:{val}%;background:{clr};"></div></div>
+                        <div class="alg-bar-val" style="color:{clr};">{val}%</div>
+                    </div>"""
                 st.markdown(f"""
-                <div style="padding:0 56px;margin-bottom:16px;">
-                <div style="background:#F0F4F8;border-left:3px solid #00B4A0;
-                            border-radius:0 8px 8px 0;padding:22px 24px;">
-                    <div style="font-size:0.92rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">{d_title}</div>
-                    <div style="font-size:0.8rem;color:#6B7280;margin-bottom:12px;">{d_desc}</div>
-                    {items_html}
-                </div></div>
+                <div class="alg-card" style="border-top:3px solid {accent};">
+                    <div class="alg-name">{method}</div>
+                    {bar_html}
+                </div>
                 """, unsafe_allow_html=True)
 
-        # ────────────────────────────────────
-        # 5. 혁신 기술
-        # ────────────────────────────────────
-        elif ov == "innovation":
-            st.markdown("""
-            <div class="ov-sec ov-sec-white">
-                <div class="ov-sec-label">Innovation Technology</div>
-                <div class="ov-sec-title">혁신 기술</div>
-                <div class="ov-sec-desc">AI·디지털 트윈·클라우드와 결합한 차세대 SOH 추정 기술을 탐색하세요.</div>
-            </div>
+        # ══════════════════════════════════════
+        # 3. 핵심 공정
+        # ══════════════════════════════════════
+        st.markdown('<div id="sec-process"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="ov-section ov-section-gray">
+            <div class="ov-sec-label">Estimation Process</div>
+            <div class="ov-sec-title">핵심 공정</div>
+            <div class="ov-sec-desc">센서 데이터 수집부터 검증까지 — SOH 추정의 5단계 공정을 탐색하세요.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        steps=[("📡","센서 데이터 수집","전압·전류·온도 실시간 수집"),
+               ("🔧","등가 회로 모델링","R₀·R₁C₁·OCV 파라미터 정의"),
+               ("📐","파라미터 식별","OLS·WLS·TLS로 추정"),
+               ("🎯","상태 추정 (필터)","EKF·SPKF로 실시간 추정"),
+               ("✅","검증 및 보정","RMSE·MAE 평가 및 업데이트")]
+        flow_html = '<div class="process-flow">'
+        for j,(icon,title,desc) in enumerate(steps):
+            flow_html+=f'<div class="process-step"><div class="ps-icon-box">{icon}</div><div class="ps-title">{title}</div><div class="ps-desc">{desc}</div></div>'
+            if j<len(steps)-1: flow_html+='<div class="ps-arrow">›</div>'
+        flow_html+="</div>"
+        st.markdown(f'<div style="padding:0 72px 20px;">{flow_html}</div>', unsafe_allow_html=True)
+
+        details=[
+            ("등가 회로 모델 (ECM)","배터리를 RC 회로로 모델링하여 실시간 계산을 가능하게 합니다.",
+             ["R₀ : 순수 내부 저항 — 즉각 전압 강하","R₁C₁ : 전기화학 분극 — 시정수 τ=R₁C₁","OCV : 개방 회로 전압 — SOC의 비선형 함수","V = OCV - I·R₀ - V_RC"]),
+            ("칼만 필터 추정 공정","예측-업데이트 반복으로 노이즈를 제거하며 최적 추정합니다.",
+             ["예측: x̂⁻ = f(x̂, u) — 상태 전파","예측: P⁻ = F·P·Fᵀ + Q — 오차 공분산","업데이트: K = P⁻Hᵀ(HP⁻Hᵀ+R)⁻¹ — 칼만 이득","업데이트: x̂ = x̂⁻ + K(y - h(x̂⁻)) — 상태 보정"]),
+        ]
+        for d_title,d_desc,d_items in details:
+            items_html="".join([f'<div class="proc-detail-item">▸ {it}</div>' for it in d_items])
+            st.markdown(f"""
+            <div style="padding:0 72px;margin-bottom:14px;">
+            <div class="proc-detail">
+                <div class="proc-detail-title">{d_title}</div>
+                <div class="proc-detail-desc">{d_desc}</div>
+                {items_html}
+            </div></div>
             """, unsafe_allow_html=True)
 
-            innovations = [
-                ("🤖","AI / 머신러닝 기반 SOH","딥러닝(LSTM·Transformer)과 물리 기반 모델을 결합한 하이브리드 방식으로 정확도를 대폭 향상시킵니다.",["LSTM 시계열 예측","Physics-Informed NN","온라인 학습","이상 탐지"]),
-                ("🌐","디지털 트윈","실제 배터리와 동기화된 가상 모델로 SOH 추정 정확도와 예측 범위를 혁신적으로 확장합니다.",["실시간 물리 모델","가속 열화 시뮬","수명 예측 정밀화","가상 환경 테스트"]),
-                ("☁️","클라우드 BMS","차량 군집 빅데이터를 통합 분석하여 집단 지성형 SOH 모델을 지속 개선합니다.",["OTA 모델 업데이트","Fleet 데이터 분석","엣지-클라우드 분산","개인화 보정"]),
-                ("⚡","전고체 배터리 대응","차세대 전고체 배터리의 새로운 열화 메커니즘에 특화된 SOH 추정 방법론을 개발합니다.",["계면 저항 추적","덴드라이트 감지","고온 내구성","새 ECM 파라미터"]),
-                ("📡","EIS 기반 진단","전기화학 임피던스 분광법으로 배터리 내부 상태를 비침습적으로 정밀 진단합니다.",["주파수 대역 분리","온라인 EIS 측정","SOH·SOP 동시 추정","열화 메커니즘 분석"]),
-                ("🔗","조인트·듀얼 추정 고도화","SOC·SOH 동시 추정 필터를 고도화하여 파라미터 식별 정확도를 극대화합니다.",["적응형 노이즈","다중 모델 전환","강인한 초기화","실시간 파라미터 업데이트"]),
-            ]
-            c1, c2 = st.columns(2, gap="small")
-            for i,(icon,title,desc,tags) in enumerate(innovations):
-                tag_html = "".join([f'<span class="ov-innov-tag">{t}</span>' for t in tags])
-                with (c1 if i%2==0 else c2):
-                    st.markdown(f"""
-                    <div class="ov-innov-card">
-                        <div class="ov-innov-icon">{icon}</div>
-                        <div>
-                            <div class="ov-innov-title">{title}</div>
-                            <div class="ov-innov-desc">{desc}</div>
-                            <div class="ov-innov-tags">{tag_html}</div>
-                        </div>
+        # ══════════════════════════════════════
+        # 4. 혁신 기술
+        # ══════════════════════════════════════
+        st.markdown('<div id="sec-innovation"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="ov-section ov-section-white">
+            <div class="ov-sec-label">Innovation Technology</div>
+            <div class="ov-sec-title">혁신 기술</div>
+            <div class="ov-sec-desc">AI·디지털 트윈·클라우드와 결합한 차세대 SOH 추정 기술을 탐색하세요.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        innovations=[
+            ("🤖","AI / 머신러닝 기반 SOH","딥러닝(LSTM·Transformer)과 물리 기반 모델을 결합한 하이브리드 방식으로 정확도를 대폭 향상시킵니다.",["LSTM 시계열 예측","Physics-Informed NN","온라인 학습","이상 탐지"]),
+            ("🌐","디지털 트윈","실제 배터리와 동기화된 가상 모델로 SOH 추정 정확도와 예측 범위를 혁신적으로 확장합니다.",["실시간 물리 모델","가속 열화 시뮬","수명 예측 정밀화","가상 환경 테스트"]),
+            ("☁️","클라우드 BMS","차량 군집 빅데이터를 통합 분석하여 집단 지성형 SOH 모델을 지속 개선합니다.",["OTA 모델 업데이트","Fleet 데이터 분석","엣지-클라우드 분산","개인화 보정"]),
+            ("⚡","전고체 배터리 대응","차세대 전고체 배터리의 새로운 열화 메커니즘에 특화된 SOH 추정 방법론을 개발합니다.",["계면 저항 추적","덴드라이트 감지","고온 내구성","새 ECM 파라미터"]),
+            ("📡","EIS 기반 진단","전기화학 임피던스 분광법으로 배터리 내부 상태를 비침습적으로 정밀 진단합니다.",["주파수 대역 분리","온라인 EIS 측정","SOH·SOP 동시 추정","열화 메커니즘 분석"]),
+            ("🔗","조인트·듀얼 추정 고도화","SOC·SOH 동시 추정 필터를 고도화하여 파라미터 식별 정확도를 극대화합니다.",["적응형 노이즈","다중 모델 전환","강인한 초기화","실시간 파라미터 업데이트"]),
+        ]
+        ic1,ic2=st.columns(2,gap="small")
+        for i,(icon,title,desc,tags) in enumerate(innovations):
+            tag_html="".join([f'<span class="innov-tag">{t}</span>' for t in tags])
+            with (ic1 if i%2==0 else ic2):
+                st.markdown(f"""
+                <div class="innov-card">
+                    <div class="innov-icon">{icon}</div>
+                    <div>
+                        <div class="innov-title">{title}</div>
+                        <div class="innov-desc">{desc}</div>
+                        <div style="margin-top:10px;">{tag_html}</div>
                     </div>
-                    """, unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
 
-        # ────────────────────────────────────
-        # 6. 산업별 적용
-        # ────────────────────────────────────
-        elif ov == "industry":
-            st.markdown("""
-            <div class="ov-sec ov-sec-white">
-                <div class="ov-sec-label">Industry Solutions</div>
-                <div class="ov-sec-title">산업별 솔루션</div>
-                <div class="ov-sec-desc">배터리 건강 추정 기술은 다양한 산업에 핵심 기술로 적용됩니다. 각 분야를 클릭하여 자세한 내용을 확인하세요.</div>
-            </div>
-            """, unsafe_allow_html=True)
+        # ══════════════════════════════════════
+        # 5. 산업별 적용
+        # ══════════════════════════════════════
+        st.markdown('<div id="sec-industry"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="ov-section ov-section-gray">
+            <div class="ov-sec-label">Industry Solutions</div>
+            <div class="ov-sec-title">산업별 적용</div>
+            <div class="ov-sec-desc">배터리 건강 추정 기술은 전기차부터 항공까지 다양한 산업에 핵심 기술로 적용됩니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-            industries = [
-                ("승용 EV","🚗","#E6F7F5","주행거리 보장과 충전 최적화에 SOH 추정이 직접 활용됩니다.","자세히 보기 →"),
-                ("상용 EV","🚛","#EFF6FF","대용량 배터리팩의 SOH를 정밀 관리하여 안정적 운행을 보장합니다.","자세히 보기 →"),
-                ("ESS (에너지저장)","🏭","#F0FDF4","재생에너지 연계 ESS에서 SOH 기반 충방전 전략으로 효율을 극대화합니다.","자세히 보기 →"),
-                ("LEV (경량 모빌리티)","🛵","#FFF7ED","경량화된 SOH 알고리즘으로 전동 킥보드·자전거를 관리합니다.","자세히 보기 →"),
-                ("로봇·중장비","🤖","#FDF2F8","극한 환경의 산업용 배터리를 안전하게 실시간 관리합니다.","자세히 보기 →"),
-                ("항공·드론","✈️","#F0F9FF","비행 중 실시간 SOH 추정으로 안전 귀환을 보장합니다.","자세히 보기 →"),
-            ]
-
-            c1, c2 = st.columns(2, gap="small")
-            for i, (name, icon, bg, desc, link) in enumerate(industries):
-                with (c1 if i%2==0 else c2):
-                    st.markdown(f"""
-                    <div class="ov-ind-card" style="background:{bg};margin-bottom:14px;">
-                        <div>
-                            <div class="ov-ind-name">{name}</div>
-                            <div class="ov-ind-desc">{desc}</div>
-                            <span class="ov-ind-arrow">{link}</span>
-                        </div>
-                        <div class="ov-ind-icon">{icon}</div>
+        industries=[
+            ("승용 EV","🚗","#E6F7F5","주행거리 보장과 충전 최적화에 SOH 추정이 직접 활용됩니다.","자세히 보기 →"),
+            ("상용 EV (트럭·버스)","🚛","#EFF6FF","대용량 배터리팩 SOH를 정밀 관리하여 안정적 운행을 보장합니다.","자세히 보기 →"),
+            ("ESS (에너지 저장)","🏭","#F0FDF4","재생에너지 연계 ESS에서 SOH 기반 충방전으로 효율을 극대화합니다.","자세히 보기 →"),
+            ("LEV (경량 모빌리티)","🛵","#FFF7ED","경량화된 SOH 알고리즘으로 전동 킥보드·자전거를 관리합니다.","자세히 보기 →"),
+            ("로봇·중장비","🤖","#FDF2F8","극한 환경의 산업용 배터리를 안전하게 실시간 관리합니다.","자세히 보기 →"),
+            ("항공·드론","✈️","#F0F9FF","비행 중 실시간 SOH 추정으로 안전 귀환을 보장합니다.","자세히 보기 →"),
+        ]
+        in1,in2=st.columns(2,gap="small")
+        for i,(name,icon,bg,desc,link) in enumerate(industries):
+            with (in1 if i%2==0 else in2):
+                st.markdown(f"""
+                <div class="ind-card" style="background:{bg};">
+                    <div>
+                        <div class="ind-name">{name}</div>
+                        <div class="ind-desc">{desc}</div>
+                        <span class="ind-arrow">{link}</span>
                     </div>
-                    """, unsafe_allow_html=True)
+                    <div class="ind-icon-big">{icon}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # 푸터
     st.markdown("""
