@@ -1189,76 +1189,157 @@ if st.session_state["page"] == "home":
 
     st.markdown("<div style='height:1px;'></div>", unsafe_allow_html=True)
 
-    # ── 최신 뉴스 섹션 ──
+    # ── 최신 뉴스 섹션 (자동 수집 + LG 뉴스룸 스타일) ──
+
+    # 최초 진입 시 자동 수집
+    if not st.session_state.get("home_news_ko") and not st.session_state.get("home_news_en"):
+        with st.spinner("최신 뉴스를 불러오는 중..."):
+            raw_ko = fetch_news("배터리 건강 추정 SOH BMS","ko","KR","KR:ko", 4)
+            st.session_state["home_news_ko"] = [
+                {"title":e.title,"link":e.link,"published":getattr(e,'published',''),
+                 "source":(e.get('source') or {}).get('title','Google News')}
+                for e in raw_ko
+            ]
+            raw_en = fetch_news("Battery State of Health Estimation","en","US","US:en", 4)
+            st.session_state["home_news_en"] = [
+                {"title":e.title,"link":e.link,"published":getattr(e,'published',''),
+                 "source":(e.get('source') or {}).get('title','Google News')}
+                for e in raw_en
+            ]
+
+    home_ko = st.session_state.get("home_news_ko", [])
+    home_en = st.session_state.get("home_news_en", [])
+    all_home = home_ko + home_en
+
+    # 뉴스룸 섹션 헤더
     st.markdown("""
-    <div class="section section-dark">
-        <div class="news-header">
+    <div class="section section-dark" style="padding-bottom:60px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;">
             <div>
                 <div class="section-label">최신 뉴스</div>
-                <div class="section-title">배터리 건강 추정<br>최신 동향</div>
+                <div class="section-title" style="font-size:2.2rem;">뉴스룸</div>
+            </div>
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.35);letter-spacing:0.5px;">
+                배터리 SOH 관련 최신 뉴스
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # 뉴스 수집 버튼
-    c1, c2, c3 = st.columns([3,3,6])
-    with c1:
-        load_ko = st.button("🇰🇷 국내 뉴스 불러오기", key="home_news_ko", use_container_width=True)
-    with c2:
-        load_en = st.button("🌍 해외 뉴스 불러오기", key="home_news_en", use_container_width=True)
-
-    if load_ko:
-        with st.spinner("수집 중..."):
-            raw = fetch_news("배터리 건강 추정 SOH","ko","KR","KR:ko",4)
-            st.session_state["home_news_ko"] = [{"title":e.title,"link":e.link,"published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw]
-
-    if load_en:
-        with st.spinner("수집 중..."):
-            raw = fetch_news("Battery State of Health Estimation","en","US","US:en",4)
-            st.session_state["home_news_en"] = [{"title":e.title,"link":e.link,"published":getattr(e,'published',''),"source":(e.get('source') or {}).get('title','Google News')} for e in raw]
-
-    home_ko = st.session_state.get("home_news_ko",[])
-    home_en = st.session_state.get("home_news_en",[])
-    all_home = home_ko + home_en
+    # LG 스타일 4열 뉴스 카드
+    TOPIC_IMGS_NEWS = [
+        "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=360&fit=crop",
+        "https://images.unsplash.com/photo-1543286386-713bdd548da4?w=600&h=360&fit=crop",
+    ]
 
     if all_home:
-        featured = all_home[0]
-        rest = all_home[1:3]
-        imgs = NEWS_IMGS
+        # 상단 대형 피처드 카드 + 우측 서브카드
+        feat = all_home[0]
+        feat_flag = "🇰🇷" if feat in home_ko else "🌍"
+        feat_date = feat['published'][:10] if feat['published'] else ""
+
         st.markdown(f"""
-        <div class="news-grid">
-            <div class="news-card featured">
-                <div class="news-card-img-wrap">
-                    <img class="news-card-img" src="{imgs[0]}" alt="news">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1px;background:rgba(255,255,255,0.05);margin-bottom:1px;">
+            <!-- 피처드 카드 -->
+            <div style="background:#0a0a0a;overflow:hidden;position:relative;">
+                <div style="overflow:hidden;height:320px;">
+                    <img src="{TOPIC_IMGS_NEWS[0]}"
+                         style="width:100%;height:320px;object-fit:cover;filter:brightness(0.5);
+                                transition:transform 0.4s ease;"
+                         onmouseover="this.style.transform='scale(1.03)'"
+                         onmouseout="this.style.transform='scale(1)'">
                 </div>
-                <div class="news-card-body">
-                    <div class="news-card-tag">{'🇰🇷 국내' if featured in home_ko else '🌍 해외'} · 배터리 SOH</div>
-                    <div class="news-card-title"><a href="{featured['link']}" target="_blank">{featured['title']}</a></div>
-                    <div class="news-card-meta">{featured['source']} · {featured['published'][:16]}</div>
+                <div style="padding:24px 28px 28px;">
+                    <div style="font-size:0.68rem;color:#C8001E;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">
+                        {feat_flag} · {feat_date}
+                    </div>
+                    <div style="font-size:1.05rem;font-weight:700;color:#fff;line-height:1.5;margin-bottom:14px;letter-spacing:-0.2px;">
+                        <a href="{feat['link']}" target="_blank"
+                           style="color:#fff;text-decoration:none;"
+                           onmouseover="this.style.color='#C8001E'"
+                           onmouseout="this.style.color='#fff'">{feat['title']}</a>
+                    </div>
+                    <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">{feat['source']}</div>
                 </div>
             </div>
+            <!-- 우측 서브 카드 -->
+            <div style="display:flex;flex-direction:column;gap:1px;">
         """, unsafe_allow_html=True)
-        for i, item in enumerate(rest):
+
+        for i, item in enumerate(all_home[1:3]):
+            flag = "🇰🇷" if item in home_ko else "🌍"
+            date = item['published'][:10] if item['published'] else ""
+            img = TOPIC_IMGS_NEWS[i+1]
             st.markdown(f"""
-            <div class="news-card">
-                <div class="news-card-img-wrap">
-                    <img class="news-card-img" src="{imgs[i+1]}" alt="news">
+            <div style="background:#0a0a0a;display:flex;gap:0;flex:1;overflow:hidden;">
+                <div style="overflow:hidden;width:160px;flex-shrink:0;">
+                    <img src="{img}" style="width:160px;height:100%;object-fit:cover;filter:brightness(0.55);min-height:120px;">
                 </div>
-                <div class="news-card-body">
-                    <div class="news-card-tag">{'🇰🇷 국내' if item in home_ko else '🌍 해외'} · 배터리 SOH</div>
-                    <div class="news-card-title"><a href="{item['link']}" target="_blank">{item['title']}</a></div>
-                    <div class="news-card-meta">{item['source']} · {item['published'][:16]}</div>
+                <div style="padding:18px 20px;flex:1;">
+                    <div style="font-size:0.62rem;color:#C8001E;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">{flag} · {date}</div>
+                    <div style="font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.9);line-height:1.45;margin-bottom:8px;">
+                        <a href="{item['link']}" target="_blank"
+                           style="color:rgba(255,255,255,0.9);text-decoration:none;">{item['title'][:65]}{'...' if len(item['title'])>65 else ''}</a>
+                    </div>
+                    <div style="font-size:0.7rem;color:rgba(255,255,255,0.3);">{item['source']}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
+        # 하단 4열 카드 그리드
+        bottom_items = all_home[3:7]
+        if bottom_items:
+            st.markdown(f"""
+            <div style="display:grid;grid-template-columns:repeat({len(bottom_items)},1fr);gap:1px;background:rgba(255,255,255,0.05);margin-top:1px;">
+            """, unsafe_allow_html=True)
+            for i, item in enumerate(bottom_items):
+                flag = "🇰🇷" if item in home_ko else "🌍"
+                date = item['published'][:10] if item['published'] else ""
+                img = TOPIC_IMGS_NEWS[(i+3) % len(TOPIC_IMGS_NEWS)]
+                st.markdown(f"""
+                <div style="background:#0a0a0a;overflow:hidden;">
+                    <div style="overflow:hidden;height:180px;">
+                        <img src="{img}"
+                             style="width:100%;height:180px;object-fit:cover;filter:brightness(0.5);
+                                    transition:transform 0.4s;"
+                             onmouseover="this.style.transform='scale(1.04)'"
+                             onmouseout="this.style.transform='scale(1)'">
+                    </div>
+                    <div style="padding:18px 20px 22px;">
+                        <div style="font-size:0.6rem;color:#C8001E;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">{flag} · {date}</div>
+                        <div style="font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.88);line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+                            <a href="{item['link']}" target="_blank"
+                               style="color:rgba(255,255,255,0.88);text-decoration:none;">{item['title']}</a>
+                        </div>
+                        <div style="font-size:0.7rem;color:rgba(255,255,255,0.28);">{item['source']}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
     else:
         st.markdown("""
-        <div style="text-align:center;padding:60px;border:1px solid rgba(255,255,255,0.06);border-radius:2px;color:rgba(255,255,255,0.3);">
+        <div style="text-align:center;padding:60px;border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);">
             <div style="font-size:2rem;margin-bottom:12px;">📰</div>
-            <div>위 버튼을 클릭하여 최신 뉴스를 불러오세요</div>
+            <div>뉴스를 불러오는 중입니다...</div>
         </div>
         """, unsafe_allow_html=True)
+
+    # 새로고침 버튼
+    _, rc, _ = st.columns([4,2,4])
+    with rc:
+        if st.button("🔄 뉴스 새로고침", key="home_refresh", use_container_width=True):
+            st.session_state["home_news_ko"] = []
+            st.session_state["home_news_en"] = []
+            st.rerun()
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ── 24개 주제 탐색 ──
