@@ -1105,12 +1105,6 @@ if st.session_state["page"] == "home":
     if "show_topic_nav" not in st.session_state:
         st.session_state["show_topic_nav"] = False
 
-    _, bc, _ = st.columns([3, 2, 3])
-    with bc:
-        if st.button("핵심 주제 바로가기 →", key="topic_nav_btn", use_container_width=True):
-            st.session_state["show_topic_nav"] = not st.session_state["show_topic_nav"]
-            st.rerun()
-
     # 24개 주제 그리드 (펼치면 보임)
     if st.session_state["show_topic_nav"]:
         st.markdown('<div style="background:#0D1B2A;padding:56px 72px 72px;">', unsafe_allow_html=True)
