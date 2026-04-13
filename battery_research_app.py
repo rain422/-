@@ -752,133 +752,99 @@ pc=len(st.session_state["papers"])+len(st.session_state["arxiv"])
 
 st.markdown("""
 <style>
-/* GNB 전체를 Streamlit 버튼으로 구성 */
-.gnb-wrap {
-    position: fixed; top:0; left:0; right:0; height:64px;
-    background: rgba(255,255,255,0.96);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #E2E8F0;
-    z-index: 9999;
-    display: flex; align-items: center;
-}
-/* 로고 영역 */
-.gnb-logo-fixed {
-    position: fixed; top:0; left:0;
-    height:64px; width:180px;
-    display:flex; align-items:center; padding:0 24px;
-    font-family:'Plus Jakarta Sans',sans-serif;
-    font-weight:800; font-size:1.1rem; color:#0D1B2A;
-    gap:10px; z-index:10000;
-    background:rgba(255,255,255,0.96);
-}
-.gnb-logo-mark {
-    width:30px; height:30px; background:#00B4A0;
-    border-radius:6px; display:flex; align-items:center;
-    justify-content:center; font-size:0.9rem; color:white;
-}
-/* 우측 정보 */
-.gnb-right-fixed {
-    position:fixed; top:0; right:24px;
-    height:64px; display:flex; align-items:center;
-    font-size:0.75rem; color:#9EA5AF; z-index:10000;
-}
-/* 네비 버튼들 — 중앙 정렬 */
-[data-testid="stHorizontalBlock"]:has(button[kind="secondary"].gnb-btn) {
+/* ── GNB 전체 스타일 ── */
+.stApp > div > div > div > div:first-child [data-testid="stHorizontalBlock"] {
     position: fixed !important;
-    top: 0 !important; left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 0 !important; left: 0 !important; right: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(255,255,255,0.97) !important;
+    backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     height: 64px !important;
-    display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    z-index: 10000 !important;
-    background: transparent !important;
+    gap: 0 !important;
 }
-/* 모든 GNB 버튼 스타일 */
-.gnb-btn-style button {
+/* 모든 GNB 버튼 초기화 */
+[data-testid="stHorizontalBlock"]:first-of-type button {
     background: transparent !important;
-    color: #6B7280 !important;
     border: none !important;
     border-radius: 0 !important;
-    font-size: 0.84rem !important;
-    font-weight: 500 !important;
-    padding: 20px 20px !important;
-    height: 64px !important;
-    letter-spacing: 0.3px !important;
     box-shadow: none !important;
+    color: #6B7280 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    padding: 0 20px !important;
+    height: 64px !important;
+    width: 100% !important;
+    letter-spacing: 0.2px !important;
     transition: color 0.15s !important;
-    width: auto !important;
 }
-.gnb-btn-style button:hover {
+[data-testid="stHorizontalBlock"]:first-of-type button:hover {
     color: #00B4A0 !important;
     background: transparent !important;
     border-bottom: 2px solid #00B4A0 !important;
 }
-/* 페이지 상단 여백 (GNB 높이만큼) */
-.main-content-pad { margin-top: 64px; }
-/* Streamlit 기본 상단 숨김 */
+/* 로고 컬럼 */
+[data-testid="stHorizontalBlock"]:first-of-type [data-testid="column"]:first-child button {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 1.05rem !important;
+    color: #0D1B2A !important;
+    justify-content: flex-start !important;
+    padding-left: 28px !important;
+}
+[data-testid="stHorizontalBlock"]:first-of-type [data-testid="column"]:first-child button:hover {
+    color: #0D1B2A !important;
+    border-bottom: none !important;
+}
+/* 우측 빈 컬럼 */
+[data-testid="stHorizontalBlock"]:first-of-type [data-testid="column"]:last-child {
+    flex: 2 !important;
+}
+/* 페이지 상단 여백 */
+.main-spacer { height: 64px; }
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none; }
-/* 기존 block-container 패딩 제거 */
 .block-container { padding: 0 !important; max-width: 100% !important; }
 [data-testid="stAppViewBlockContainer"] { padding: 0 !important; max-width: 100% !important; }
 </style>
-
-<div class="gnb-logo-fixed">
-    <div class="gnb-logo-mark">🔋</div>
-    BatteryIQ
-</div>
-<div class="gnb-right-fixed">Gregory Plett · Chapter 2-04</div>
-<div class="gnb-wrap"></div>
 """, unsafe_allow_html=True)
 
-# 실제 작동하는 GNB 네비 버튼
-st.markdown('<div class="main-content-pad"></div>', unsafe_allow_html=True)
+# ── GNB — 단일 컬럼 행 ──
+logo_col, nav1, nav2, nav3, nav4, right_col = st.columns([3, 1.2, 1.2, 1, 1.4, 2])
 
-# GNB 버튼 행 — CSS로 fixed 포지션으로 올림
-gnb_container = st.container()
-with gnb_container:
-    st.markdown("""
-    <style>
-    /* 첫 번째 컨테이너를 GNB 위치로 올리기 */
-    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"]:first-child
-    > div:first-child {
-        position: fixed !important;
-        top: 0 !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 10001 !important;
-        background: transparent !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    g1, g2, g3, g4 = st.columns([1, 1, 1, 1])
-    
-    with g1:
-        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
-        if st.button("연구 개요", key="gnb_ov", use_container_width=False):
-            st.session_state["page"] = "overview"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with g2:
-        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
-        if st.button("핵심 기술", key="gnb_tech", use_container_width=False):
-            st.session_state["page"] = "home"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with g3:
-        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
-        if st.button("뉴스룸", key="gnb_news", use_container_width=False):
-            st.session_state["page"] = "home"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with g4:
-        st.markdown('<div class="gnb-btn-style">', unsafe_allow_html=True)
-        if st.button("24개 주제", key="gnb_topics", use_container_width=False):
-            st.session_state["page"] = "home"
-            st.session_state["show_topic_nav"] = True; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+with logo_col:
+    st.button("🟩 BatteryIQ", key="gnb_logo")
+
+with nav1:
+    if st.button("연구 개요", key="gnb_ov"):
+        st.session_state["page"] = "overview"; st.rerun()
+
+with nav2:
+    if st.button("핵심 기술", key="gnb_tech"):
+        st.session_state["page"] = "home"; st.rerun()
+
+with nav3:
+    if st.button("뉴스룸", key="gnb_news"):
+        st.session_state["page"] = "home"; st.rerun()
+
+with nav4:
+    if st.button("24개 주제", key="gnb_topics"):
+        st.session_state["page"] = "home"
+        st.session_state["show_topic_nav"] = True; st.rerun()
+
+with right_col:
+    st.markdown(
+        '<div style="height:64px;display:flex;align-items:center;'
+        'justify-content:flex-end;padding-right:24px;'
+        f'font-size:0.74rem;color:#9EA5AF;">Gregory Plett · Ch 2-04 &nbsp;|&nbsp; 📰{nc}건 📚{pc}편</div>',
+        unsafe_allow_html=True
+    )
+
+st.markdown('<div class="main-spacer"></div>', unsafe_allow_html=True)
 
 # =====================================================================
 # HOME
