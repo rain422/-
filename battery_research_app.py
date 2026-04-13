@@ -757,34 +757,59 @@ st.markdown(f"""
         BatteryIQ
     </div>
     <ul class="gnb-menu">
-        <li id="nav-overview">연구 개요</li>
+        <li id="gnb-overview">연구 개요</li>
         <li>핵심 기술</li>
         <li>뉴스룸</li>
         <li>24개 주제</li>
     </ul>
     <div class="gnb-right">Gregory Plett · Chapter 2-04 &nbsp;|&nbsp; 📰{nc}건 📚{pc}편</div>
 </div>
+<style>
+/* GNB 위에 투명 버튼 오버레이 */
+.gnb-btn-row {{
+    position: fixed; top:0; left:0; right:0; height:68px;
+    display:flex; align-items:center;
+    padding:0 52px; gap:36px;
+    z-index:10000; pointer-events:none;
+}}
+.gnb-btn-row .stButton {{
+    pointer-events:all;
+    min-width:80px;
+}}
+.gnb-btn-row .stButton > button {{
+    background:transparent !important;
+    color:transparent !important;
+    border:none !important;
+    height:68px !important;
+    padding:0 !important;
+    font-size:0 !important;
+    box-shadow:none !important;
+    min-width:80px;
+    cursor:pointer !important;
+}}
+/* 로고 자리 공간 */
+.gnb-btn-spacer {{ min-width:160px; pointer-events:none; }}
+</style>
+<div class="gnb-btn-row">
+    <div class="gnb-btn-spacer"></div>
 """, unsafe_allow_html=True)
 
-# GNB 실제 클릭 버튼 (투명 오버레이)
-gnb_cols = st.columns([2,1,1,1,1,3])
-with gnb_cols[1]:
-    if st.button("연구 개요", key="gnb_overview"):
-        st.session_state["page"] = "overview"
-        st.rerun()
-with gnb_cols[2]:
+gnb_c1,gnb_c2,gnb_c3,gnb_c4,_ = st.columns([1.2,1.2,1,1.2,6])
+with gnb_c1:
+    if st.button("연구 개요", key="gnb_ov"):
+        st.session_state["page"]="overview"; st.rerun()
+with gnb_c2:
     if st.button("핵심 기술", key="gnb_tech"):
-        st.session_state["page"] = "home"
-        st.rerun()
-with gnb_cols[3]:
+        st.session_state["page"]="home"; st.rerun()
+with gnb_c3:
     if st.button("뉴스룸", key="gnb_news"):
-        st.session_state["page"] = "home"
-        st.rerun()
-with gnb_cols[4]:
+        st.session_state["page"]="home"; st.rerun()
+with gnb_c4:
     if st.button("24개 주제", key="gnb_topics"):
-        st.session_state["page"] = "home"
-        st.session_state["show_topic_nav"] = True
-        st.rerun()
+        st.session_state["page"]="home"
+        st.session_state["show_topic_nav"]=True; st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # =====================================================================
 # HOME
@@ -1447,357 +1472,163 @@ elif st.session_state["page"] == "detail":
 # =====================================================================
 # OVERVIEW — 단일 HTML 블록 (sticky 사이드바 완전 지원)
 # =====================================================================
+
 elif st.session_state["page"] == "overview":
 
-    # 홈 버튼
     bc, _ = st.columns([2, 8])
     with bc:
         if st.button("← 홈으로", key="ov_back"):
             st.session_state["page"] = "home"; st.rerun()
 
-    # ─── 동적 HTML 조각 빌드 ───────────────────────────
-
-    # 1. 경쟁력 카드 6개
-    comps = [
-        ("01","안전성 확보","과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.",
-         "https://images.unsplash.com/photo-1597852074816-d933c7d2b988?w=600&h=280&fit=crop"),
-        ("02","수명 예측 (RUL)","잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.",
-         "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=280&fit=crop"),
-        ("03","성능 최적화","실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다.",
-         "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=280&fit=crop"),
-        ("04","배터리 재사용","2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.",
-         "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=280&fit=crop"),
-        ("05","비용 절감","불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.",
-         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=280&fit=crop"),
-        ("06","실시간 모니터링","주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.",
-         "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=280&fit=crop"),
-    ]
-    comp_html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px;">'
-    for num, title, desc, img in comps:
-        comp_html += f'''
-        <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;
-                    transition:all 0.25s;cursor:default;"
-             onmouseover="this.style.boxShadow='0 10px 30px rgba(0,180,160,0.14)';this.style.borderColor='#00B4A0';this.style.transform='translateY(-3px)'"
-             onmouseout="this.style.boxShadow='none';this.style.borderColor='#E2E8F0';this.style.transform='translateY(0)'">
-            <div style="overflow:hidden;height:140px;">
-                <img src="{img}" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);
-                           transition:transform 0.4s;"
-                     onmouseover="this.style.transform='scale(1.05)'"
-                     onmouseout="this.style.transform='scale(1)'">
-            </div>
-            <div style="padding:16px 18px;">
-                <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.8rem;font-weight:800;
-                            color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:7px;">{num}</div>
-                <div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">{title}</div>
-                <div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">{desc}</div>
-            </div>
-        </div>'''
-    comp_html += '</div>'
-
-    # 2. 알고리즘 성능 바 차트
-    methods = [
-        ("칼만 필터 (KF)",         "#94A3B8", [("정확도",72),("실시간성",95),("노이즈 강인성",80),("계산 효율",92),("수렴 속도",85)]),
-        ("확장 칼만 필터 (EKF)",   "#F59E0B", [("정확도",84),("실시간성",88),("노이즈 강인성",85),("계산 효율",80),("수렴 속도",82)]),
-        ("SPKF / UKF",             "#00B4A0", [("정확도",93),("실시간성",82),("노이즈 강인성",92),("계산 효율",72),("수렴 속도",88)]),
-        ("머신러닝 기반",           "#3B82F6", [("정확도",96),("실시간성",75),("노이즈 강인성",90),("계산 효율",55),("수렴 속도",70)]),
-    ]
-    perf_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px;">'
-    for method, accent, bars in methods:
-        card = f'<div style="background:#fff;border:1px solid #E2E8F0;border-top:3px solid {accent};border-radius:8px;padding:20px 22px;">'
-        card += f'<div style="font-size:0.9rem;font-weight:700;color:#0D1B2A;margin-bottom:14px;">{method}</div>'
-        for label, val in bars:
-            clr = "#00B4A0" if val >= 88 else ("#F59E0B" if val >= 72 else "#EF4444")
-            card += f'''<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;">
-                <div style="font-size:0.76rem;color:#334155;min-width:100px;">{label}</div>
-                <div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;overflow:hidden;">
-                    <div style="width:{val}%;height:6px;background:{clr};border-radius:20px;"></div>
-                </div>
-                <div style="font-size:0.76rem;font-weight:700;color:{clr};min-width:28px;text-align:right;">{val}%</div>
-            </div>'''
-        card += '</div>'
-        perf_html += card
-    perf_html += '</div>'
-
-    # 3. 공정 단계
-    steps = [
-        ("📡","센서 데이터 수집","전압·전류·온도 실시간 수집"),
-        ("🔧","등가 회로 모델링","R₀·R₁C₁·OCV 파라미터 정의"),
-        ("📐","파라미터 식별","OLS·WLS·TLS로 추정"),
-        ("🎯","상태 추정 (필터)","EKF·SPKF로 실시간 추정"),
-        ("✅","검증 및 보정","RMSE·MAE 평가 및 업데이트"),
-    ]
-    flow_html = '<div style="display:flex;gap:0;margin-top:32px;">'
-    for j, (icon, title, desc) in enumerate(steps):
-        flow_html += f'''<div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;
-                            text-align:center;transition:all 0.2s;"
-                         onmouseover="this.style.borderColor='#00B4A0'"
-                         onmouseout="this.style.borderColor='#E2E8F0'">
-            <div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:1.3rem;margin:0 auto 12px;transition:all 0.2s;">{icon}</div>
-            <div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">{title}</div>
-            <div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">{desc}</div>
-        </div>'''
-        if j < len(steps) - 1:
-            flow_html += '<div style="display:flex;align-items:center;padding:0 4px;background:#F7F8FA;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;color:#CBD5E1;font-size:1.2rem;">›</div>'
-    flow_html += '</div>'
-
-    # 공정 상세 박스
-    detail_items = [
-        ("등가 회로 모델 (ECM)", "배터리를 RC 회로로 모델링하여 실시간 계산을 가능하게 합니다.",
-         ["R₀ : 순수 내부 저항 — 즉각 전압 강하", "R₁C₁ : 전기화학 분극 — 시정수 τ=R₁C₁",
-          "OCV : 개방 회로 전압 — SOC의 비선형 함수", "V = OCV - I·R₀ - V_RC"]),
-        ("칼만 필터 추정 공정", "예측-업데이트 반복으로 노이즈를 제거하며 최적 추정합니다.",
-         ["예측: x̂⁻ = f(x̂, u) — 상태 전파", "예측: P⁻ = F·P·Fᵀ + Q — 오차 공분산",
-          "업데이트: K = P⁻Hᵀ(HP⁻Hᵀ+R)⁻¹ — 칼만 이득", "업데이트: x̂ = x̂⁻ + K(y - h(x̂⁻)) — 상태 보정"]),
-    ]
-    detail_html = '<div style="margin-top:20px;">'
-    for d_title, d_desc, d_items in detail_items:
-        rows = "".join([f'<div style="font-size:0.76rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ {it}</div>' for it in d_items])
-        detail_html += f'''<div style="background:#F0F4F8;border-left:3px solid #00B4A0;border-radius:0 8px 8px 0;padding:18px 22px;margin-bottom:12px;">
-            <div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">{d_title}</div>
-            <div style="font-size:0.78rem;color:#6B7280;margin-bottom:10px;">{d_desc}</div>
-            {rows}
-        </div>'''
-    detail_html += '</div>'
-
-    # 4. 혁신 기술
-    innovations = [
-        ("🤖","AI / 머신러닝 기반 SOH","딥러닝(LSTM·Transformer)과 물리 기반 모델을 결합한 하이브리드 방식.",["LSTM 시계열 예측","Physics-Informed NN","온라인 학습","이상 탐지"]),
-        ("🌐","디지털 트윈","실제 배터리와 동기화된 가상 모델로 SOH 추정 정확도를 혁신적으로 확장.",["실시간 물리 모델","가속 열화 시뮬","수명 예측 정밀화","가상 환경 테스트"]),
-        ("☁️","클라우드 BMS","차량 군집 빅데이터를 통합 분석하여 집단 지성형 SOH 모델을 개선.",["OTA 모델 업데이트","Fleet 데이터 분석","엣지-클라우드 분산","개인화 보정"]),
-        ("⚡","전고체 배터리 대응","차세대 전고체 배터리의 새로운 열화 메커니즘에 특화된 SOH 추정.",["계면 저항 추적","덴드라이트 감지","고온 내구성","새 ECM 파라미터"]),
-        ("📡","EIS 기반 진단","전기화학 임피던스 분광법으로 내부 상태를 비침습적으로 정밀 진단.",["주파수 대역 분리","온라인 EIS 측정","SOH·SOP 동시 추정","열화 메커니즘 분석"]),
-        ("🔗","조인트·듀얼 추정 고도화","SOC·SOH 동시 추정 필터를 고도화하여 파라미터 식별 정확도 극대화.",["적응형 노이즈","다중 모델 전환","강인한 초기화","실시간 업데이트"]),
-    ]
-    innov_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:32px;">'
-    for icon, title, desc, tags in innovations:
-        tag_html = "".join([f'<span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">{t}</span>' for t in tags])
-        innov_html += f'''<div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;
-                              display:flex;gap:14px;transition:all 0.2s;"
-                         onmouseover="this.style.borderColor='#00B4A0';this.style.boxShadow='0 4px 16px rgba(0,180,160,0.1)'"
-                         onmouseout="this.style.borderColor='#E2E8F0';this.style.boxShadow='none'">
-            <div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:1.2rem;flex-shrink:0;">{icon}</div>
-            <div>
-                <div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">{title}</div>
-                <div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">{desc}</div>
-                <div>{tag_html}</div>
-            </div>
-        </div>'''
-    innov_html += '</div>'
-
-    # 5. 산업별 적용
-    industries = [
-        ("승용 EV","🚗","#E6F7F5","주행거리 보장과 충전 최적화에 SOH 추정이 직접 활용됩니다."),
-        ("상용 EV (트럭·버스)","🚛","#EFF6FF","대용량 배터리팩 SOH를 정밀 관리하여 안정적 운행을 보장합니다."),
-        ("ESS (에너지 저장)","🏭","#F0FDF4","재생에너지 연계 ESS에서 SOH 기반 충방전으로 효율을 극대화합니다."),
-        ("LEV (경량 모빌리티)","🛵","#FFF7ED","경량화된 SOH 알고리즘으로 전동 킥보드·자전거를 관리합니다."),
-        ("로봇·중장비","🤖","#FDF2F8","극한 환경의 산업용 배터리를 안전하게 실시간 관리합니다."),
-        ("항공·드론","✈️","#F0F9FF","비행 중 실시간 SOH 추정으로 안전 귀환을 보장합니다."),
-    ]
-    ind_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px;">'
-    for name, icon, bg, desc in industries:
-        ind_html += f'''<div style="background:{bg};border:1px solid #E2E8F0;border-radius:14px;padding:26px;
-                            display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;
-                            transition:all 0.25s;"
-                        onmouseover="this.style.borderColor='#00B4A0';this.style.boxShadow='0 8px 24px rgba(0,180,160,0.11)'"
-                        onmouseout="this.style.borderColor='#E2E8F0';this.style.boxShadow='none'">
-            <div>
-                <div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">{name}</div>
-                <div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">{desc}</div>
-                <div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div>
-            </div>
-            <div style="font-size:3.2rem;opacity:0.65;">{icon}</div>
-        </div>'''
-    ind_html += '</div>'
-
-    # ─── 전체 단일 HTML 블록 렌더링 ────────────────────
-    st.markdown(f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-    .ov-root {{
-        display: flex;
-        align-items: flex-start;
-        background: #fff;
-        min-height: 100vh;
-        font-family: 'Noto Sans KR', sans-serif;
-    }}
-    /* ── 핵심: 사이드바 sticky ── */
-    .ov-sidebar {{
-        width: 220px;
-        flex-shrink: 0;
-        position: sticky;
-        top: 72px;
-        height: fit-content;
-        padding: 40px 0 40px 0;
-        border-right: 1px solid #E2E8F0;
-        background: #fff;
-        z-index: 200;
-        align-self: flex-start;
-    }}
-    .ov-sidebar-label {{
-        font-size: 0.65rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #00B4A0;
-        padding: 0 24px;
-        margin-bottom: 16px;
-    }}
-    .ov-nav-a {{
-        display: block;
-        padding: 13px 24px;
-        font-size: 0.88rem;
-        font-weight: 400;
-        color: #9EA5AF;
-        text-decoration: none;
-        border-left: 2px solid transparent;
-        transition: all 0.15s;
-        cursor: pointer;
-        border-bottom: 1px solid #F1F5F9;
-    }}
-    .ov-nav-a:last-child {{ border-bottom: none; }}
-    .ov-nav-a:hover {{ color: #0D1B2A; padding-left: 30px; }}
-    .ov-nav-a.on {{ color: #0D1B2A; font-weight: 700; border-left-color: #00B4A0; background: #F7F8FA; }}
-    /* ── 콘텐츠 ── */
-    .ov-body {{ flex: 1; overflow: hidden; }}
-    .ov-sec {{
-        padding: 72px 64px;
-        border-bottom: 1px solid #E2E8F0;
-        scroll-margin-top: 80px;
-    }}
-    .ov-sec-white {{ background: #fff; }}
-    .ov-sec-gray  {{ background: #F0F4F8; }}
-    .ov-sec-label {{
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 3px;
-        text-transform: uppercase; color: #00B4A0; margin-bottom: 10px;
-        display: flex; align-items: center; gap: 8px;
-    }}
-    .ov-sec-label::before {{ content:''; display:block; width:18px; height:1px; background:#00B4A0; }}
-    .ov-sec-title {{
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 1.8rem; font-weight: 800; color: #0D1B2A;
-        letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 12px;
-    }}
-    .ov-sec-desc {{
-        font-size: 0.86rem; color: #6B7280;
-        line-height: 1.8; max-width: 620px;
-    }}
-    </style>
-
-    <div class="ov-root">
-        <!-- 사이드바 -->
-        <div class="ov-sidebar">
-            <div class="ov-sidebar-label">연구 개요</div>
-            <a class="ov-nav-a on" id="nav-competitiveness" onclick="navTo('competitiveness')">경쟁력</a>
-            <a class="ov-nav-a" id="nav-performance" onclick="navTo('performance')">알고리즘 성능</a>
-            <a class="ov-nav-a" id="nav-process" onclick="navTo('process')">핵심 공정</a>
-            <a class="ov-nav-a" id="nav-innovation" onclick="혁신 기술</a>
-            <a class="ov-nav-a" id="nav-industry" onclick="navTo('industry')">산업별 적용</a>
+    # 개요 히어로
+    st.markdown("""
+    <div style="background:#0D1B2A;padding:110px 72px 56px;">
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:18px;">BatteryIQ › 연구 개요</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);
+                    font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.15;">
+            배터리 건강 추정<br>연구 개요
         </div>
-
-        <!-- 콘텐츠 -->
-        <div class="ov-body">
-
-            <!-- 경쟁력 -->
-            <div class="ov-sec ov-sec-white" id="sec-competitiveness">
-                <div class="ov-sec-label">Core Competitiveness</div>
-                <div class="ov-sec-title">경쟁력</div>
-                <div class="ov-sec-desc">배터리 건강 상태(SOH) 추정은 전기차·ESS 안전 운용의 핵심 기술입니다. 정확한 SOH 추정은 안전성·수명·성능·비용 모든 면에서 경쟁력을 결정합니다.</div>
-                {comp_html}
-            </div>
-
-            <!-- 알고리즘 비교표 -->
-            <div class="ov-sec ov-sec-gray">
-                <div class="ov-sec-label">Algorithm Comparison</div>
-                <div class="ov-sec-title">알고리즘 비교</div>
-                <div class="ov-sec-desc">SOH 추정 방법별 정확도·실시간성·계산량을 비교하여 최적 알고리즘을 선택하세요.</div>
-                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:28px;">
-                <thead><tr style="background:#0D1B2A;color:white;">
-                    <th style="padding:13px 15px;text-align:left;font-weight:600;">방법</th>
-                    <th style="padding:13px 15px;text-align:center;font-weight:600;">정확도</th>
-                    <th style="padding:13px 15px;text-align:center;font-weight:600;">실시간성</th>
-                    <th style="padding:13px 15px;text-align:center;font-weight:600;">계산량</th>
-                    <th style="padding:13px 15px;text-align:center;font-weight:600;">노이즈 강인성</th>
-                    <th style="padding:13px 15px;text-align:left;font-weight:600;">주요 적용</th>
-                </tr></thead><tbody>
-                <tr style="border-bottom:1px solid #EEF0F3;"><td style="padding:12px 15px;color:#6B7280;">쿨롱 카운팅</td><td style="text-align:center;">⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">❌</td><td style="padding:12px 15px;color:#6B7280;">간단한 BMS</td></tr>
-                <tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;"><td style="padding:12px 15px;color:#6B7280;">OCV 기반</td><td style="text-align:center;">⭐⭐⭐</td><td style="text-align:center;">❌</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">✅</td><td style="padding:12px 15px;color:#6B7280;">초기화 시점</td></tr>
-                <tr style="border-bottom:1px solid #EEF0F3;"><td style="padding:12px 15px;color:#6B7280;">OLS / WLS / TLS</td><td style="text-align:center;">⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">보통</td><td style="padding:12px 15px;color:#6B7280;">용량 추정</td></tr>
-                <tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;"><td style="padding:12px 15px;color:#6B7280;">EKF</td><td style="text-align:center;">⭐⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#F59E0B;font-weight:600;">보통</td><td style="text-align:center;">✅</td><td style="padding:12px 15px;color:#6B7280;">EV BMS</td></tr>
-                <tr style="border-bottom:1px solid #EEF0F3;background:#E6F7F5;"><td style="padding:12px 15px;color:#0D1B2A;font-weight:700;">SPKF / UKF ★</td><td style="text-align:center;">⭐⭐⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#F59E0B;font-weight:600;">보통</td><td style="text-align:center;color:#00B4A0;font-weight:700;">✅✅</td><td style="padding:12px 15px;color:#00B4A0;font-weight:700;">고성능 EV</td></tr>
-                <tr><td style="padding:12px 15px;color:#6B7280;">머신러닝</td><td style="text-align:center;">⭐⭐⭐⭐⭐</td><td style="text-align:center;">보통</td><td style="text-align:center;color:#EF4444;font-weight:600;">높음</td><td style="text-align:center;color:#00B4A0;font-weight:700;">✅✅</td><td style="padding:12px 15px;color:#6B7280;">클라우드 BMS</td></tr>
-                </tbody></table>
-            </div>
-
-            <!-- 알고리즘 성능 -->
-            <div class="ov-sec ov-sec-white" id="sec-performance">
-                <div class="ov-sec-label">Algorithm Performance</div>
-                <div class="ov-sec-title">알고리즘 성능</div>
-                <div class="ov-sec-desc">Gregory Plett Chapter 2-04의 핵심 SOH 추정 알고리즘을 5가지 지표로 비교합니다. EV BMS 실적용을 위한 알고리즘 선택의 기준이 됩니다.</div>
-                {perf_html}
-            </div>
-
-            <!-- 핵심 공정 -->
-            <div class="ov-sec ov-sec-gray" id="sec-process">
-                <div class="ov-sec-label">Estimation Process</div>
-                <div class="ov-sec-title">핵심 공정</div>
-                <div class="ov-sec-desc">센서 데이터 수집부터 검증까지 — SOH 추정의 5단계 공정을 탐색하세요.</div>
-                {flow_html}
-                {detail_html}
-            </div>
-
-            <!-- 혁신 기술 -->
-            <div class="ov-sec ov-sec-white" id="sec-innovation">
-                <div class="ov-sec-label">Innovation Technology</div>
-                <div class="ov-sec-title">혁신 기술</div>
-                <div class="ov-sec-desc">AI·디지털 트윈·클라우드와 결합한 차세대 SOH 추정 기술을 탐색하세요.</div>
-                {innov_html}
-            </div>
-
-            <!-- 산업별 적용 -->
-            <div class="ov-sec ov-sec-gray" id="sec-industry">
-                <div class="ov-sec-label">Industry Solutions</div>
-                <div class="ov-sec-title">산업별 적용</div>
-                <div class="ov-sec-desc">배터리 건강 추정 기술은 전기차부터 항공까지 다양한 산업에 핵심 기술로 적용됩니다.</div>
-                {ind_html}
-            </div>
-
-        </div><!-- /.ov-body -->
-    </div><!-- /.ov-root -->
-
-    <script>
-    // 사이드바 앵커 이동
-    function navTo(id) {{
-        const el = document.getElementById('sec-' + id);
-        if (el) {{
-            const y = el.getBoundingClientRect().top + window.pageYOffset - 90;
-            window.scrollTo({{ top: y, behavior: 'smooth' }});
-        }}
-    }}
-    // 스크롤 → 사이드바 자동 하이라이트
-    (function() {{
-        const ids = ['competitiveness', 'performance', 'process', 'innovation', 'industry'];
-        function update() {{
-            let cur = ids[0];
-            ids.forEach(id => {{
-                const el = document.getElementById('sec-' + id);
-                if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.4) cur = id;
-            }});
-            ids.forEach(id => {{
-                const nav = document.getElementById('nav-' + id);
-                if (nav) nav.classList.toggle('on', id === cur);
-            }});
-        }}
-        window.addEventListener('scroll', update, {{ passive: true }});
-        update();
-    }})();
-    </script>
+    </div>
     """, unsafe_allow_html=True)
 
-    # 푸터
+    import streamlit.components.v1 as components
+
+    SEC = dict(
+        lbl_style="font-size:0.65rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#00B4A0;margin-bottom:10px;display:flex;align-items:center;gap:8px;",
+        title_style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.7rem;font-weight:800;color:#0D1B2A;letter-spacing:-0.5px;line-height:1.2;margin-bottom:12px;",
+        desc_style="font-size:0.86rem;color:#6B7280;line-height:1.8;max-width:640px;margin-bottom:0;",
+    )
+
+
+    full_html = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#0D1B2A;}
+.root{display:flex;align-items:flex-start;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:#fff;border-right:1px solid #E2E8F0;padding:32px 0;}
+.sidebar-label{font-size:0.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    color:#00B4A0;padding:0 24px;margin-bottom:16px;}
+.nav-a{display:block;padding:12px 24px;font-size:0.88rem;font-weight:400;color:#9EA5AF;
+    text-decoration:none;border-left:2px solid transparent;border-bottom:1px solid #F1F5F9;
+    cursor:pointer;transition:all 0.15s;}
+.nav-a:last-child{border-bottom:none;}
+.nav-a:hover{color:#0D1B2A;padding-left:30px;}
+.nav-a.on{color:#0D1B2A;font-weight:700;border-left-color:#00B4A0;background:#F7F8FA;}
+.body{flex:1;overflow:hidden;}
+.sec{padding:64px 60px;border-bottom:1px solid #E2E8F0;scroll-margin-top:10px;}
+.sec-w{background:#fff;}
+.sec-g{background:#F0F4F8;}
+.sec-lbl{font-size:0.62rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+    color:#00B4A0;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-lbl::before{content:'';display:block;width:18px;height:1px;background:#00B4A0;}
+.sec-ttl{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.7rem;font-weight:800;
+    color:#0D1B2A;letter-spacing:-0.5px;line-height:1.2;margin-bottom:12px;}
+.sec-dsc{font-size:0.84rem;color:#6B7280;line-height:1.8;max-width:620px;}
+</style>
+</head>
+<body>
+<div class="root">
+<div class="sidebar">
+    <div class="sidebar-label">연구 개요</div>
+    <a class="nav-a on" id="nav-c" onclick="go('c')">경쟁력</a>
+    <a class="nav-a" id="nav-p" onclick="go('p')">알고리즘 성능</a>
+    <a class="nav-a" id="nav-pr" onclick="go('pr')">핵심 공정</a>
+    <a class="nav-a" id="nav-i" onclick="go('i')">혁신 기술</a>
+    <a class="nav-a" id="nav-d" onclick="go('d')">산업별 적용</a>
+</div>
+<div class="body" id="body">
+
+<div class="sec sec-w" id="s-c">
+<div class="sec-lbl">Core Competitiveness</div>
+<div class="sec-ttl">경쟁력</div>
+<div class="sec-dsc">배터리 건강 상태(SOH) 추정은 전기차·ESS 안전 운용의 핵심 기술입니다. 정확한 SOH 추정은 안전성·수명·성능·비용 모든 면에서 경쟁력을 결정합니다.</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;"><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1597852074816-d933c7d2b988?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">01</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">안전성 확보</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">과충전·과방전 실시간 방지로 배터리 열폭주 위험을 사전 예방합니다.</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">02</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">수명 예측 (RUL)</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">잔여 유용 수명을 정확히 예측하여 교체 시점을 최적화합니다.</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">03</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">성능 최적화</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">실시간 SOH로 에너지 관리 전략을 최적화, 주행거리를 극대화합니다.</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">04</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">배터리 재사용</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">2차 활용 가능 배터리를 정밀 선별하여 순환경제를 실현합니다.</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">05</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">비용 절감</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">불필요한 조기 교체 방지로 총 소유 비용(TCO)을 절감합니다.</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;"><div style="overflow:hidden;height:140px;"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=260&fit=crop" style="width:100%;height:140px;object-fit:cover;filter:brightness(0.85);display:block;"></div><div style="padding:16px 18px;"><div style="font-size:1.8rem;font-weight:800;color:#00B4A0;opacity:0.18;line-height:1;margin-bottom:6px;">06</div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:6px;">실시간 모니터링</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.65;">주행 중에도 배터리 상태를 실시간 추정하여 즉각 대응합니다.</div></div></div></div>
+</div>
+
+<div class="sec sec-g">
+<div class="sec-lbl">Algorithm Comparison</div>
+<div class="sec-ttl">알고리즘 비교</div>
+<div class="sec-dsc">SOH 추정 방법별 정확도·실시간성·계산량을 비교하여 최적 알고리즘을 선택하세요.</div>
+<table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-top:24px;">
+<thead><tr style="background:#0D1B2A;color:#fff;">
+<th style="padding:12px 14px;text-align:left;">방법</th>
+<th style="padding:12px 14px;text-align:center;">정확도</th>
+<th style="padding:12px 14px;text-align:center;">실시간성</th>
+<th style="padding:12px 14px;text-align:center;">계산량</th>
+<th style="padding:12px 14px;text-align:center;">노이즈 강인성</th>
+<th style="padding:12px 14px;text-align:left;">주요 적용</th>
+</tr></thead><tbody>
+<tr style="border-bottom:1px solid #EEF0F3;"><td style="padding:11px 14px;color:#6B7280;">쿨롱 카운팅</td><td style="text-align:center;">⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">❌</td><td style="padding:11px 14px;color:#6B7280;">간단한 BMS</td></tr>
+<tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;"><td style="padding:11px 14px;color:#6B7280;">OCV 기반</td><td style="text-align:center;">⭐⭐⭐</td><td style="text-align:center;">❌</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">✅</td><td style="padding:11px 14px;color:#6B7280;">초기화 시점</td></tr>
+<tr style="border-bottom:1px solid #EEF0F3;"><td style="padding:11px 14px;color:#6B7280;">OLS / WLS / TLS</td><td style="text-align:center;">⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#00B4A0;font-weight:600;">낮음</td><td style="text-align:center;">보통</td><td style="padding:11px 14px;color:#6B7280;">용량 추정</td></tr>
+<tr style="border-bottom:1px solid #EEF0F3;background:#F7F8FA;"><td style="padding:11px 14px;color:#6B7280;">EKF</td><td style="text-align:center;">⭐⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#F59E0B;font-weight:600;">보통</td><td style="text-align:center;">✅</td><td style="padding:11px 14px;color:#6B7280;">EV BMS</td></tr>
+<tr style="border-bottom:1px solid #EEF0F3;background:#E6F7F5;"><td style="padding:11px 14px;color:#0D1B2A;font-weight:700;">SPKF / UKF ★</td><td style="text-align:center;">⭐⭐⭐⭐⭐</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#F59E0B;font-weight:600;">보통</td><td style="text-align:center;color:#00B4A0;font-weight:700;">✅✅</td><td style="padding:11px 14px;color:#00B4A0;font-weight:700;">고성능 EV</td></tr>
+<tr><td style="padding:11px 14px;color:#6B7280;">머신러닝</td><td style="text-align:center;">⭐⭐⭐⭐⭐</td><td style="text-align:center;">보통</td><td style="text-align:center;color:#EF4444;font-weight:600;">높음</td><td style="text-align:center;color:#00B4A0;font-weight:700;">✅✅</td><td style="padding:11px 14px;color:#6B7280;">클라우드 BMS</td></tr>
+</tbody></table>
+</div>
+
+<div class="sec sec-w" id="s-p">
+<div class="sec-lbl">Algorithm Performance</div>
+<div class="sec-ttl">알고리즘 성능</div>
+<div class="sec-dsc">Gregory Plett Chapter 2-04의 핵심 SOH 추정 알고리즘을 5가지 지표로 비교합니다.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px;"><div style="background:#fff;border:1px solid #E2E8F0;border-top:3px solid #94A3B8;border-radius:8px;padding:20px 22px;"><div style="font-size:0.9rem;font-weight:700;color:#0D1B2A;margin-bottom:12px;">칼만 필터 (KF)</div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">정확도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:72%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">72%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">실시간성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:95%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">95%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">노이즈 강인성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:80%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">80%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">계산 효율</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:92%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">92%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">수렴 속도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:85%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">85%</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-top:3px solid #F59E0B;border-radius:8px;padding:20px 22px;"><div style="font-size:0.9rem;font-weight:700;color:#0D1B2A;margin-bottom:12px;">확장 칼만 필터 (EKF)</div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">정확도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:84%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">84%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">실시간성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:88%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">88%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">노이즈 강인성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:85%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">85%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">계산 효율</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:80%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">80%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">수렴 속도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:82%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">82%</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-top:3px solid #00B4A0;border-radius:8px;padding:20px 22px;"><div style="font-size:0.9rem;font-weight:700;color:#0D1B2A;margin-bottom:12px;">SPKF / UKF</div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">정확도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:93%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">93%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">실시간성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:82%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">82%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">노이즈 강인성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:92%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">92%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">계산 효율</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:72%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">72%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">수렴 속도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:88%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">88%</div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-top:3px solid #3B82F6;border-radius:8px;padding:20px 22px;"><div style="font-size:0.9rem;font-weight:700;color:#0D1B2A;margin-bottom:12px;">머신러닝 기반</div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">정확도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:96%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">96%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">실시간성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:75%;height:6px;background:#F59E0B;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#F59E0B;min-width:28px;text-align:right;">75%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">노이즈 강인성</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:90%;height:6px;background:#00B4A0;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#00B4A0;min-width:28px;text-align:right;">90%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">계산 효율</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:55%;height:6px;background:#EF4444;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#EF4444;min-width:28px;text-align:right;">55%</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;"><div style="font-size:0.75rem;color:#334155;min-width:100px;">수렴 속도</div><div style="flex:1;background:#E2E8F0;border-radius:20px;height:6px;"><div style="width:70%;height:6px;background:#EF4444;border-radius:20px;"></div></div><div style="font-size:0.75rem;font-weight:700;color:#EF4444;min-width:28px;text-align:right;">70%</div></div></div></div>
+</div>
+
+<div class="sec sec-g" id="s-pr">
+<div class="sec-lbl">Estimation Process</div>
+<div class="sec-ttl">핵심 공정</div>
+<div class="sec-dsc">센서 데이터 수집부터 검증까지 — SOH 추정의 5단계 공정을 탐색하세요.</div>
+<div style="display:flex;gap:0;margin-top:28px;"><div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 12px;">📡</div><div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">센서 데이터 수집</div><div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">전압·전류·온도 실시간 수집</div></div><div style="display:flex;align-items:center;padding:0 6px;background:#F7F8FA;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;color:#CBD5E1;font-size:1.2rem;">›</div><div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 12px;">🔧</div><div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">등가 회로 모델링</div><div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">R₀·R₁C₁·OCV 파라미터 정의</div></div><div style="display:flex;align-items:center;padding:0 6px;background:#F7F8FA;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;color:#CBD5E1;font-size:1.2rem;">›</div><div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 12px;">📐</div><div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">파라미터 식별</div><div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">OLS·WLS·TLS로 추정</div></div><div style="display:flex;align-items:center;padding:0 6px;background:#F7F8FA;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;color:#CBD5E1;font-size:1.2rem;">›</div><div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 12px;">🎯</div><div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">상태 추정 (필터)</div><div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">EKF·SPKF로 실시간 추정</div></div><div style="display:flex;align-items:center;padding:0 6px;background:#F7F8FA;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;color:#CBD5E1;font-size:1.2rem;">›</div><div style="flex:1;background:#fff;border:1px solid #E2E8F0;padding:24px 16px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 12px;">✅</div><div style="font-size:0.82rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">검증 및 보정</div><div style="font-size:0.72rem;color:#9EA5AF;line-height:1.5;">RMSE·MAE 평가 및 업데이트</div></div></div>
+<div style="margin-top:20px;"><div style="background:#F0F4F8;border-left:3px solid #00B4A0;border-radius:0 8px 8px 0;padding:18px 22px;margin-bottom:12px;"><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">등가 회로 모델 (ECM)</div><div style="font-size:0.78rem;color:#6B7280;margin-bottom:10px;">배터리를 RC 회로로 모델링하여 실시간 계산을 가능하게 합니다.</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ R₀ : 순수 내부 저항 — 즉각 전압 강하</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ R₁C₁ : 전기화학 분극 — 시정수 τ=R₁C₁</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ OCV : 개방 회로 전압 — SOC의 비선형 함수</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ V = OCV - I·R₀ - V_RC</div></div><div style="background:#F0F4F8;border-left:3px solid #00B4A0;border-radius:0 8px 8px 0;padding:18px 22px;margin-bottom:12px;"><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">칼만 필터 추정 공정</div><div style="font-size:0.78rem;color:#6B7280;margin-bottom:10px;">예측-업데이트 반복으로 노이즈를 제거하며 최적 추정합니다.</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ 예측: x̂⁻ = f(x̂, u) — 상태 전파</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ 예측: P⁻ = F·P·Fᵀ + Q — 오차 공분산</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ 업데이트: K = P⁻Hᵀ(HP⁻Hᵀ+R)⁻¹ — 칼만 이득</div><div style="font-size:0.74rem;color:#334155;padding:5px 0;border-bottom:1px solid #E2E8F0;font-family:monospace;">▸ 업데이트: x̂ = x̂⁻ + K(y - h(x̂⁻)) — 상태 보정</div></div></div>
+</div>
+
+<div class="sec sec-w" id="s-i">
+<div class="sec-lbl">Innovation Technology</div>
+<div class="sec-ttl">혁신 기술</div>
+<div class="sec-dsc">AI·디지털 트윈·클라우드와 결합한 차세대 SOH 추정 기술을 탐색하세요.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;"><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🤖</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">AI / 머신러닝 기반 SOH</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">딥러닝과 물리 기반 모델을 결합한 하이브리드 방식으로 정확도를 대폭 향상.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">LSTM 시계열 예측</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">Physics-Informed NN</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">온라인 학습</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">이상 탐지</span></div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🌐</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">디지털 트윈</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">실제 배터리와 동기화된 가상 모델로 SOH 추정 정확도를 혁신적으로 확장.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">실시간 물리 모델</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">가속 열화 시뮬</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">수명 예측 정밀화</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">가상 환경 테스트</span></div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">☁️</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">클라우드 BMS</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">차량 군집 빅데이터를 통합 분석하여 집단 지성형 SOH 모델을 개선.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">OTA 모델 업데이트</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">Fleet 데이터 분석</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">엣지-클라우드 분산</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">개인화 보정</span></div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">⚡</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">전고체 배터리 대응</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">차세대 전고체 배터리의 새로운 열화 메커니즘에 특화된 SOH 추정.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">계면 저항 추적</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">덴드라이트 감지</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">고온 내구성</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">새 ECM 파라미터</span></div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📡</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">EIS 기반 진단</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">전기화학 임피던스 분광법으로 내부 상태를 비침습적으로 정밀 진단.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">주파수 대역 분리</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">온라인 EIS 측정</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">SOH·SOP 동시 추정</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">열화 메커니즘 분석</span></div></div></div><div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:20px;display:flex;gap:14px;"><div style="width:44px;height:44px;border-radius:10px;background:#E6F7F5;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🔗</div><div><div style="font-size:0.88rem;font-weight:700;color:#0D1B2A;margin-bottom:5px;">조인트·듀얼 추정 고도화</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;margin-bottom:8px;">SOC·SOH 동시 추정 필터를 고도화하여 파라미터 식별 정확도 극대화.</div><div><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">적응형 노이즈</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">다중 모델 전환</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">강인한 초기화</span><span style="background:#E6F7F5;color:#00796B;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:500;margin:2px 2px 0 0;display:inline-block;">실시간 업데이트</span></div></div></div></div>
+</div>
+
+<div class="sec sec-g" id="s-d">
+<div class="sec-lbl">Industry Solutions</div>
+<div class="sec-ttl">산업별 적용</div>
+<div class="sec-dsc">배터리 건강 추정 기술은 전기차부터 항공까지 다양한 산업에 핵심 기술로 적용됩니다.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px;"><div style="background:#E6F7F5;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">승용 EV</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">주행거리 보장과 충전 최적화에 SOH 추정이 직접 활용됩니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">🚗</div></div><div style="background:#EFF6FF;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">상용 EV (트럭·버스)</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">대용량 배터리팩 SOH를 정밀 관리하여 안정적 운행을 보장합니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">🚛</div></div><div style="background:#F0FDF4;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">ESS (에너지 저장)</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">재생에너지 연계 ESS에서 SOH 기반 충방전으로 효율을 극대화합니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">🏭</div></div><div style="background:#FFF7ED;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">LEV (경량 모빌리티)</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">경량화된 SOH 알고리즘으로 전동 킥보드·자전거를 관리합니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">🛵</div></div><div style="background:#FDF2F8;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">로봇·중장비</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">극한 환경의 산업용 배터리를 안전하게 실시간 관리합니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">🤖</div></div><div style="background:#F0F9FF;border:1px solid #E2E8F0;border-radius:14px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;min-height:160px;"><div><div style="font-size:1.05rem;font-weight:800;color:#0D1B2A;margin-bottom:7px;">항공·드론</div><div style="font-size:0.76rem;color:#6B7280;line-height:1.6;max-width:190px;">비행 중 실시간 SOH 추정으로 안전 귀환을 보장합니다.</div><div style="font-size:0.76rem;color:#9EA5AF;font-weight:600;margin-top:10px;">자세히 보기 →</div></div><div style="font-size:3.2rem;opacity:0.65;">✈️</div></div></div>
+</div>
+
+</div>
+</div>
+<script>
+function go(id) {
+  document.getElementById('s-' + id).scrollIntoView({behavior:'smooth', block:'start'});
+}
+(function() {
+  var secs = [['c','s-c'],['p','s-p'],['pr','s-pr'],['i','s-i'],['d','s-d']];
+  var body = document.getElementById('body');
+  body.addEventListener('scroll', function() {
+    var cur = secs[0][0];
+    secs.forEach(function(s) {
+      var el = document.getElementById(s[1]);
+      if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.45) cur = s[0];
+    });
+    secs.forEach(function(s) {
+      var nav = document.getElementById('nav-' + s[0]);
+      if (nav) nav.className = 'nav-a' + (s[0] === cur ? ' on' : '');
+    });
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
+    """
+    components.html(full_html, height=900, scrolling=True)
+
     st.markdown("""
     <div class="footer">
         <div class="footer-logo">🔋 Battery<span>IQ</span></div>
