@@ -942,32 +942,6 @@ if st.session_state["page"] == "home":
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 24개 주제 탐색
-    st.markdown("""
-    <div class="sec sec-gray">
-        <div class="sec-label">연구 주제</div>
-        <div class="sec-title">24개 핵심 주제</div>
-        <div class="sec-desc">각 주제를 선택하면 최신 뉴스, 논문 검색, 전문 보고서 자동 생성을 시작합니다.</div>
-        <div class="topic-list-wrap">
-    """, unsafe_allow_html=True)
-
-    for i,(num,ko,en,desc,kw) in enumerate(TOPICS):
-        st.markdown(f"""
-        <div class="topic-row">
-            <div class="t-num">{num}</div>
-            <div class="t-title">{ko}</div>
-            <div class="t-en">{en}</div>
-            <div class="t-arrow">→</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button(f"주제선택_{i}", key=f"tsel_{i}", use_container_width=True):
-            st.session_state.update({"page":"detail","sel_idx":i,"tab":"news","step":0,"auto_fetch":True})
-            for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
-                st.session_state[k2]=[] if k2!="report" else ""
-            st.rerun()
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
     # ── LG 스타일 다크 배너 (영상 배경) ──
     st.markdown("""
     <style>
