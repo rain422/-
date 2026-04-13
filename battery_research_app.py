@@ -1079,11 +1079,11 @@ if st.session_state["page"] == "home":
     </style>
     <div class="dark-banner">
         <video autoplay muted loop playsinline
-            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.3);">
+            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.55);">
             <source src="https://raw.githubusercontent.com/rain422/-/main/15254965_1920_1080_24fps.mp4" type="video/mp4">
         </video>
         <div style="position:absolute;inset:0;
-            background:linear-gradient(to bottom, rgba(13,27,42,0.3) 0%, rgba(13,27,42,0.5) 100%);">
+            background:linear-gradient(to bottom, rgba(13,27,42,0.15) 0%, rgba(13,27,42,0.4) 100%);">
         </div>
         <div class="dark-banner-overlay"></div>
         <div class="dark-banner-body">
