@@ -1597,41 +1597,62 @@ elif st.session_state["page"] == "overview":
         st.markdown("""
         <div class="ov-sidenav">
             <div class="ov-sidenav-label">연구 개요</div>
-            <a class="ov-nav-link active" href="#sec-competitiveness" onclick="smoothTo('sec-competitiveness')">경쟁력</a>
-            <a class="ov-nav-link" href="#sec-performance" onclick="smoothTo('sec-performance')">알고리즘 성능</a>
-            <a class="ov-nav-link" href="#sec-process" onclick="smoothTo('sec-process')">핵심 공정</a>
-            <a class="ov-nav-link" href="#sec-innovation" onclick="smoothTo('sec-innovation')">혁신 기술</a>
-            <a class="ov-nav-link" href="#sec-industry" onclick="smoothTo('sec-industry')">산업별 적용</a>
+            <a class="ov-nav-link active" href="#sec-competitiveness" onclick="smoothTo('sec-competitiveness');return false;">경쟁력</a>
+            <a class="ov-nav-link" href="#sec-performance" onclick="smoothTo('sec-performance');return false;">알고리즘 성능</a>
+            <a class="ov-nav-link" href="#sec-process" onclick="smoothTo('sec-process');return false;">핵심 공정</a>
+            <a class="ov-nav-link" href="#sec-innovation" onclick="smoothTo('sec-innovation');return false;">혁신 기술</a>
+            <a class="ov-nav-link" href="#sec-industry" onclick="smoothTo('sec-industry');return false;">산업별 적용</a>
         </div>
+
+        <style>
+        /* 사이드바 강제 sticky — Streamlit iframe 내부 스크롤 대응 */
+        .ov-sidenav {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 80px !important;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            z-index: 100;
+        }
+        /* Streamlit 컬럼 overflow 허용 */
+        [data-testid="column"]:first-child {
+            overflow: visible !important;
+            position: sticky !important;
+            top: 80px !important;
+            align-self: flex-start !important;
+            height: fit-content !important;
+        }
+        </style>
 
         <script>
         function smoothTo(id) {
             const el = document.getElementById(id);
             if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                window.scrollTo({ top: y, behavior: 'smooth' });
             }
         }
         // 스크롤 시 자동 하이라이트
         (function() {
             const sections = ['sec-competitiveness','sec-performance','sec-process','sec-innovation','sec-industry'];
-            const navLinks = document.querySelectorAll('.ov-nav-link');
             function onScroll() {
                 let current = sections[0];
                 sections.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
                         const top = el.getBoundingClientRect().top;
-                        if (top <= window.innerHeight * 0.35) current = id;
+                        if (top <= window.innerHeight * 0.38) current = id;
                     }
                 });
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#' + current) {
-                        link.classList.add('active');
-                    }
+                document.querySelectorAll('.ov-nav-link').forEach(link => {
+                    const href = link.getAttribute('href') || '';
+                    link.classList.toggle('active', href === '#' + current);
                 });
             }
-            window.addEventListener('scroll', onScroll, {passive: true});
+            window.addEventListener('scroll', onScroll, { passive: true });
+            // 부모 요소 스크롤도 감지
+            document.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
         })();
         </script>
         """, unsafe_allow_html=True)
@@ -1714,30 +1735,45 @@ elif st.session_state["page"] == "overview":
         </div>
         """, unsafe_allow_html=True)
 
+        # 알고리즘 데이터
         methods = [
-            ("칼만 필터 (KF)",[("정확도",72),("실시간성",95),("노이즈 강인성",80),("계산 효율",92),("수렴 속도",85)],"#6B7280"),
-            ("확장 칼만 필터 (EKF)",[("정확도",84),("실시간성",88),("노이즈 강인성",85),("계산 효율",80),("수렴 속도",82)],"#F59E0B"),
-            ("SPKF / UKF",[("정확도",93),("실시간성",82),("노이즈 강인성",92),("계산 효율",72),("수렴 속도",88)],"#00B4A0"),
-            ("머신러닝 기반",[("정확도",96),("실시간성",75),("노이즈 강인성",90),("계산 효율",55),("수렴 속도",70)],"#3B82F6"),
+            ("칼만 필터 (KF)",    "#6B7280", [("정확도",72),("실시간성",95),("노이즈 강인성",80),("계산 효율",92),("수렴 속도",85)]),
+            ("확장 칼만 필터 (EKF)","#F59E0B",[("정확도",84),("실시간성",88),("노이즈 강인성",85),("계산 효율",80),("수렴 속도",82)]),
+            ("SPKF / UKF",       "#00B4A0", [("정확도",93),("실시간성",82),("노이즈 강인성",92),("계산 효율",72),("수렴 속도",88)]),
+            ("머신러닝 기반",     "#3B82F6", [("정확도",96),("실시간성",75),("노이즈 강인성",90),("계산 효율",55),("수렴 속도",70)]),
         ]
-        ac1,ac2 = st.columns(2, gap="small")
-        for i,(method,bars,accent) in enumerate(methods):
-            with (ac1 if i%2==0 else ac2):
-                bar_html = ""
-                for label,val in bars:
-                    clr = "#00B4A0" if val>=88 else ("#F59E0B" if val>=72 else "#EF4444")
-                    bar_html += f"""
-                    <div class="alg-bar-row">
-                        <div class="alg-bar-label">{label}</div>
-                        <div class="alg-bar-bg"><div class="alg-bar-fill" style="width:{val}%;background:{clr};"></div></div>
-                        <div class="alg-bar-val" style="color:{clr};">{val}%</div>
-                    </div>"""
+
+        ac1, ac2 = st.columns(2, gap="small")
+        for i, (method, accent, bars) in enumerate(methods):
+            with (ac1 if i % 2 == 0 else ac2):
+                # 카드 헤더
                 st.markdown(f"""
-                <div class="alg-card" style="border-top:3px solid {accent};">
-                    <div class="alg-name">{method}</div>
-                    {bar_html}
+                <div style="background:var(--white);border:1px solid var(--gray2);
+                            border-top:3px solid {accent};border-radius:8px;
+                            padding:20px 22px 8px;margin-bottom:0;">
+                    <div style="font-size:0.92rem;font-weight:700;color:var(--navy);margin-bottom:14px;">{method}</div>
                 </div>
                 """, unsafe_allow_html=True)
+                # 각 지표를 개별 st.markdown으로 렌더링
+                for label, val in bars:
+                    clr = "#00B4A0" if val >= 88 else ("#F59E0B" if val >= 72 else "#EF4444")
+                    pct = val / 100.0
+                    # 배경 바 HTML — 단순하게 inline style만 사용
+                    filled_w = val
+                    empty_w  = 100 - val
+                    st.markdown(
+                        f'<div style="background:white;border:1px solid #EEF0F3;border-top:none;'
+                        f'padding:10px 22px;display:flex;align-items:center;gap:12px;">'
+                        f'<div style="font-size:0.78rem;color:#334155;font-weight:500;min-width:110px;">{label}</div>'
+                        f'<div style="flex:1;background:#E2E8F0;border-radius:20px;height:7px;overflow:hidden;">'
+                        f'<div style="width:{filled_w}%;height:7px;background:{clr};border-radius:20px;"></div>'
+                        f'</div>'
+                        f'<div style="font-size:0.78rem;font-weight:700;color:{clr};min-width:30px;text-align:right;">{val}%</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+                # 카드 하단 마감
+                st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
 
         # ══════════════════════════════════════
         # 3. 핵심 공정
