@@ -741,7 +741,8 @@ for k,v in [("page","home"),("sel_idx",0),
             ("sel_news",[]),("sel_papers",[]),("sel_arxiv",[]),
             ("report",""),("tab","news"),("step",0),
             ("auto_fetch",False),("home_ko",[]),("home_en",[]),
-            ("show_topic_nav",False),("overview_tab","competitiveness")]:
+            ("show_topic_nav",False),("overview_tab","competitiveness"),
+            ("nr_topic_idx",-1),("nr_news",[])]:
     if k not in st.session_state: st.session_state[k]=v
 
 # =====================================================================
@@ -814,7 +815,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -- GNB — 단일 컬럼 행 --
-logo_col, nav1, nav2, nav3, nav4, right_col = st.columns([3, 1.2, 1.2, 1, 1.4, 2])
+logo_col, nav1, nav2, nav3, right_col = st.columns([3, 1.2, 1, 1.4, 3])
 
 with logo_col:
     st.button("🟩 BatteryIQ", key="gnb_logo")
@@ -824,25 +825,13 @@ with nav1:
         st.session_state["page"] = "overview"; st.rerun()
 
 with nav2:
-    if st.button("핵심 기술", key="gnb_tech"):
-        st.session_state["page"] = "home"; st.rerun()
+    if st.button("뉴스룸", key="gnb_news"):
+        st.session_state["page"] = "newsroom"; st.rerun()
 
 with nav3:
-    if st.button("뉴스룸", key="gnb_news"):
-        st.session_state["page"] = "home"; st.rerun()
-
-with nav4:
     if st.button("24개 주제", key="gnb_topics"):
         st.session_state["page"] = "home"
         st.session_state["show_topic_nav"] = True; st.rerun()
-
-with right_col:
-    st.markdown(
-        '<div style="height:64px;display:flex;align-items:center;'
-        'justify-content:flex-end;padding-right:24px;'
-        f'font-size:0.74rem;color:#9EA5AF;">Gregory Plett · Ch 2-04 &nbsp;|&nbsp; 📰{nc}건 📚{pc}편</div>',
-        unsafe_allow_html=True
-    )
 
 st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
@@ -1658,6 +1647,196 @@ function go(id) {
     """
     components.html(full_html, height=900, scrolling=True)
 
+    st.markdown("""
+    <div class="footer">
+        <div class="footer-logo">🔋 Battery<span>IQ</span></div>
+        <div class="footer-copy">Battery Management Systems · Gregory Plett · Chapter 2-04</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =====================================================================
+# NEWSROOM PAGE
+# =====================================================================
+elif st.session_state["page"] == "newsroom":
+
+    # 홈 버튼
+    bc, _ = st.columns([2,8])
+    with bc:
+        if st.button("← 홈으로", key="nr_back"):
+            st.session_state["page"] = "home"; st.rerun()
+
+    # 히어로
+    st.markdown("""
+    <div style="background:#0D1B2A;padding:110px 72px 52px;">
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:16px;">BatteryIQ › 뉴스룸</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);
+                    font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.15;">뉴스룸</div>
+        <div style="font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:10px;font-weight:300;">
+            배터리 건강 추정 24개 핵심 주제별 최신 뉴스를 수집합니다.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
+    # ── 상단 바: 뉴스 건수 + 주제 선택기 ──
+    left_col, right_col = st.columns([3, 5], gap="medium")
+
+    with left_col:
+        nr_news = st.session_state.get("nr_news", [])
+        total_n = len(nr_news)
+        st.markdown(
+            f'<div style="padding:20px 0 8px;font-size:0.9rem;color:#6B7280;">'
+            f'총 <span style="color:#00B4A0;font-weight:700;">{total_n}</span>건</div>',
+            unsafe_allow_html=True
+        )
+
+    with right_col:
+        # 주제 선택 드롭다운
+        topic_options = ["전체 (배터리 건강 추정)"] + [f"{t[0]}. {t[1]}" for t in TOPICS]
+        sel = st.selectbox(
+            "주제 선택",
+            options=topic_options,
+            index=0 if st.session_state["nr_topic_idx"] == -1
+                  else st.session_state["nr_topic_idx"] + 1,
+            key="nr_topic_sel",
+            label_visibility="collapsed"
+        )
+        new_idx = topic_options.index(sel) - 1  # -1 = 전체
+        if new_idx != st.session_state["nr_topic_idx"]:
+            st.session_state["nr_topic_idx"] = new_idx
+            st.session_state["nr_news"] = []
+            st.rerun()
+
+    st.markdown('<hr style="border-color:#E2E8F0;margin:4px 0 24px;">', unsafe_allow_html=True)
+
+    # ── 뉴스 수집 ──
+    tidx = st.session_state["nr_topic_idx"]
+    if tidx == -1:
+        kw_ko = "배터리 건강 추정 SOH BMS"
+        kw_en = "Battery State of Health Estimation"
+    else:
+        num, ko, en, bg, kw = TOPICS[tidx]
+        kw_ko = ko + " 배터리"
+        kw_en = en
+
+    # 자동 수집
+    if not st.session_state.get("nr_news"):
+        with st.spinner("뉴스를 불러오는 중..."):
+            raw_ko = fetch_news(kw_ko, "ko", "KR", "KR:ko", 8)
+            raw_en = fetch_news(kw_en, "en", "US",  "US:en", 8)
+            items = []
+            for e in raw_ko:
+                items.append({"title": e.title, "link": e.link,
+                               "published": getattr(e,'published',''), "lang": "ko",
+                               "source": (e.get('source') or {}).get('title','Google News')})
+            for e in raw_en:
+                items.append({"title": e.title, "link": e.link,
+                               "published": getattr(e,'published',''), "lang": "en",
+                               "source": (e.get('source') or {}).get('title','Google News')})
+            st.session_state["nr_news"] = items
+
+    nr_news = st.session_state.get("nr_news", [])
+
+    # 새로고침 버튼
+    rc1, rc2, _ = st.columns([2, 2, 6])
+    with rc1:
+        if st.button("🔄 새로고침", key="nr_refresh", use_container_width=True):
+            st.session_state["nr_news"] = []
+            st.rerun()
+    with rc2:
+        lang_filter = st.selectbox("언어", ["전체", "🇰🇷 국내", "🌍 해외"],
+                                    key="nr_lang", label_visibility="collapsed")
+
+    # 언어 필터 적용
+    if lang_filter == "🇰🇷 국내":
+        display_news = [n for n in nr_news if n["lang"] == "ko"]
+    elif lang_filter == "🌍 해외":
+        display_news = [n for n in nr_news if n["lang"] == "en"]
+    else:
+        display_news = nr_news
+
+    st.markdown(
+        f'<div style="font-size:0.78rem;color:#9EA5AF;margin-bottom:20px;">'
+        f'{len(display_news)}건 표시</div>',
+        unsafe_allow_html=True
+    )
+
+    # ── 뉴스 목록 — LG 뉴스룸 스타일 ──
+    # 대표 이미지 목록 (주제별 순환)
+    thumb_imgs = [
+        "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=260&h=180&fit=crop",
+        "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=260&h=180&fit=crop",
+    ]
+
+    if display_news:
+        # 첫 번째 뉴스 — 대형 피처드
+        feat = display_news[0]
+        flag = "🇰🇷" if feat["lang"] == "ko" else "🌍"
+        date = feat["published"][:10] if feat["published"] else ""
+        feat_img = thumb_imgs[0]
+
+        st.markdown(f"""
+        <div style="display:flex;gap:32px;padding:28px 0;border-bottom:1px solid #E2E8F0;align-items:flex-start;">
+            <div style="flex-shrink:0;border-radius:8px;overflow:hidden;width:260px;height:180px;">
+                <img src="{feat_img}" style="width:260px;height:180px;object-fit:cover;display:block;">
+            </div>
+            <div style="flex:1;padding-top:4px;">
+                <div style="font-size:0.72rem;font-weight:700;color:#00B4A0;letter-spacing:1px;
+                            text-transform:uppercase;margin-bottom:10px;">{flag} {date}</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#0D1B2A;line-height:1.5;margin-bottom:12px;">
+                    <a href="{feat['link']}" target="_blank"
+                       style="color:#0D1B2A;text-decoration:none;"
+                       onmouseover="this.style.color='#00B4A0'"
+                       onmouseout="this.style.color='#0D1B2A'">{feat['title']}</a>
+                </div>
+                <div style="font-size:0.78rem;color:#9EA5AF;">{feat['source']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 나머지 뉴스 — 리스트 형태 (이미지 + 제목)
+        for i, item in enumerate(display_news[1:], 1):
+            flag = "🇰🇷" if item["lang"] == "ko" else "🌍"
+            date = item["published"][:10] if item["published"] else ""
+            img  = thumb_imgs[i % len(thumb_imgs)]
+
+            st.markdown(f"""
+            <div style="display:flex;gap:24px;padding:22px 0;border-bottom:1px solid #E2E8F0;align-items:flex-start;
+                        transition:background 0.15s;"
+                 onmouseover="this.style.background='#F7F8FA';this.style.paddingLeft='8px'"
+                 onmouseout="this.style.background='transparent';this.style.paddingLeft='0'">
+                <div style="flex-shrink:0;border-radius:6px;overflow:hidden;width:140px;height:96px;">
+                    <img src="{img}" style="width:140px;height:96px;object-fit:cover;display:block;">
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.7rem;font-weight:700;color:#00B4A0;letter-spacing:1px;
+                                text-transform:uppercase;margin-bottom:7px;">{flag} {date}</div>
+                    <div style="font-size:0.92rem;font-weight:600;color:#0D1B2A;line-height:1.5;margin-bottom:7px;">
+                        <a href="{item['link']}" target="_blank"
+                           style="color:#0D1B2A;text-decoration:none;"
+                           onmouseover="this.style.color='#00B4A0'"
+                           onmouseout="this.style.color='#0D1B2A'">{item['title']}</a>
+                    </div>
+                    <div style="font-size:0.74rem;color:#9EA5AF;">{item['source']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="text-align:center;padding:80px 0;color:#9EA5AF;border:1px solid #E2E8F0;border-radius:8px;">
+            <div style="font-size:2rem;margin-bottom:12px;">📰</div>
+            <div>뉴스를 불러오는 중입니다...</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 푸터
     st.markdown("""
     <div class="footer">
         <div class="footer-logo">🔋 Battery<span>IQ</span></div>
