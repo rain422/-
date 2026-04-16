@@ -617,6 +617,46 @@ textarea {
 .footer-logo { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1rem; color: var(--white); }
 .footer-logo span { color: var(--teal); }
 .footer-copy { font-size:0.72rem; color:rgba(255,255,255,0.3); }
+
+/* ══════════════════════════════
+   드롭다운(Selectbox) 스타일
+══════════════════════════════ */
+div[data-baseweb="select"] > div {
+    background-color: var(--white) !important;
+    border-color: var(--gray3) !important;
+    border-radius: 4px !important;
+}
+div[data-baseweb="select"] > div:focus-within {
+    border-color: var(--teal) !important;
+    box-shadow: 0 0 0 2px rgba(0,180,160,0.15) !important;
+}
+div[data-baseweb="select"] span {
+    color: var(--navy) !important;
+    font-size: 0.85rem !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+}
+div[data-baseweb="select"] svg { fill: var(--gray5) !important; }
+div[data-baseweb="popover"] ul {
+    background: var(--white) !important;
+    border: 1px solid var(--gray3) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 8px 24px rgba(13,27,42,0.1) !important;
+}
+div[data-baseweb="popover"] li {
+    color: var(--navy) !important;
+    font-size: 0.83rem !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    background: var(--white) !important;
+}
+div[data-baseweb="popover"] li:hover {
+    background: var(--gray1) !important;
+    color: var(--teal) !important;
+}
+div[data-baseweb="popover"] li[aria-selected="true"] {
+    background: #E6F7F5 !important;
+    color: var(--teal) !important;
+    font-weight: 600 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1680,7 +1720,7 @@ elif st.session_state["page"] == "newsroom":
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ── 상단 바: 뉴스 건수 + 주제 선택기 ──
-    left_col, right_col = st.columns([3, 5], gap="medium")
+    left_col, right_col, _ = st.columns([2, 3, 3], gap="medium")
 
     with left_col:
         nr_news = st.session_state.get("nr_news", [])
