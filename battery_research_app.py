@@ -864,7 +864,8 @@ st.markdown("""
 logo_col, nav1, nav2, nav3, right_col = st.columns([3, 1.2, 1, 1.4, 3])
 
 with logo_col:
-    st.button("🟩 BatteryIQ", key="gnb_logo")
+    if st.button("🟩 BatteryIQ", key="gnb_logo"):
+        st.session_state["page"] = "home"; st.rerun()
 
 with nav1:
     if st.button("연구 개요", key="gnb_ov"):
