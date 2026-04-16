@@ -1221,9 +1221,28 @@ if st.session_state["page"] == "home":
     </div>
     """, unsafe_allow_html=True)
 
-    # 실제 클릭 버튼 (배너 바로 아래, 스트림릿 동작용 — 최소화)
-    if "show_topic_nav" not in st.session_state:
-        st.session_state["show_topic_nav"] = False
+    # 배너 위 투명 오버레이 버튼 → topics 페이지로 이동
+    st.markdown("""
+    <style>
+    .banner-btn-wrap { margin-top: -80px; text-align: center; position: relative; z-index: 20; }
+    .banner-btn-wrap > div[data-testid="stButton"] > button {
+        background: transparent !important;
+        border: none !important;
+        width: 220px !important;
+        height: 52px !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+    }
+    </style>
+    <div class="banner-btn-wrap">
+    """, unsafe_allow_html=True)
+    _, center_col, _ = st.columns([3, 2, 3])
+    with center_col:
+        if st.button("핵심 주제 바로가기", key="banner_topics_btn", use_container_width=True):
+            st.session_state["page"] = "topics"; st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # 24개 주제 그리드 (펼치면 보임)
     if st.session_state["show_topic_nav"]:
