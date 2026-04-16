@@ -1175,38 +1175,85 @@ if st.session_state["page"] == "home":
     </style>
     """, unsafe_allow_html=True)
 
-    # 배너 표시 (버튼 배너 안에 포함)
+    # 배너 — 위쪽 (텍스트까지)
     st.markdown("""
     <style>
-    .pill-btn {
-        display: inline-flex; align-items: center; gap: 10px;
-        background: rgba(255,255,255,0.05);
-        color: rgba(255,255,255,0.55);
-        border: 1px solid rgba(255,255,255,0.25);
-        border-radius: 50px;
-        padding: 13px 36px;
-        font-size: 0.88rem; font-weight: 400;
-        letter-spacing: 0.3px;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(4px);
+    .dark-banner-top {
+        position: relative; width: 100%;
+        background: var(--navy);
+        overflow: hidden;
+        padding: 80px 48px 48px;
+        text-align: center;
     }
-    .pill-btn:hover {
-        background: rgba(255,255,255,0.15) !important;
-        color: var(--white) !important;
-        border-color: rgba(255,255,255,0.55) !important;
-        transform: translateY(-2px);
+    .dark-banner-top video {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; filter: brightness(0.55);
+    }
+    .dark-banner-top-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(13,27,42,0.15) 0%, rgba(13,27,42,0.55) 100%);
+    }
+    .dark-banner-top-body {
+        position: relative; z-index: 2;
+        max-width: 860px; margin: 0 auto;
+    }
+
+    /* 버튼 영역 (배너 아래 연결) */
+    .dark-banner-btn-wrap {
+        background: var(--navy);
+        padding: 0 48px 72px;
+        text-align: center;
+        position: relative; z-index: 2;
+    }
+    .dark-banner-btn-wrap::before {
+        content: '';
+        position: absolute; top: -120px; left: 0; right: 0; height: 120px;
+        background: linear-gradient(to bottom,
+            rgba(13,27,42,0) 0%,
+            rgba(13,27,42,0.6) 100%);
+        pointer-events: none;
+    }
+
+    /* Streamlit 버튼 → pill 스타일로 완전 변환 */
+    .pill-st-btn > div[data-testid="stButton"] > button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(255,255,255,0.07) !important;
+        color: rgba(255,255,255,0.75) !important;
+        border: 1px solid rgba(255,255,255,0.28) !important;
+        border-radius: 50px !important;
+        padding: 14px 44px !important;
+        font-size: 0.9rem !important;
+        font-weight: 400 !important;
+        font-family: 'Noto Sans KR', sans-serif !important;
+        letter-spacing: 0.4px !important;
+        width: auto !important;
+        min-width: 220px !important;
+        height: auto !important;
+        backdrop-filter: blur(4px) !important;
+        transition: all 0.3s ease !important;
+        box-shadow: none !important;
+    }
+    .pill-st-btn > div[data-testid="stButton"] > button:hover {
+        background: rgba(255,255,255,0.16) !important;
+        color: #fff !important;
+        border-color: rgba(255,255,255,0.6) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
+    }
+    .pill-st-btn > div[data-testid="stButton"] > button:active {
+        transform: translateY(0) !important;
     }
     </style>
-    <div class="dark-banner">
-        <video autoplay muted loop playsinline
-            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.55);">
+
+    <div class="dark-banner-top">
+        <video autoplay muted loop playsinline>
             <source src="https://raw.githubusercontent.com/rain422/-/main/15254965_1920_1080_24fps.mp4" type="video/mp4">
         </video>
-        <div style="position:absolute;inset:0;
-            background:linear-gradient(to bottom, rgba(13,27,42,0.15) 0%, rgba(13,27,42,0.4) 100%);">
-        </div>
-        <div class="dark-banner-overlay"></div>
-        <div class="dark-banner-body">
+        <div class="dark-banner-top-overlay"></div>
+        <div class="dark-banner-top-body">
             <div class="dark-banner-label">Battery Intelligence Research</div>
             <div class="dark-banner-title">
                 배터리의 <span>건강 상태</span>를 알면<br>
@@ -1216,31 +1263,19 @@ if st.session_state["page"] == "home":
                 SOH 추정 기술은 전기차 안전과 에너지 효율의 핵심입니다.<br>
                 24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
             </div>
-            <span class="pill-btn">핵심 주제 바로가기 &nbsp;→</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 배너 위 투명 오버레이 버튼 → topics 페이지로 이동
-    st.markdown("""
-    <style>
-    .banner-btn-wrap { margin-top: -80px; text-align: center; position: relative; z-index: 20; }
-    .banner-btn-wrap > div[data-testid="stButton"] > button {
-        background: transparent !important;
-        border: none !important;
-        width: 220px !important;
-        height: 52px !important;
-        opacity: 0 !important;
-        cursor: pointer !important;
-    }
-    </style>
-    <div class="banner-btn-wrap">
-    """, unsafe_allow_html=True)
-    _, center_col, _ = st.columns([3, 2, 3])
-    with center_col:
-        if st.button("핵심 주제 바로가기", key="banner_topics_btn", use_container_width=True):
+    # 배너 — 아래쪽 (pill 버튼)
+    st.markdown('<div class="dark-banner-btn-wrap">', unsafe_allow_html=True)
+    _, pill_col, _ = st.columns([3, 2, 3])
+    with pill_col:
+        st.markdown('<div class="pill-st-btn">', unsafe_allow_html=True)
+        if st.button("핵심 주제 바로가기  →", key="banner_topics_btn", use_container_width=False):
             st.session_state["page"] = "topics"; st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
