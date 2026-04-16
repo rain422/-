@@ -791,6 +791,13 @@ for k,v in [("page","home"),("sel_idx",0),
             ("nr_topic_idx",-1),("nr_news",[]),("topics_page",1)]:
     if k not in st.session_state: st.session_state[k]=v
 
+# 쿼리 파라미터로 페이지 이동 감지 (HTML 버튼 → topics)
+_qp = st.query_params.to_dict()
+if _qp.get("goto") == "topics":
+    st.query_params.clear()
+    st.session_state["page"] = "topics"
+    st.rerun()
+
 # =====================================================================
 # GNB
 # =====================================================================
@@ -1175,14 +1182,14 @@ if st.session_state["page"] == "home":
     </style>
     """, unsafe_allow_html=True)
 
-    # 배너 — 위쪽 (텍스트까지)
+    # 배너 — 영상 배경 + pill 버튼 포함 (HTML 직접 클릭)
     st.markdown("""
     <style>
     .dark-banner-top {
         position: relative; width: 100%;
         background: var(--navy);
         overflow: hidden;
-        padding: 80px 48px 120px;
+        padding: 80px 48px 80px;
         text-align: center;
     }
     .dark-banner-top video {
@@ -1198,50 +1205,30 @@ if st.session_state["page"] == "home":
         position: relative; z-index: 2;
         max-width: 860px; margin: 0 auto;
     }
-
-    /* 버튼 영역 (배너 안으로 당겨오기) */
-    .dark-banner-btn-wrap {
-        background: transparent;
-        padding: 0 48px 0;
-        text-align: center;
-        position: relative; z-index: 10;
-        margin-top: -72px;
-        padding-bottom: 72px;
+    .pill-btn-real {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: rgba(255,255,255,0.07);
+        color: rgba(255,255,255,0.8);
+        border: 1px solid rgba(255,255,255,0.28);
+        border-radius: 50px;
+        padding: 14px 44px;
+        font-size: 0.9rem; font-weight: 400;
+        font-family: 'Noto Sans KR', sans-serif;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        margin-top: 8px;
     }
-
-    /* Streamlit 버튼 → pill 스타일로 완전 변환 */
-    .pill-st-btn > div[data-testid="stButton"] > button {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        background: rgba(255,255,255,0.07) !important;
-        color: rgba(255,255,255,0.75) !important;
-        border: 1px solid rgba(255,255,255,0.28) !important;
-        border-radius: 50px !important;
-        padding: 14px 44px !important;
-        font-size: 0.9rem !important;
-        font-weight: 400 !important;
-        font-family: 'Noto Sans KR', sans-serif !important;
-        letter-spacing: 0.4px !important;
-        width: auto !important;
-        min-width: 220px !important;
-        height: auto !important;
-        backdrop-filter: blur(4px) !important;
-        transition: all 0.3s ease !important;
-        box-shadow: none !important;
-    }
-    .pill-st-btn > div[data-testid="stButton"] > button:hover {
-        background: rgba(255,255,255,0.16) !important;
-        color: #fff !important;
-        border-color: rgba(255,255,255,0.6) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
-    }
-    .pill-st-btn > div[data-testid="stButton"] > button:active {
-        transform: translateY(0) !important;
+    .pill-btn-real:hover {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border-color: rgba(255,255,255,0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     </style>
-
     <div class="dark-banner-top">
         <video autoplay muted loop playsinline>
             <source src="https://raw.githubusercontent.com/rain422/-/main/15254965_1920_1080_24fps.mp4" type="video/mp4">
@@ -1257,19 +1244,14 @@ if st.session_state["page"] == "home":
                 SOH 추정 기술은 전기차 안전과 에너지 효율의 핵심입니다.<br>
                 24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
             </div>
+            <a class="pill-btn-real"
+               href="?goto=topics"
+               onclick="window.location.href='?goto=topics'; return false;">
+               핵심 주제 바로가기 &nbsp;→
+            </a>
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # 배너 — 아래쪽 (pill 버튼)
-    st.markdown('<div class="dark-banner-btn-wrap">', unsafe_allow_html=True)
-    _, pill_col, _ = st.columns([3, 2, 3])
-    with pill_col:
-        st.markdown('<div class="pill-st-btn">', unsafe_allow_html=True)
-        if st.button("핵심 주제 바로가기  →", key="banner_topics_btn", use_container_width=False):
-            st.session_state["page"] = "topics"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
