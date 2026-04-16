@@ -788,7 +788,7 @@ for k,v in [("page","home"),("sel_idx",0),
             ("report",""),("tab","news"),("step",0),
             ("auto_fetch",False),("home_ko",[]),("home_en",[]),
             ("show_topic_nav",False),("overview_tab","competitiveness"),
-            ("nr_topic_idx",-1),("nr_news",[])]:
+            ("nr_topic_idx",-1),("nr_news",[]),("topics_page",1)]:
     if k not in st.session_state: st.session_state[k]=v
 
 # =====================================================================
@@ -876,8 +876,7 @@ with nav2:
 
 with nav3:
     if st.button("24개 주제", key="gnb_topics"):
-        st.session_state["page"] = "home"
-        st.session_state["show_topic_nav"] = True; st.rerun()
+        st.session_state["page"] = "topics"; st.rerun()
 
 st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
@@ -1881,6 +1880,127 @@ elif st.session_state["page"] == "newsroom":
             <div>뉴스를 불러오는 중입니다...</div>
         </div>
         """, unsafe_allow_html=True)
+
+    # 푸터
+    st.markdown("""
+    <div class="footer">
+        <div class="footer-logo">🔋 Battery<span>IQ</span></div>
+        <div class="footer-copy">Battery Management Systems · Gregory Plett · Chapter 2-04</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =====================================================================
+# TOPICS PAGE (24개 주제)
+# =====================================================================
+elif st.session_state["page"] == "topics":
+
+    # 홈 버튼
+    bc, _ = st.columns([2, 8])
+    with bc:
+        if st.button("← 홈으로", key="tp_back"):
+            st.session_state["page"] = "home"; st.rerun()
+
+    # 히어로
+    st.markdown("""
+    <div style="background:#0D1B2A;padding:110px 72px 52px;">
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:16px;">BatteryIQ › 24개 주제</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);
+                    font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.15;">24개 핵심 주제</div>
+        <div style="font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:10px;font-weight:300;">
+            배터리 건강 추정(SOH) 연구의 24개 핵심 주제를 탐색하세요. 주제를 클릭하면 관련 뉴스와 논문을 확인할 수 있습니다.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
+    # 주제 그리드 헤더
+    st.markdown("""
+    <div style="background:#0D1B2A;padding:32px 72px 0;">
+        <div style="text-align:center;margin-bottom:40px;">
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                        color:#00B4A0;margin-bottom:14px;display:flex;align-items:center;
+                        justify-content:center;gap:10px;">
+                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
+                Battery State of Health Estimation
+                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
+            </div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;font-weight:800;
+                        color:#fff;letter-spacing:-0.5px;">
+                주제를 선택하여 뉴스 · 논문 · 보고서를 확인하세요
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 4열 주제 그리드
+    st.markdown("""
+    <style>
+    .tp-grid-wrap { background: #0D1B2A; padding: 0 64px 80px; }
+    .tp-cell {
+        background: #1C2E40;
+        padding: 24px 22px;
+        cursor: pointer;
+        transition: background 0.2s;
+        position: relative;
+        border-left: 2px solid transparent;
+    }
+    .tp-cell:hover { background: #243548; border-left-color: #00B4A0; }
+    .tp-cell:hover .tp-title { color: #00B4A0; }
+    .tp-num {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.62rem; font-weight: 700;
+        color: #00B4A0; letter-spacing: 2px;
+        margin-bottom: 8px; text-transform: uppercase;
+    }
+    .tp-title {
+        font-size: 0.88rem; font-weight: 600;
+        color: #fff; line-height: 1.4;
+        transition: color 0.2s;
+        margin-bottom: 6px;
+    }
+    .tp-en {
+        font-size: 0.7rem; color: rgba(255,255,255,0.3);
+        font-weight: 300; line-height: 1.3;
+    }
+    .tp-arrow {
+        position: absolute; right: 16px; top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.12);
+        font-size: 0.9rem; transition: all 0.2s;
+    }
+    .tp-cell:hover .tp-arrow { color: #00B4A0; transform: translateY(-50%) translateX(3px); }
+    </style>
+    <div class="tp-grid-wrap">
+    """, unsafe_allow_html=True)
+
+    cols_per_row = 4
+    for row_start in range(0, len(TOPICS), cols_per_row):
+        row_topics = TOPICS[row_start:row_start + cols_per_row]
+        cols = st.columns(cols_per_row, gap="small")
+        for col, (num, ko, en, desc, kw) in zip(cols, row_topics):
+            i = TOPICS.index((num, ko, en, desc, kw))
+            with col:
+                st.markdown(f"""
+                <div class="tp-cell">
+                    <div class="tp-num">TOPIC {num}</div>
+                    <div class="tp-title">{ko}</div>
+                    <div class="tp-en">{en}</div>
+                    <div class="tp-arrow">→</div>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"주제_{num}", key=f"tp_go_{num}", use_container_width=True):
+                    st.session_state.update({
+                        "page": "detail", "sel_idx": i,
+                        "tab": "news", "step": 0, "auto_fetch": True
+                    })
+                    for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
+                        st.session_state[k2] = [] if k2 != "report" else ""
+                    st.rerun()
+        st.markdown("<div style='height:1px;background:rgba(255,255,255,0.05);'></div>",
+                    unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # 푸터
     st.markdown("""
