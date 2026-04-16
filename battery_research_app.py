@@ -1244,14 +1244,32 @@ if st.session_state["page"] == "home":
                 SOH 추정 기술은 전기차 안전과 에너지 효율의 핵심입니다.<br>
                 24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
             </div>
-            <a class="pill-btn-real"
-               href="?goto=topics"
-               onclick="window.location.href='?goto=topics'; return false;">
-               핵심 주제 바로가기 &nbsp;→
-            </a>
+            <button class="pill-btn-real" onclick="
+                var doc = window.parent.document;
+                var btns = doc.querySelectorAll('button');
+                for (var i = 0; i < btns.length; i++) {
+                    if (btns[i].innerText.trim() === '___GOTO_TOPICS___') {
+                        btns[i].click(); break;
+                    }
+                }
+            ">핵심 주제 바로가기 &nbsp;→</button>
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # 숨겨진 Streamlit 트리거 버튼 (JS가 클릭, 화면 밖에 위치)
+    st.markdown("""
+    <style>
+    /* ___GOTO_TOPICS___ 버튼을 화면 밖으로 */
+    div[data-testid="stHorizontalBlock"]:has(button) > div:first-child:has(button[kind="secondary"]) {
+        position: fixed !important; left: -9999px !important; top: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    col_hide, _ = st.columns([1, 99])
+    with col_hide:
+        if st.button("___GOTO_TOPICS___", key="banner_topics_btn"):
+            st.session_state["page"] = "topics"; st.rerun()
 
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
