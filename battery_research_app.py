@@ -1894,115 +1894,385 @@ elif st.session_state["page"] == "newsroom":
 # =====================================================================
 elif st.session_state["page"] == "topics":
 
-    # 홈 버튼
-    bc, _ = st.columns([2, 8])
-    with bc:
-        if st.button("← 홈으로", key="tp_back"):
-            st.session_state["page"] = "home"; st.rerun()
-
-    # 히어로
-    st.markdown("""
-    <div style="background:#0D1B2A;padding:110px 72px 52px;">
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:16px;">BatteryIQ › 24개 주제</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);
-                    font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.15;">24개 핵심 주제</div>
-        <div style="font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:10px;font-weight:300;">
-            배터리 건강 추정(SOH) 연구의 24개 핵심 주제를 탐색하세요. 주제를 클릭하면 관련 뉴스와 논문을 확인할 수 있습니다.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
-
-    # 주제 그리드 헤더
-    st.markdown("""
-    <div style="background:#0D1B2A;padding:32px 72px 0;">
-        <div style="text-align:center;margin-bottom:40px;">
-            <div style="font-size:0.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
-                        color:#00B4A0;margin-bottom:14px;display:flex;align-items:center;
-                        justify-content:center;gap:10px;">
-                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
-                Battery State of Health Estimation
-                <span style="display:block;width:32px;height:1px;background:#00B4A0;"></span>
-            </div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;font-weight:800;
-                        color:#fff;letter-spacing:-0.5px;">
-                주제를 선택하여 뉴스 · 논문 · 보고서를 확인하세요
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 4열 주제 그리드
+    # ── CSS ──
     st.markdown("""
     <style>
-    .tp-grid-wrap { background: #0D1B2A; padding: 0 64px 80px; }
-    .tp-cell {
-        background: #1C2E40;
-        padding: 24px 22px;
-        cursor: pointer;
-        transition: background 0.2s;
-        position: relative;
-        border-left: 2px solid transparent;
+    /* 홈 버튼 숨기기 */
+    [data-testid="stHorizontalBlock"] + div [data-testid="stButton"] > button {
+        display: none !important;
     }
-    .tp-cell:hover { background: #243548; border-left-color: #00B4A0; }
-    .tp-cell:hover .tp-title { color: #00B4A0; }
-    .tp-num {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.62rem; font-weight: 700;
-        color: #00B4A0; letter-spacing: 2px;
-        margin-bottom: 8px; text-transform: uppercase;
+
+    /* 토픽 카드 위 버튼 오버레이 */
+    .tpc-wrap { position: relative; }
+    .tpc-wrap .stButton { position: absolute !important; inset: 0 !important; z-index: 10 !important; opacity: 0 !important; }
+    .tpc-wrap .stButton > button { width: 100% !important; height: 100% !important; cursor: pointer !important; }
+
+    /* 히어로 */
+    .tp-hero {
+        position: relative; width: 100%;
+        min-height: 420px;
+        background: #0D1B2A;
+        overflow: hidden;
+        display: flex; align-items: flex-end;
     }
-    .tp-title {
-        font-size: 0.88rem; font-weight: 600;
-        color: #fff; line-height: 1.4;
-        transition: color 0.2s;
-        margin-bottom: 6px;
+    .tp-hero video {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; filter: brightness(0.22);
     }
-    .tp-en {
+    .tp-hero-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to right,
+            rgba(13,27,42,0.92) 0%,
+            rgba(13,27,42,0.55) 60%,
+            rgba(13,27,42,0.2) 100%);
+    }
+    .tp-hero-body {
+        position: relative; z-index: 2;
+        padding: 120px 72px 60px;
+        max-width: 720px;
+    }
+    .tp-hero-crumb {
         font-size: 0.7rem; color: rgba(255,255,255,0.3);
-        font-weight: 300; line-height: 1.3;
+        margin-bottom: 18px; letter-spacing: 0.5px;
     }
-    .tp-arrow {
-        position: absolute; right: 16px; top: 50%;
-        transform: translateY(-50%);
-        color: rgba(255,255,255,0.12);
-        font-size: 0.9rem; transition: all 0.2s;
+    .tp-hero-eyebrow {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.66rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: #00B4A0; margin-bottom: 18px;
     }
-    .tp-cell:hover .tp-arrow { color: #00B4A0; transform: translateY(-50%) translateX(3px); }
+    .tp-hero-eyebrow::before {
+        content:''; display:block;
+        width:24px; height:1px; background:#00B4A0;
+    }
+    .tp-hero-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: clamp(2rem, 4.5vw, 3.2rem);
+        font-weight: 800; color: #fff;
+        line-height: 1.1; letter-spacing: -1.5px;
+        margin-bottom: 18px;
+    }
+    .tp-hero-title span { color: #00B4A0; }
+    .tp-hero-desc {
+        font-size: 0.95rem; color: rgba(255,255,255,0.5);
+        font-weight: 300; line-height: 1.8; max-width: 480px;
+    }
+
+    /* 스탯 바 */
+    .tp-stats {
+        background: #00B4A0;
+        display: grid; grid-template-columns: repeat(4,1fr);
+        padding: 0; border-top: 0;
+    }
+    .tp-stat {
+        padding: 24px 32px;
+        border-right: 1px solid rgba(255,255,255,0.18);
+        text-align: center;
+    }
+    .tp-stat:last-child { border-right: none; }
+    .tp-stat-num {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 1.8rem; font-weight: 800;
+        color: #fff; line-height: 1; margin-bottom: 4px;
+    }
+    .tp-stat-num span { font-size: 1rem; }
+    .tp-stat-label { font-size: 0.72rem; color: rgba(255,255,255,0.8); }
+
+    /* 섹션 구분 헤더 */
+    .tp-section-head {
+        background: #0D1B2A;
+        padding: 52px 72px 24px;
+        display: flex; align-items: center; gap: 20px;
+    }
+    .tp-section-badge {
+        background: rgba(0,180,160,0.15);
+        border: 1px solid rgba(0,180,160,0.35);
+        color: #00B4A0; border-radius: 20px;
+        padding: 5px 16px; font-size: 0.68rem;
+        font-weight: 700; letter-spacing: 1.5px;
+        text-transform: uppercase; white-space: nowrap;
+    }
+    .tp-section-line {
+        flex: 1; height: 1px;
+        background: rgba(255,255,255,0.07);
+    }
+    .tp-section-label {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 1rem; font-weight: 700;
+        color: rgba(255,255,255,0.5);
+        white-space: nowrap;
+    }
+
+    /* 카드 그리드 래퍼 */
+    .tp-grid-wrap {
+        background: #0D1B2A;
+        padding: 0 64px 20px;
+    }
+
+    /* 카드 */
+    .tp-card {
+        background: #111f2e;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-top: 2px solid transparent;
+        border-radius: 2px;
+        padding: 28px 24px 22px;
+        height: 100%;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        position: relative;
+        display: flex; flex-direction: column;
+    }
+    .tp-card:hover {
+        background: #1a2f44;
+        border-top-color: #00B4A0;
+        border-color: rgba(0,180,160,0.25);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    .tp-card:hover .tp-card-title { color: #00B4A0; }
+    .tp-card:hover .tp-card-cta { color: #00B4A0; opacity: 1; }
+
+    .tp-card-num {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.6rem; font-weight: 700;
+        color: #00B4A0; letter-spacing: 2.5px;
+        text-transform: uppercase; margin-bottom: 12px;
+    }
+    .tp-card-title {
+        font-size: 0.95rem; font-weight: 700;
+        color: #fff; line-height: 1.4;
+        letter-spacing: -0.2px;
+        margin-bottom: 8px;
+        transition: color 0.2s;
+    }
+    .tp-card-en {
+        font-size: 0.7rem; color: rgba(255,255,255,0.28);
+        font-weight: 300; line-height: 1.4;
+        margin-bottom: 14px;
+    }
+    .tp-card-desc {
+        font-size: 0.75rem; color: rgba(255,255,255,0.38);
+        line-height: 1.7; font-weight: 300;
+        flex: 1; margin-bottom: 16px;
+        display: -webkit-box; -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .tp-card-kws {
+        display: flex; flex-wrap: wrap; gap: 5px;
+        margin-bottom: 16px;
+    }
+    .tp-card-kw {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.4);
+        border-radius: 20px; padding: 3px 10px;
+        font-size: 0.62rem; font-weight: 400;
+    }
+    .tp-card-cta {
+        font-size: 0.72rem; font-weight: 600;
+        color: rgba(255,255,255,0.25);
+        letter-spacing: 1px; text-transform: uppercase;
+        display: flex; align-items: center; gap: 6px;
+        transition: all 0.2s; opacity: 0.7;
+        margin-top: auto;
+    }
+
+    /* 카드 위 버튼 투명 오버레이 */
+    .tp-btn-wrap { position: relative; margin-bottom: 20px; }
+    .tp-btn-wrap > div[data-testid="stButton"] {
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 5 !important;
+    }
+    .tp-btn-wrap > div[data-testid="stButton"] > button {
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* 섹션별 그리드 row */
+    .tp-row { margin-bottom: 4px; }
+
+    /* 하단 CTA 배너 */
+    .tp-bottom-cta {
+        background: linear-gradient(135deg, #0a1520 0%, #1C2E40 100%);
+        border-top: 1px solid rgba(0,180,160,0.2);
+        padding: 72px;
+        text-align: center;
+    }
+    .tp-bottom-cta-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 1.6rem; font-weight: 800;
+        color: #fff; margin-bottom: 12px;
+        letter-spacing: -0.5px;
+    }
+    .tp-bottom-cta-desc {
+        font-size: 0.88rem; color: rgba(255,255,255,0.45);
+        font-weight: 300; line-height: 1.8; margin-bottom: 28px;
+    }
+    .tp-bottom-cta-btn {
+        display: inline-block;
+        background: #00B4A0; color: #fff;
+        padding: 12px 32px; border-radius: 2px;
+        font-size: 0.82rem; font-weight: 600;
+        letter-spacing: 0.5px; text-decoration: none;
+        transition: background 0.2s; border: none; cursor: pointer;
+    }
+    .tp-bottom-cta-btn:hover { background: #009688; }
+
+    /* 뒤로가기 버튼 숨기기 전용 */
+    .tp-back-btn > div[data-testid="stButton"] > button {
+        background: transparent !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: rgba(255,255,255,0.5) !important;
+        font-size: 0.78rem !important;
+        padding: 6px 16px !important;
+        height: auto !important;
+        width: auto !important;
+        border-radius: 2px !important;
+    }
+    .tp-back-btn > div[data-testid="stButton"] > button:hover {
+        color: #fff !important;
+        border-color: rgba(255,255,255,0.5) !important;
+    }
     </style>
-    <div class="tp-grid-wrap">
     """, unsafe_allow_html=True)
 
+    # ── 히어로 ──
+    st.markdown("""
+    <div class="tp-hero">
+        <video autoplay muted loop playsinline>
+            <source src="https://raw.githubusercontent.com/rain422/-/main/13814690_1920_1080_100fps.mp4" type="video/mp4">
+        </video>
+        <div class="tp-hero-overlay"></div>
+        <div class="tp-hero-body">
+            <div class="tp-hero-crumb">BatteryIQ &rsaquo; 24개 핵심 주제</div>
+            <div class="tp-hero-eyebrow">Research Topics</div>
+            <div class="tp-hero-title">배터리 건강 추정<br><span>24개 핵심 주제</span></div>
+            <div class="tp-hero-desc">
+                Gregory Plett의 Battery Management Systems를 기반으로 한<br>
+                SOH 추정 연구의 전체 주제를 탐색하세요.<br>
+                각 주제에서 최신 뉴스·논문·분석 보고서를 바로 확인할 수 있습니다.
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 스탯 바 ──
+    st.markdown("""
+    <div class="tp-stats">
+        <div class="tp-stat">
+            <div class="tp-stat-num">24<span>개</span></div>
+            <div class="tp-stat-label">핵심 연구 주제</div>
+        </div>
+        <div class="tp-stat">
+            <div class="tp-stat-num">6<span>종</span></div>
+            <div class="tp-stat-label">추정 알고리즘</div>
+        </div>
+        <div class="tp-stat">
+            <div class="tp-stat-num">2<span>개</span></div>
+            <div class="tp-stat-label">논문 데이터베이스</div>
+        </div>
+        <div class="tp-stat">
+            <div class="tp-stat-num">∞</div>
+            <div class="tp-stat-label">최신 뉴스 수집</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 카테고리별 그룹 정의 ──
+    TOPIC_GROUPS = [
+        ("개요",        "배터리 건강 추정 소개",            [0]),
+        ("노화 메커니즘", "음극·양극 열화 원리",              [1, 2]),
+        ("측정·민감도",  "전압·용량 민감도 분석",            [3, 4, 5]),
+        ("칼만 필터",   "칼만·EKF·SPKF·조인트 추정",       [6, 7, 8, 9, 10]),
+        ("최소제곱법",  "선형 회귀·가중·총 최소제곱",        [11, 12, 13, 14, 15, 16, 17]),
+        ("시뮬레이션",  "HEV·EV·코드·검증",                 [18, 19, 20, 21]),
+        ("결론·심화",   "향후 방향·비선형 칼만 필터",         [22, 23]),
+    ]
+
     cols_per_row = 4
-    for row_start in range(0, len(TOPICS), cols_per_row):
-        row_topics = TOPICS[row_start:row_start + cols_per_row]
-        cols = st.columns(cols_per_row, gap="small")
-        for col, (num, ko, en, desc, kw) in zip(cols, row_topics):
-            i = TOPICS.index((num, ko, en, desc, kw))
-            with col:
-                st.markdown(f"""
-                <div class="tp-cell">
-                    <div class="tp-num">TOPIC {num}</div>
-                    <div class="tp-title">{ko}</div>
-                    <div class="tp-en">{en}</div>
-                    <div class="tp-arrow">→</div>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button(f"주제_{num}", key=f"tp_go_{num}", use_container_width=True):
-                    st.session_state.update({
-                        "page": "detail", "sel_idx": i,
-                        "tab": "news", "step": 0, "auto_fetch": True
-                    })
-                    for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
-                        st.session_state[k2] = [] if k2 != "report" else ""
-                    st.rerun()
-        st.markdown("<div style='height:1px;background:rgba(255,255,255,0.05);'></div>",
-                    unsafe_allow_html=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    for group_label, group_sub, group_indices in TOPIC_GROUPS:
+        # 섹션 헤더
+        st.markdown(f"""
+        <div class="tp-section-head">
+            <span class="tp-section-badge">{group_label}</span>
+            <span class="tp-section-label">{group_sub}</span>
+            <div class="tp-section-line"></div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # 푸터
+        # 카드 그리드 (4열씩)
+        st.markdown('<div class="tp-grid-wrap">', unsafe_allow_html=True)
+        group_topics = [TOPICS[i] for i in group_indices]
+
+        for row_start in range(0, len(group_topics), cols_per_row):
+            row_slice = group_topics[row_start:row_start + cols_per_row]
+            n_cols = len(row_slice)
+            cols = st.columns(n_cols, gap="small")
+
+            for col, (num, ko, en, desc, kw) in zip(cols, row_slice):
+                i = TOPICS.index((num, ko, en, desc, kw))
+                kw_chips = "".join([f'<span class="tp-card-kw">{k}</span>' for k in kw[:3]])
+                with col:
+                    st.markdown(f"""
+                    <div class="tp-card">
+                        <div class="tp-card-num">TOPIC {num}</div>
+                        <div class="tp-card-title">{ko}</div>
+                        <div class="tp-card-en">{en}</div>
+                        <div class="tp-card-desc">{desc}</div>
+                        <div class="tp-card-kws">{kw_chips}</div>
+                        <div class="tp-card-cta">탐색하기 &nbsp;→</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"주제_{num}", key=f"tp_go_{num}", use_container_width=True):
+                        st.session_state.update({
+                            "page": "detail", "sel_idx": i,
+                            "tab": "news", "step": 0, "auto_fetch": True
+                        })
+                        for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
+                            st.session_state[k2] = [] if k2 != "report" else ""
+                        st.rerun()
+
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── 하단 CTA 배너 ──
+    st.markdown("""
+    <div class="tp-bottom-cta">
+        <div class="tp-bottom-cta-title">주제를 선택해 연구를 시작하세요</div>
+        <div class="tp-bottom-cta-desc">
+            각 주제를 클릭하면 관련 국내·해외 뉴스, arXiv 논문,<br>
+            Google Scholar 자료와 AI 분석 보고서를 즉시 생성할 수 있습니다.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Streamlit 버튼 오버레이 CSS ──
+    st.markdown("""
+    <style>
+    /* 토픽 카드 위의 st.button 을 투명하게 오버레이 */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"]
+      > div > [data-testid="stButton"] > button,
+    [data-testid="element-container"] + [data-testid="element-container"]
+      [data-testid="stButton"] > button {
+        margin-top: -60px !important;
+        height: 60px !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 10 !important;
+        width: 100% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── 푸터 ──
     st.markdown("""
     <div class="footer">
         <div class="footer-logo">🔋 Battery<span>IQ</span></div>
