@@ -1245,8 +1245,7 @@ if st.session_state["page"] == "home":
                 24개 핵심 주제를 통해 배터리 건강 추정의 모든 것을 탐구하세요.
             </div>
             <button class="pill-btn-real" onclick="
-                var doc = window.parent.document;
-                var btns = doc.querySelectorAll('button');
+                var btns = document.querySelectorAll('button');
                 for (var i = 0; i < btns.length; i++) {
                     if (btns[i].innerText.trim() === '___GOTO_TOPICS___') {
                         btns[i].click(); break;
@@ -1260,10 +1259,7 @@ if st.session_state["page"] == "home":
     # 숨겨진 Streamlit 트리거 버튼 (JS가 클릭, 화면 밖에 위치)
     st.markdown("""
     <style>
-    /* ___GOTO_TOPICS___ 버튼을 화면 밖으로 */
-    div[data-testid="stHorizontalBlock"]:has(button) > div:first-child:has(button[kind="secondary"]) {
-        position: fixed !important; left: -9999px !important; top: 0 !important;
-    }
+    button[kind="secondary"]:not([data-testid]):first-of-type { display: none; }
     </style>
     """, unsafe_allow_html=True)
     col_hide, _ = st.columns([1, 99])
