@@ -1182,7 +1182,7 @@ if st.session_state["page"] == "home":
         position: relative; width: 100%;
         background: var(--navy);
         overflow: hidden;
-        padding: 80px 48px 48px;
+        padding: 80px 48px 120px;
         text-align: center;
     }
     .dark-banner-top video {
@@ -1199,20 +1199,14 @@ if st.session_state["page"] == "home":
         max-width: 860px; margin: 0 auto;
     }
 
-    /* 버튼 영역 (배너 아래 연결) */
+    /* 버튼 영역 (배너 안으로 당겨오기) */
     .dark-banner-btn-wrap {
-        background: var(--navy);
-        padding: 0 48px 72px;
+        background: transparent;
+        padding: 0 48px 0;
         text-align: center;
-        position: relative; z-index: 2;
-    }
-    .dark-banner-btn-wrap::before {
-        content: '';
-        position: absolute; top: -120px; left: 0; right: 0; height: 120px;
-        background: linear-gradient(to bottom,
-            rgba(13,27,42,0) 0%,
-            rgba(13,27,42,0.6) 100%);
-        pointer-events: none;
+        position: relative; z-index: 10;
+        margin-top: -72px;
+        padding-bottom: 72px;
     }
 
     /* Streamlit 버튼 → pill 스타일로 완전 변환 */
