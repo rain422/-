@@ -2419,6 +2419,27 @@ elif st.session_state["page"] == "simulation":
         font-size:0.68rem; font-weight:700; letter-spacing:2px;
         text-transform:uppercase; color:#9EA5AF; margin-top:12px;
     }
+    /* 차트 설명 카드 */
+    .chart-explain {
+        background:#F7F8FA; border-left:3px solid #00B4A0;
+        border-radius:0 6px 6px 0; padding:13px 16px;
+        margin:4px 0 12px 0;
+    }
+    .chart-explain-title {
+        font-size:0.72rem; font-weight:700; color:#0D1B2A;
+        letter-spacing:0.2px; margin-bottom:4px;
+        display:flex; align-items:center; gap:6px;
+    }
+    .chart-explain-title::before {
+        content:''; display:inline-block; width:6px; height:6px;
+        border-radius:50%; background:#00B4A0; flex-shrink:0;
+    }
+    .chart-explain-body {
+        font-size:0.74rem; color:#6B7280; line-height:1.75; font-weight:300;
+    }
+    .chart-explain-body b  { color:#0D1B2A; font-weight:600; }
+    .chart-explain-body em { color:#00B4A0; font-style:normal; font-weight:600; }
+    .chart-explain-body s  { color:#E8002A; text-decoration:none; font-weight:600; }
     /* 차트 섹션 */
     .sim-chart-wrap { background:#fff; padding:8px 0; }
     /* 3D 섹션 */
@@ -2679,6 +2700,16 @@ elif st.session_state["page"] == "simulation":
                     margin=dict(l=10,r=10,t=40,b=10))
                 fig_reg.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_reg, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">전류 펄스 → 전압 강하 (ΔV vs ΔI)</div>
+                  <div class="chart-explain-body">
+                    배터리에 서로 다른 크기의 <b>전류 펄스(ΔI)</b>를 인가했을 때 발생하는 <b>전압 강하(ΔV)</b>를 측정한 산점도입니다.
+                    이상적으로는 <em>ΔV = R₀ × ΔI</em> 관계가 성립하며, <s>빨간 점선</s>이 최소제곱법으로 추정한 기울기(= R₀)입니다.
+                    점들이 직선에 가까울수록 추정 신뢰도가 높습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             # R₀ / SOH 사이클 추이 + 3D 서피스
             c1, c2 = st.columns(2)
@@ -2701,6 +2732,17 @@ elif st.session_state["page"] == "simulation":
                 fig_cyc.update_yaxes(title_text="R₀ (mΩ)", secondary_y=False, showgrid=True, gridcolor='#E2E8F0')
                 fig_cyc.update_yaxes(title_text="SOH (%)", secondary_y=True)
                 st.plotly_chart(fig_cyc, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">사이클별 R₀ 증가 & SOH 저하</div>
+                  <div class="chart-explain-body">
+                    충·방전 사이클이 쌓일수록 <s>R₀(내부 저항)</s>는 증가하고
+                    <em>SOH(건강 상태)</em>는 감소하는 반비례 관계를 보여줍니다.
+                    <b>R₀ 증가 = 배터리 노화의 직접적 지표</b>입니다.
+                    이 곡선의 기울기가 가파를수록 빠르게 열화되는 배터리입니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             with c2:
                 # 3D 서피스: 노이즈 × 샘플 수 → 추정 오차
@@ -2735,6 +2777,16 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A')
                 )
                 st.plotly_chart(fig3d, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">3D 서피스 — 노이즈 × 샘플 수 → 추정 오차</div>
+                  <div class="chart-explain-body">
+                    <b>X축</b>(샘플 수)와 <b>Y축</b>(전압 노이즈 크기)에 따라 R₀ 추정 오차가 어떻게 달라지는지 3D로 표현합니다.
+                    <em>녹색 영역</em>은 오차가 낮은 조건, <s>빨간 영역</s>은 오차가 높은 조건입니다.
+                    샘플이 많고 노이즈가 낮을수록 추정 정확도가 높아집니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 07 — 칼만 필터
@@ -2840,6 +2892,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_soc.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_soc, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">SOC 추정 수렴 — 칼만 필터</div>
+                  <div class="chart-explain-body">
+                    <b>회색 점선</b>은 실제 SOC(쿨롱 카운팅 기반), <em>녹색 실선</em>은 칼만 필터 추정값입니다.
+                    초기에는 오차가 있더라도 측정이 반복될수록 실제값에 수렴하는 것을 확인할 수 있습니다.
+                    <b>채워진 면적</b>이 작을수록 추정 품질이 높습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -2853,6 +2915,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_k.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_k, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">칼만 이득 K 수렴</div>
+                  <div class="chart-explain-body">
+                    <b>칼만 이득 K</b>는 측정값을 얼마나 신뢰할지를 결정합니다.
+                    초기엔 크게 시작해 측정을 많이 반영하다가, 점차 <em>작은 값으로 수렴</em>하며 안정됩니다.
+                    수렴이 빠를수록 필터가 효율적으로 동작하는 것입니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c2:
                 fig_p = go.Figure()
                 fig_p.add_trace(go.Scatter(x=t, y=P_hist, mode='lines',
@@ -2864,6 +2936,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_p.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_p, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">공분산 P 감소</div>
+                  <div class="chart-explain-body">
+                    <b>공분산 P</b>는 추정 불확실성의 크기입니다.
+                    측정이 쌓일수록 <em>P가 감소</em>하며 추정에 대한 확신이 높아집니다.
+                    P가 너무 빨리 0이 되면 새 정보를 무시하는 문제가 생길 수 있습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c3:
                 fig_inn = go.Figure()
                 fig_inn.add_trace(go.Scatter(x=t, y=innov, mode='lines',
@@ -2876,6 +2958,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_inn.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_inn, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">이노베이션 시퀀스</div>
+                  <div class="chart-explain-body">
+                    <b>이노베이션</b>은 실제 측정값과 예측값의 차이입니다.
+                    필터가 잘 작동하면 이노베이션은 <em>0 주변을 무작위로 진동</em>해야 합니다.
+                    한쪽으로 편향되거나 추세가 보이면 모델에 오류가 있다는 신호입니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 08 — EKF
@@ -2976,11 +3068,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_cmp, use_container_width=True)
-
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                soc_range = np.linspace(0, 1, 200)
-                fig_ocv = go.Figure()
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">SOC 추정 비교 — KF · EKF · OLS</div>
+                  <div class="chart-explain-body">
+                    동일한 합성 배터리 데이터에서 세 알고리즘을 동시에 실행한 결과입니다.
+                    <b>회색 점선</b>이 실제 SOC이며, <b>KF(연회색)</b> · <em>EKF(녹색)</em> · <s>OLS(빨간 점선)</s> 순으로 비교합니다.
+                    노이즈가 높을수록 세 알고리즘의 차이가 더 뚜렷하게 나타납니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
                 fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=ocv(soc_range), mode='lines',
                     line=dict(color='#00B4A0',width=2.5), name='비선형 OCV'))
                 fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=3.0+1.5*soc_range, mode='lines',
@@ -2992,6 +3089,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.35))
                 fig_ocv.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_ocv, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">OCV-SOC 비선형 곡선</div>
+                  <div class="chart-explain-body">
+                    실제 배터리의 <em>OCV-SOC 곡선(녹색)</em>은 3차 다항식 형태로 비선형입니다.
+                    <s>빨간 점선</s>은 선형 KF가 가정하는 단순 직선 근사입니다.
+                    이 차이가 클수록 EKF가 더 유리합니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c2:
                 fig_hj = go.Figure()
                 fig_hj.add_trace(go.Scatter(x=np.arange(ekf_steps), y=Hj_hist, mode='lines',
@@ -3003,6 +3110,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_hj.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_hj, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">야코비안 변화 (∂OCV/∂SOC)</div>
+                  <div class="chart-explain-body">
+                    EKF는 매 스텝마다 <b>야코비안(H_k)</b>으로 비선형 모델을 순간 선형화합니다.
+                    SOC가 변함에 따라 야코비안 값이 달라지며, 이것이 EKF와 선형 KF의 핵심 차이입니다.
+                    <em>값이 크게 변하는 구간</em>이 비선형성이 강한 영역입니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c3:
                 err_kf  = np.abs(soc_kf_lin-soc_true)*100
                 err_ekf = np.abs(soc_ekf-soc_true)*100
@@ -3018,6 +3135,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.35))
                 fig_err.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_err, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">절대 오차 비교 — KF vs EKF</div>
+                  <div class="chart-explain-body">
+                    매 시간 스텝에서 실제 SOC와의 <b>절대 오차</b>를 비교합니다.
+                    <em>EKF(녹색)</em>가 <b>선형 KF(회색)</b>보다 오차가 작을수록 비선형 모델링의 효과가 큽니다.
+                    초기 수렴 구간에서 일시적으로 오차가 클 수 있습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 12 — 선형 회귀 용량 추정
@@ -3100,6 +3227,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_q.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_q, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">사이클별 용량 추정 (OLS vs 실제)</div>
+                  <div class="chart-explain-body">
+                    <b>회색 점선</b>은 실제 용량 감소 곡선, <em>녹색 실선</em>은 OLS 선형 회귀로 추정한 용량입니다.
+                    사이클이 쌓일수록 용량이 줄어드는데, 추정값이 실제값을 얼마나 정확히 따라가는지 확인합니다.
+                    <b>채워진 면적이 작을수록</b> 추정 정확도가 높습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -3114,6 +3251,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_res.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_res, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">잔차 분포 (Histogram)</div>
+                  <div class="chart-explain-body">
+                    OLS 추정값과 실제 용량의 차이인 <b>잔차</b>의 분포입니다.
+                    잔차가 <em>0을 중심으로 대칭 분포</em>하면 추정에 편향이 없다는 의미입니다.
+                    한쪽으로 치우치거나 분산이 크면 모델 개선이 필요합니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c2:
                 soh_curve = Q_est_arr/reg_Q_true*100
                 col_map = ['#00B4A0' if v>80 else '#F59E0B' if v>60 else '#E8002A' for v in soh_curve]
@@ -3130,6 +3277,16 @@ elif st.session_state["page"] == "simulation":
                     showlegend=False)
                 fig_soh.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_soh, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">SOH 저하 곡선</div>
+                  <div class="chart-explain-body">
+                    OLS로 추정한 용량을 초기 용량으로 나눈 <b>SOH 저하 추이</b>입니다.
+                    <em>노란 점선(80%)</em>은 교체 권고 임계값, <s>빨간 점선(60%)</s>은 위험 임계값입니다.
+                    몇 사이클 만에 임계값을 넘는지 확인해 배터리 수명을 예측할 수 있습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
             with c3:
                 # 파라미터 민감도 히트맵
                 noise_v = np.arange(1, 11)
@@ -3154,6 +3311,16 @@ elif st.session_state["page"] == "simulation":
                     height=210, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
                 st.plotly_chart(fig_hm, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">파라미터 민감도 히트맵</div>
+                  <div class="chart-explain-body">
+                    <b>노이즈 레벨</b>과 <b>측정 포인트 수</b>의 조합에 따른 OLS 추정 오차를 색상으로 표현합니다.
+                    <em>녹색(낮은 오차)</em> → <s>빨간색(높은 오차)</s> 순입니다.
+                    포인트 수를 늘리고 노이즈를 줄일수록 정확도가 올라가는 것을 한눈에 확인할 수 있습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 19 — 종합 성능 비교
@@ -3290,6 +3457,15 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.15), margin=dict(l=30,r=30,t=40,b=10))
                 st.plotly_chart(fig_rad, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">알고리즘 역량 레이더 차트</div>
+                  <div class="chart-explain-body">
+                    <b>정확도 · 속도 · 단순성 · 노이즈 강인성 · 비선형 대응</b> 5가지 축으로 알고리즘을 비교합니다.
+                    면적이 넓을수록 전반적으로 우수하며, <em>EKF</em>는 정확도·비선형에서, <b>KF</b>는 속도·단순성에서 강점을 보입니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -3309,6 +3485,16 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3))
                 fig_bar.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
                 st.plotly_chart(fig_bar, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">RMSE · MAE 비교</div>
+                  <div class="chart-explain-body">
+                    <b>RMSE</b>(평균 제곱근 오차)와 <b>MAE</b>(평균 절대 오차)로 세 알고리즘의 정확도를 정량 비교합니다.
+                    진한 막대가 RMSE, 연한 막대가 MAE입니다.
+                    <em>값이 낮을수록</em> 추정이 정확합니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             with c2:
                 # 노이즈 레벨별 히트맵
@@ -3343,6 +3529,16 @@ elif st.session_state["page"] == "simulation":
                     xaxis_title="노이즈 σ", height=220, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
                 st.plotly_chart(fig_hm2, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">노이즈 레벨별 RMSE 히트맵</div>
+                  <div class="chart-explain-body">
+                    노이즈가 커질수록(오른쪽) 세 알고리즘 모두 RMSE가 증가합니다.
+                    <em>녹색(낮은 오차)</em> → <s>빨간색(높은 오차)</s>으로 표현되며,
+                    행(알고리즘)별로 노이즈 민감도 차이를 한눈에 비교할 수 있습니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             with c3:
                 # 3D 서피스: 노이즈 × 스텝 수 → EKF RMSE
@@ -3375,6 +3571,16 @@ elif st.session_state["page"] == "simulation":
                     height=220, margin=dict(l=0,r=0,t=35,b=0),
                     paper_bgcolor='white', font=dict(family='Noto Sans KR',size=9,color='#0D1B2A'))
                 st.plotly_chart(fig3d2, use_container_width=True)
+                st.markdown("""
+                <div class="chart-explain">
+                  <div class="chart-explain-title">3D 서피스 — 노이즈 × 스텝 수 → EKF RMSE</div>
+                  <div class="chart-explain-body">
+                    <b>X축</b>(시뮬레이션 스텝 수)과 <b>Y축</b>(노이즈 크기)에 따른 EKF의 RMSE를 3D로 표현합니다.
+                    스텝이 많고 노이즈가 낮을수록 <em>녹색 평탄 지형</em>이 나타나고,
+                    노이즈가 강할수록 <s>빨간 봉우리</s>가 솟아올라 추정이 어려워짐을 시각화합니다.
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ── 푸터 ──
     st.markdown("""
