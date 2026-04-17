@@ -2575,7 +2575,7 @@ elif st.session_state["page"] == "simulation":
             }
         ))
         fig.update_layout(
-            height=200, margin=dict(l=20,r=20,t=40,b=0),
+            height=230, margin=dict(l=20,r=20,t=40,b=30),
             paper_bgcolor="white", font_family="Noto Sans KR"
         )
         return fig
