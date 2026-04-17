@@ -2844,21 +2844,24 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods.
-                        Artech House. <em>Chapter 5 · pp. 123–148</em>
+                        Artech House. <em>Chapter 5</em>
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">H</div>
                     <div class="sim-ref-text">
-                        <b>Hu, X. et al. (2012)</b> — A comparative study of equivalent circuit models for Li-ion batteries.
+                        <b>Hu, X., Li, S. &amp; Peng, H. (2012)</b> — A comparative study of equivalent circuit models for Li-ion batteries.
                         <em>Journal of Power Sources, 198, 359–367</em>
+                        · <a href="https://doi.org/10.1016/j.jpowsour.2011.10.013" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
-                    <div class="sim-ref-icon">L</div>
+                    <div class="sim-ref-icon">W</div>
                     <div class="sim-ref-text">
-                        <b>Liaw, B.Y. et al. (2004)</b> — Modeling of lithium ion cells — A simple equivalent-circuit model approach.
-                        <em>Solid State Ionics, 175(1–4), 835–839</em>
+                        <b>Waag, W., Fleischer, C. &amp; Sauer, D.U. (2014)</b> — Critical review of the methods for monitoring of lithium-ion batteries in electric and hybrid vehicles.
+                        <em>Journal of Power Sources, 258, 321–339</em>
+                        · <a href="https://doi.org/10.1016/j.jpowsour.2014.02.064" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
             </div>
@@ -3076,21 +3079,23 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-icon">K</div>
                     <div class="sim-ref-text">
                         <b>Kalman, R.E. (1960)</b> — A New Approach to Linear Filtering and Prediction Problems.
-                        <em>Journal of Basic Engineering, 82(1), 35–45</em> — 칼만 필터 원조 논문
+                        <em>ASME J. Basic Engineering, 82(1), 35–45</em>
+                        · <a href="https://doi.org/10.1115/1.3662552" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
-                        <b>Plett, G.L. (2004)</b> — Extended Kalman filtering for battery management systems of LiPB-based HEV battery packs.
+                        <b>Plett, G.L. (2004)</b> — Extended Kalman filtering for battery management systems of LiPB-based HEV battery packs — Part 1: Background.
                         <em>Journal of Power Sources, 134(2), 252–261</em>
+                        · <a href="https://doi.org/10.1016/j.jpowsour.2004.02.031" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
-                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
-                        <em>Chapter 7 · Kalman-Filter SOC Estimation, pp. 181–220</em>
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
             </div>
@@ -3304,20 +3309,23 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2004)</b> — Extended Kalman filtering for battery management systems of LiPB-based HEV battery packs — Part 3: State and parameter estimation.
                         <em>Journal of Power Sources, 134(2), 277–292</em>
+                        · <a href="https://doi.org/10.1016/j.jpowsour.2004.02.033" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">W</div>
                     <div class="sim-ref-text">
-                        <b>Wan, E.A. & Van der Merwe, R. (2000)</b> — The Unscented Kalman Filter for Nonlinear Estimation.
-                        <em>IEEE AS-SPCC, 153–158</em> — 비선형 필터 비교 기준
+                        <b>Wan, E.A. &amp; Van der Merwe, R. (2000)</b> — The Unscented Kalman Filter for Nonlinear Estimation.
+                        <em>Proc. IEEE AS-SPCC, Lake Louise, pp. 153–158</em>
+                        · <a href="https://doi.org/10.1109/ASSPCC.2000.882463" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
-                    <div class="sim-ref-icon">S</div>
+                    <div class="sim-ref-icon">H</div>
                     <div class="sim-ref-text">
-                        <b>Sakia, R.M. (1992)</b> — The Box-Cox Transformation Technique: A Review.
-                        <em>The Statistician, 41(2), 169–178</em> — 비선형 모델 선형화 근거
+                        <b>He, H. et al. (2011)</b> — State-of-Charge Estimation of the Lithium-Ion Battery Using an Adaptive EKF Based on an Improved Thevenin Model.
+                        <em>IEEE Trans. Veh. Technol., 60(4), 1461–1469</em>
+                        · <a href="https://doi.org/10.1109/TVT.2011.2132812" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
             </div>
@@ -3529,22 +3537,24 @@ elif st.session_state["page"] == "simulation":
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
-                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
-                        <em>Chapter 12 · Unbiased Capacity Estimation, pp. 289–318</em>
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">W</div>
                     <div class="sim-ref-text">
-                        <b>Weng, C. et al. (2013)</b> — On-board state of health monitoring of lithium-ion batteries using incremental capacity analysis with support vector regression.
+                        <b>Weng, C., Cui, Y., Sun, J. &amp; Peng, H. (2013)</b> — On-board state of health monitoring of lithium-ion batteries using incremental capacity analysis with support vector regression.
                         <em>Journal of Power Sources, 235, 36–44</em>
+                        · <a href="https://doi.org/10.1016/j.jpowsour.2013.02.012" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
-                    <div class="sim-ref-icon">C</div>
+                    <div class="sim-ref-icon">N</div>
                     <div class="sim-ref-text">
-                        <b>Chin, C.S. et al. (2018)</b> — Online State-of-Health Estimation of Lithium-Ion Battery Cells Using the Coulomb-Counting Method.
-                        <em>Energies, 11(7), 1820</em>
+                        <b>Ng, K.S., Moo, C.S., Chen, Y.P. &amp; Hsieh, Y.C. (2009)</b> — Enhanced coulomb counting method for estimating state-of-charge and state-of-health of lithium-ion batteries.
+                        <em>Applied Energy, 86(9), 1506–1511</em>
+                        · <a href="https://doi.org/10.1016/j.apenergy.2008.11.021" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
             </div>
@@ -3840,22 +3850,24 @@ elif st.session_state["page"] == "simulation":
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
-                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
-                        <em>Chapter 19 · Algorithm Comparison &amp; Simulation, pp. 451–488</em>
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
                     <div class="sim-ref-icon">H</div>
                     <div class="sim-ref-text">
-                        <b>He, H. et al. (2011)</b> — State-of-charge estimation of the lithium-ion battery using an adaptive extended Kalman filter based on an improved Thevenin model.
+                        <b>He, H., Xiong, R., Zhang, X., Sun, F. &amp; Fan, J. (2011)</b> — State-of-Charge Estimation of the Lithium-Ion Battery Using an Adaptive EKF Based on an Improved Thevenin Model.
                         <em>IEEE Trans. Veh. Technol., 60(4), 1461–1469</em>
+                        · <a href="https://doi.org/10.1109/TVT.2011.2132812" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
-                    <div class="sim-ref-icon">Z</div>
+                    <div class="sim-ref-icon">X</div>
                     <div class="sim-ref-text">
-                        <b>Zhang, R. et al. (2018)</b> — A Study on the Open Circuit Voltage and State of Charge Characterization of High Capacity Lithium-Ion Battery Under Different Temperature.
-                        <em>Energies, 11(9), 2408</em>
+                        <b>Xiong, R., Cao, J., Yu, Q., He, H. &amp; Sun, F. (2018)</b> — Critical Review on the Battery State of Charge Estimation Methods for Electric Vehicles.
+                        <em>IEEE Access, 6, 1832–1843</em>
+                        · <a href="https://doi.org/10.1109/ACCESS.2017.2780065" target="_blank" style="color:#00B4A0;">DOI ↗</a>
                     </div>
                 </div>
             </div>
