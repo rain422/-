@@ -2845,7 +2845,7 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods.
                         Artech House. <em>Chapter 5</em>
-                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-II-Equivalent-Circuit-Methods-P2192.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
@@ -3095,7 +3095,7 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
-                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-II-Equivalent-Circuit-Methods-P2192.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
             </div>
@@ -3538,7 +3538,7 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
-                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-II-Equivalent-Circuit-Methods-P2192.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
@@ -3851,7 +3851,7 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-icon">P</div>
                     <div class="sim-ref-text">
                         <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods. Artech House.
-                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-Two-P1757.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
+                        · <a href="https://us.artechhouse.com/Battery-Management-Systems-Volume-II-Equivalent-Circuit-Methods-P2192.aspx" target="_blank" style="color:#00B4A0;">출판사 링크 ↗</a>
                     </div>
                 </div>
                 <div class="sim-ref-item">
@@ -3867,7 +3867,7 @@ elif st.session_state["page"] == "simulation":
                     <div class="sim-ref-text">
                         <b>Xiong, R., Cao, J., Yu, Q., He, H. &amp; Sun, F. (2018)</b> — Critical Review on the Battery State of Charge Estimation Methods for Electric Vehicles.
                         <em>IEEE Access, 6, 1832–1843</em>
-                        · <a href="https://doi.org/10.1109/ACCESS.2017.2780065" target="_blank" style="color:#00B4A0;">DOI ↗</a>
+                        · <a href="https://ieeexplore.ieee.org/document/8168251/" target="_blank" style="color:#00B4A0;">IEEE Xplore ↗</a>
                     </div>
                 </div>
             </div>
