@@ -76,6 +76,46 @@ textarea {
 }
 
 /* ══════════════════════════════
+   전체화면 오버레이
+══════════════════════════════ */
+.chart-fs-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(13,27,42,0.85);
+    z-index: 99999;
+    align-items: center; justify-content: center;
+}
+.chart-fs-overlay.active { display: flex; }
+.chart-fs-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    width: 92vw; height: 88vh;
+    display: flex; flex-direction: column;
+    position: relative;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+}
+.chart-fs-close {
+    position: absolute; top: 10px; right: 14px;
+    font-size: 1.4rem; cursor: pointer;
+    color: #6B7280; line-height: 1;
+    background: none; border: none;
+    transition: color 0.2s;
+}
+.chart-fs-close:hover { color: #E8002A; }
+.chart-fs-inner { flex: 1; min-height: 0; }
+
+/* plotly 차트 컨테이너에 전체화면 버튼 */
+.js-plotly-plot .plotly .modebar {
+    opacity: 0 !important;
+    transition: opacity 0.2s !important;
+}
+.js-plotly-plot:hover .plotly .modebar {
+    opacity: 1 !important;
+}
+
+
+/* ══════════════════════════════
    GNB (상단 네비)
 ══════════════════════════════ */
 .gnb {
@@ -2442,6 +2482,47 @@ elif st.session_state["page"] == "simulation":
     .chart-explain-body s  { color:#E8002A; text-decoration:none; font-weight:600; }
     /* 차트 섹션 */
     .sim-chart-wrap { background:#fff; padding:8px 0; }
+    /* ── 전체화면 모달 ── */
+    .chart-fullscreen-modal {
+        display:none; position:fixed; inset:0; z-index:99999;
+        background:rgba(13,27,42,0.92); backdrop-filter:blur(8px);
+        align-items:center; justify-content:center;
+    }
+    .chart-fullscreen-modal.active { display:flex; }
+    .chart-fullscreen-inner {
+        background:#fff; border-radius:10px;
+        width:92vw; max-width:1400px; height:85vh;
+        padding:16px; position:relative; overflow:hidden;
+        box-shadow:0 32px 80px rgba(0,0,0,0.5);
+    }
+    .chart-fullscreen-close {
+        position:absolute; top:12px; right:14px;
+        width:32px; height:32px; border-radius:50%;
+        background:#0D1B2A; color:#fff; border:none;
+        font-size:1.1rem; cursor:pointer; z-index:10;
+        display:flex; align-items:center; justify-content:center;
+        transition:background 0.2s;
+    }
+    .chart-fullscreen-close:hover { background:#E8002A; }
+    .chart-fullscreen-title {
+        font-size:0.75rem; font-weight:700; color:#6B7280;
+        letter-spacing:1.5px; text-transform:uppercase;
+        margin-bottom:10px; padding-right:40px;
+    }
+    .chart-fullscreen-frame {
+        width:100%; height:calc(100% - 36px);
+        border:none; border-radius:6px;
+    }
+    /* 전체화면 버튼 */
+    .chart-expand-btn {
+        display:inline-flex; align-items:center; gap:5px;
+        background:transparent; border:1px solid #D4D8DE;
+        border-radius:4px; padding:4px 10px;
+        font-size:0.72rem; font-weight:600; color:#6B7280;
+        cursor:pointer; transition:all 0.2s; float:right;
+        margin-bottom:4px;
+    }
+    .chart-expand-btn:hover { background:#00B4A0; border-color:#00B4A0; color:#fff; }
     /* 3D 섹션 */
     .sim-3d-wrap { background:#0D1B2A; padding:40px 24px; }
     .sim-3d-title {
@@ -2464,6 +2545,82 @@ elif st.session_state["page"] == "simulation":
     .algo-step-title { font-size:0.88rem; font-weight:700; color:#0D1B2A; margin-bottom:3px; }
     .algo-step-desc { font-size:0.76rem; color:#6B7280; line-height:1.6; }
     </style>
+    """, unsafe_allow_html=True)
+
+    # ── 전체화면 모달 + JS ──
+    st.markdown("""
+    <div id="chartFullscreenModal" class="chart-fullscreen-modal">
+      <div class="chart-fullscreen-inner">
+        <div class="chart-fullscreen-title" id="chartFullscreenTitle"></div>
+        <button class="chart-fullscreen-close" onclick="closeChartFullscreen()" title="닫기 (ESC)">&#10005;</button>
+        <iframe id="chartFullscreenFrame" class="chart-fullscreen-frame" src="about:blank"></iframe>
+      </div>
+    </div>
+    <script>
+    (function(){
+      window.openChartFullscreen = function(title, idx) {
+        var modal = document.getElementById('chartFullscreenModal');
+        var frame = document.getElementById('chartFullscreenFrame');
+        document.getElementById('chartFullscreenTitle').textContent = title;
+
+        // Streamlit iframe 안의 plotly div 찾기
+        var plotlyDivs = document.querySelectorAll('.js-plotly-plot');
+        if (!plotlyDivs.length) {
+          // try parent
+          try { plotlyDivs = window.parent.document.querySelectorAll('.js-plotly-plot'); } catch(e){}
+        }
+        var src = plotlyDivs[idx] || plotlyDivs[plotlyDivs.length - 1];
+        if (!src) { modal.classList.add('active'); return; }
+
+        var data  = src.data;
+        var layout = JSON.parse(JSON.stringify(src.layout || {}));
+        layout.height    = undefined;
+        layout.autosize  = true;
+        layout.margin    = {l:60, r:60, t:60, b:70};
+
+        var plotlySrc = 'https://cdn.plot.ly/plotly-2.27.0.min.js';
+        var dataJson   = JSON.stringify(data);
+        var layoutJson = JSON.stringify(layout);
+        var html = [
+          '<!DOCTYPE html><html><head>',
+          '<script src="' + plotlySrc + '"><\\/script>',
+          '</head><body style="margin:0;padding:0;background:#fff;">',
+          '<div id="p" style="width:100vw;height:100vh;"></div>',
+          '<script>',
+          'Plotly.newPlot("p",' + dataJson + ',' + layoutJson + ',',
+          '{responsive:true,scrollZoom:true,doubleClick:"reset",',
+          'displayModeBar:true,',
+          'modeBarButtonsToRemove:["select2d","lasso2d","sendDataToCloud"],',
+          'displaylogo:false});',
+          '<\\/script></body></html>'
+        ].join('');
+
+        frame.src = 'about:blank';
+        frame.onload = function() {
+          try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            doc.open(); doc.write(html); doc.close();
+          } catch(e) { console.warn(e); }
+          frame.onload = null;
+        };
+
+        modal.classList.add('active');
+        document.addEventListener('keydown', _escClose);
+      };
+
+      window.closeChartFullscreen = function() {
+        document.getElementById('chartFullscreenModal').classList.remove('active');
+        document.getElementById('chartFullscreenFrame').src = 'about:blank';
+        document.removeEventListener('keydown', _escClose);
+      };
+
+      function _escClose(e) { if (e.key === 'Escape') window.closeChartFullscreen(); }
+
+      document.getElementById('chartFullscreenModal').addEventListener('click', function(e){
+        if (e.target === this) window.closeChartFullscreen();
+      });
+    })();
+    </script>
     """, unsafe_allow_html=True)
 
     # ── 히어로 ──
@@ -2675,7 +2832,7 @@ elif st.session_state["page"] == "simulation":
             # SOH 게이지 + 배터리 SVG + 회귀 차트
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
             with g1:
-                st.plotly_chart(soh_gauge(final_soh), use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                st.plotly_chart(soh_gauge(final_soh), use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
             with g2:
                 st.markdown(f'<div class="batt-wrap">{battery_svg(final_soh)}<div class="batt-label">배터리 잔존 건강도</div></div>', unsafe_allow_html=True)
             with g3:
@@ -2699,8 +2856,9 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3),
                     margin=dict(l=10,r=10,t=40,b=10))
                 fig_reg.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_reg.update_layout(dragmode='pan')
-                st.plotly_chart(fig_reg, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_reg.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"전류 펄스 → 전압 강하 (ΔV vs ΔI)\", 0)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_reg, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">전류 펄스 → 전압 강하 (ΔV vs ΔI)</div>
@@ -2732,8 +2890,9 @@ elif st.session_state["page"] == "simulation":
                 fig_cyc.update_xaxes(title_text="사이클 수", showgrid=True, gridcolor='#E2E8F0')
                 fig_cyc.update_yaxes(title_text="R₀ (mΩ)", secondary_y=False, showgrid=True, gridcolor='#E2E8F0')
                 fig_cyc.update_yaxes(title_text="SOH (%)", secondary_y=True)
-                fig_cyc.update_layout(dragmode='pan')
-                st.plotly_chart(fig_cyc, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_cyc.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"사이클별 R₀ 증가 & SOH 저하\", 1)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_cyc, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">사이클별 R₀ 증가 & SOH 저하</div>
@@ -2778,7 +2937,8 @@ elif st.session_state["page"] == "simulation":
                     paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A')
                 )
-                st.plotly_chart(fig3d, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"3D: 노이즈 × 샘플 수 → 추정 오차\", 2)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig3d, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">3D 서피스 — 노이즈 × 샘플 수 → 추정 오차</div>
@@ -2875,7 +3035,7 @@ elif st.session_state["page"] == "simulation":
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
             with g1:
-                st.plotly_chart(soh_gauge(final_soc, "SOC 추정값"), use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                st.plotly_chart(soh_gauge(final_soc, "SOC 추정값"), use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
             with g2:
                 st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc)}<div class="batt-label">현재 SOC 상태</div></div>', unsafe_allow_html=True)
             with g3:
@@ -2893,8 +3053,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_soc.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_soc.update_layout(dragmode='pan')
-                st.plotly_chart(fig_soc, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_soc.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"SOC 추정 수렴\", 3)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_soc, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">SOC 추정 수렴 — 칼만 필터</div>
@@ -2917,8 +3078,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_k.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_k.update_layout(dragmode='pan')
-                st.plotly_chart(fig_k, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_k.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"칼만 이득 K 수렴\", 4)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_k, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">칼만 이득 K 수렴</div>
@@ -2939,8 +3101,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_p.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_p.update_layout(dragmode='pan')
-                st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_p.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"공분산 P 수렴\", 5)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">공분산 P 감소</div>
@@ -2962,8 +3125,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_inn.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_inn.update_layout(dragmode='pan')
-                st.plotly_chart(fig_inn, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_inn.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"이노베이션 시퀀스\", 6)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_inn, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">이노베이션 시퀀스</div>
@@ -3055,7 +3219,7 @@ elif st.session_state["page"] == "simulation":
             """, unsafe_allow_html=True)
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
-            with g1: st.plotly_chart(soh_gauge(final_soc_ekf, "EKF SOC 추정"), use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+            with g1: st.plotly_chart(soh_gauge(final_soc_ekf, "EKF SOC 추정"), use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
             with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc_ekf)}<div class="batt-label">EKF 추정 SOC</div></div>', unsafe_allow_html=True)
             with g3:
                 t = np.arange(ekf_steps)
@@ -3073,8 +3237,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_cmp.update_layout(dragmode='pan')
-                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_cmp.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"SOC 추정 비교\", 7)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">EKF vs 선형 KF — SOC 추정 비교</div>
@@ -3100,8 +3265,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.35))
                 fig_ocv.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_ocv.update_layout(dragmode='pan')
-                st.plotly_chart(fig_ocv, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_ocv.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"OCV 곡선\", 8)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_ocv, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">OCV-SOC 비선형 곡선</div>
@@ -3121,8 +3287,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_hj.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_hj.update_layout(dragmode='pan')
-                st.plotly_chart(fig_hj, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_hj.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"야코비안 Hj\", 9)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_hj, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">야코비안 변화 (∂OCV/∂SOC)</div>
@@ -3147,8 +3314,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.35))
                 fig_err.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_err.update_layout(dragmode='pan')
-                st.plotly_chart(fig_err, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_err.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"EKF 오차\", 10)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_err, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">절대 오차 비교 — KF vs EKF</div>
@@ -3224,7 +3392,7 @@ elif st.session_state["page"] == "simulation":
             """, unsafe_allow_html=True)
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
-            with g1: st.plotly_chart(soh_gauge(soh_est, "OLS SOH 추정"), use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+            with g1: st.plotly_chart(soh_gauge(soh_est, "OLS SOH 추정"), use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
             with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(soh_est)}<div class="batt-label">용량 기반 SOH</div></div>', unsafe_allow_html=True)
             with g3:
                 fig_q = go.Figure()
@@ -3240,8 +3408,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_q.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_q.update_layout(dragmode='pan')
-                st.plotly_chart(fig_q, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_q.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"배터리 용량 추이\", 11)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_q, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">사이클별 용량 추정 (OLS vs 실제)</div>
@@ -3265,8 +3434,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_res.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_res.update_layout(dragmode='pan')
-                st.plotly_chart(fig_res, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_res.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"잔차 분석\", 12)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_res, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">잔차 분포 (Histogram)</div>
@@ -3292,8 +3462,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_soh.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_soh.update_layout(dragmode='pan')
-                st.plotly_chart(fig_soh, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_soh.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"SOH 추정 결과\", 13)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_soh, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">SOH 저하 곡선</div>
@@ -3327,8 +3498,9 @@ elif st.session_state["page"] == "simulation":
                     xaxis_title="포인트 수", yaxis_title="노이즈 레벨",
                     height=210, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
-                fig_hm.update_layout(dragmode='pan')
-                st.plotly_chart(fig_hm, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_hm.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"히트맵\", 14)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_hm, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">파라미터 민감도 히트맵</div>
@@ -3453,8 +3625,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.28), margin=dict(l=10,r=10,t=40,b=10))
                 fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_cmp.update_layout(dragmode='pan')
-                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_cmp.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"SOC 추정 비교\", 15)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
 
             with g2:
                 # 레이더 차트
@@ -3475,8 +3648,9 @@ elif st.session_state["page"] == "simulation":
                     height=280, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.15), margin=dict(l=30,r=30,t=40,b=10))
-                fig_rad.update_layout(dragmode='pan')
-                st.plotly_chart(fig_rad, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_rad.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"알고리즘 역량 레이더\", 16)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_rad, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">알고리즘 역량 레이더 차트</div>
@@ -3504,8 +3678,9 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.3))
                 fig_bar.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                fig_bar.update_layout(dragmode='pan')
-                st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_bar.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"RMSE · MAE 비교\", 17)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">RMSE · MAE 비교</div>
@@ -3549,8 +3724,9 @@ elif st.session_state["page"] == "simulation":
                 fig_hm2.update_layout(title=dict(text="노이즈 레벨별 RMSE 히트맵",font=dict(size=11)),
                     xaxis_title="노이즈 σ", height=220, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
-                fig_hm2.update_layout(dragmode='pan')
-                st.plotly_chart(fig_hm2, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                fig_hm2.update_layout(dragmode='zoom')
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"노이즈 레벨별 RMSE 히트맵\", 18)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig_hm2, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">노이즈 레벨별 RMSE 히트맵</div>
@@ -3592,7 +3768,8 @@ elif st.session_state["page"] == "simulation":
                                bgcolor='#F7F8FA'),
                     height=220, margin=dict(l=0,r=0,t=35,b=0),
                     paper_bgcolor='white', font=dict(family='Noto Sans KR',size=9,color='#0D1B2A'))
-                st.plotly_chart(fig3d2, use_container_width=True, config={"displayModeBar": False, "scrollZoom": True, "doubleClick": False})
+                st.markdown('''<button class="chart-expand-btn" onclick="openChartFullscreen(\"3D: 노이즈 × 스텝 수 → EKF RMSE\", 19)">&#x26F6; 전체화면</button><div style="clear:both"></div>''', unsafe_allow_html=True)
+                st.plotly_chart(fig3d2, use_container_width=True, config={"displayModeBar": True, "staticPlot": False, "scrollZoom": True, "doubleClick": "reset", "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud"], "displaylogo": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">3D 서피스 — 노이즈 × 스텝 수 → EKF RMSE</div>
