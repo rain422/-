@@ -3070,14 +3070,19 @@ elif st.session_state["page"] == "simulation":
                 st.plotly_chart(fig_cmp, use_container_width=True)
                 st.markdown("""
                 <div class="chart-explain">
-                  <div class="chart-explain-title">SOC 추정 비교 — KF · EKF · OLS</div>
+                  <div class="chart-explain-title">EKF vs 선형 KF — SOC 추정 비교</div>
                   <div class="chart-explain-body">
-                    동일한 합성 배터리 데이터에서 세 알고리즘을 동시에 실행한 결과입니다.
-                    <b>회색 점선</b>이 실제 SOC이며, <b>KF(연회색)</b> · <em>EKF(녹색)</em> · <s>OLS(빨간 점선)</s> 순으로 비교합니다.
-                    노이즈가 높을수록 세 알고리즘의 차이가 더 뚜렷하게 나타납니다.
+                    <b>회색 점선</b>은 실제 SOC, <b>회색 실선</b>은 선형 KF, <em>녹색 실선</em>은 EKF 추정값입니다.
+                    배터리 OCV-SOC 관계가 비선형일수록 EKF의 우위가 커집니다.
+                    RMSE 값이 낮을수록 추정이 정확합니다.
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                soc_range = np.linspace(0, 1, 200)
+                fig_ocv = go.Figure()
                 fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=ocv(soc_range), mode='lines',
                     line=dict(color='#00B4A0',width=2.5), name='비선형 OCV'))
                 fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=3.0+1.5*soc_range, mode='lines',
@@ -3099,7 +3104,6 @@ elif st.session_state["page"] == "simulation":
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
-            with c2:
                 fig_hj = go.Figure()
                 fig_hj.add_trace(go.Scatter(x=np.arange(ekf_steps), y=Hj_hist, mode='lines',
                     line=dict(color='#8B5CF6',width=2), name='야코비안 H'))
