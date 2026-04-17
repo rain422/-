@@ -2675,7 +2675,7 @@ elif st.session_state["page"] == "simulation":
             # SOH 게이지 + 배터리 SVG + 회귀 차트
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
             with g1:
-                st.plotly_chart(soh_gauge(final_soh), use_container_width=True)
+                st.plotly_chart(soh_gauge(final_soh), use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
             with g2:
                 st.markdown(f'<div class="batt-wrap">{battery_svg(final_soh)}<div class="batt-label">배터리 잔존 건강도</div></div>', unsafe_allow_html=True)
             with g3:
@@ -2699,7 +2699,8 @@ elif st.session_state["page"] == "simulation":
                     legend=dict(orientation='h',y=-0.3),
                     margin=dict(l=10,r=10,t=40,b=10))
                 fig_reg.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_reg, use_container_width=True)
+                fig_reg.update_layout(dragmode=False)
+                st.plotly_chart(fig_reg, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">전류 펄스 → 전압 강하 (ΔV vs ΔI)</div>
@@ -2731,7 +2732,8 @@ elif st.session_state["page"] == "simulation":
                 fig_cyc.update_xaxes(title_text="사이클 수", showgrid=True, gridcolor='#E2E8F0')
                 fig_cyc.update_yaxes(title_text="R₀ (mΩ)", secondary_y=False, showgrid=True, gridcolor='#E2E8F0')
                 fig_cyc.update_yaxes(title_text="SOH (%)", secondary_y=True)
-                st.plotly_chart(fig_cyc, use_container_width=True)
+                fig_cyc.update_layout(dragmode=False)
+                st.plotly_chart(fig_cyc, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">사이클별 R₀ 증가 & SOH 저하</div>
@@ -2776,7 +2778,7 @@ elif st.session_state["page"] == "simulation":
                     paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A')
                 )
-                st.plotly_chart(fig3d, use_container_width=True)
+                st.plotly_chart(fig3d, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">3D 서피스 — 노이즈 × 샘플 수 → 추정 오차</div>
@@ -2873,7 +2875,7 @@ elif st.session_state["page"] == "simulation":
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
             with g1:
-                st.plotly_chart(soh_gauge(final_soc, "SOC 추정값"), use_container_width=True)
+                st.plotly_chart(soh_gauge(final_soc, "SOC 추정값"), use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
             with g2:
                 st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc)}<div class="batt-label">현재 SOC 상태</div></div>', unsafe_allow_html=True)
             with g3:
@@ -2891,7 +2893,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_soc.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_soc, use_container_width=True)
+                fig_soc.update_layout(dragmode=False)
+                st.plotly_chart(fig_soc, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">SOC 추정 수렴 — 칼만 필터</div>
@@ -2914,7 +2917,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_k.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_k, use_container_width=True)
+                fig_k.update_layout(dragmode=False)
+                st.plotly_chart(fig_k, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">칼만 이득 K 수렴</div>
@@ -2935,7 +2939,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_p.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_p, use_container_width=True)
+                fig_p.update_layout(dragmode=False)
+                st.plotly_chart(fig_p, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">공분산 P 감소</div>
@@ -2957,7 +2962,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_inn.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_inn, use_container_width=True)
+                fig_inn.update_layout(dragmode=False)
+                st.plotly_chart(fig_inn, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">이노베이션 시퀀스</div>
@@ -3049,7 +3055,7 @@ elif st.session_state["page"] == "simulation":
             """, unsafe_allow_html=True)
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
-            with g1: st.plotly_chart(soh_gauge(final_soc_ekf, "EKF SOC 추정"), use_container_width=True)
+            with g1: st.plotly_chart(soh_gauge(final_soc_ekf, "EKF SOC 추정"), use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
             with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc_ekf)}<div class="batt-label">EKF 추정 SOC</div></div>', unsafe_allow_html=True)
             with g3:
                 t = np.arange(ekf_steps)
@@ -3067,7 +3073,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_cmp, use_container_width=True)
+                fig_cmp.update_layout(dragmode=False)
+                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">EKF vs 선형 KF — SOC 추정 비교</div>
@@ -3093,7 +3100,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.35))
                 fig_ocv.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_ocv, use_container_width=True)
+                fig_ocv.update_layout(dragmode=False)
+                st.plotly_chart(fig_ocv, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">OCV-SOC 비선형 곡선</div>
@@ -3113,7 +3121,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_hj.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_hj, use_container_width=True)
+                fig_hj.update_layout(dragmode=False)
+                st.plotly_chart(fig_hj, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">야코비안 변화 (∂OCV/∂SOC)</div>
@@ -3138,7 +3147,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.35))
                 fig_err.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_err, use_container_width=True)
+                fig_err.update_layout(dragmode=False)
+                st.plotly_chart(fig_err, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">절대 오차 비교 — KF vs EKF</div>
@@ -3214,7 +3224,7 @@ elif st.session_state["page"] == "simulation":
             """, unsafe_allow_html=True)
 
             g1, g2, g3 = st.columns([1.2, 0.7, 2])
-            with g1: st.plotly_chart(soh_gauge(soh_est, "OLS SOH 추정"), use_container_width=True)
+            with g1: st.plotly_chart(soh_gauge(soh_est, "OLS SOH 추정"), use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
             with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(soh_est)}<div class="batt-label">용량 기반 SOH</div></div>', unsafe_allow_html=True)
             with g3:
                 fig_q = go.Figure()
@@ -3230,7 +3240,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
                 fig_q.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_q, use_container_width=True)
+                fig_q.update_layout(dragmode=False)
+                st.plotly_chart(fig_q, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">사이클별 용량 추정 (OLS vs 실제)</div>
@@ -3254,7 +3265,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_res.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_res, use_container_width=True)
+                fig_res.update_layout(dragmode=False)
+                st.plotly_chart(fig_res, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">잔차 분포 (Histogram)</div>
@@ -3280,7 +3292,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     showlegend=False)
                 fig_soh.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_soh, use_container_width=True)
+                fig_soh.update_layout(dragmode=False)
+                st.plotly_chart(fig_soh, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">SOH 저하 곡선</div>
@@ -3314,7 +3327,8 @@ elif st.session_state["page"] == "simulation":
                     xaxis_title="포인트 수", yaxis_title="노이즈 레벨",
                     height=210, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
-                st.plotly_chart(fig_hm, use_container_width=True)
+                fig_hm.update_layout(dragmode=False)
+                st.plotly_chart(fig_hm, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">파라미터 민감도 히트맵</div>
@@ -3439,7 +3453,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.28), margin=dict(l=10,r=10,t=40,b=10))
                 fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_cmp, use_container_width=True)
+                fig_cmp.update_layout(dragmode=False)
+                st.plotly_chart(fig_cmp, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
 
             with g2:
                 # 레이더 차트
@@ -3460,7 +3475,8 @@ elif st.session_state["page"] == "simulation":
                     height=280, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=10,color='#0D1B2A'),
                     legend=dict(orientation='h',y=-0.15), margin=dict(l=30,r=30,t=40,b=10))
-                st.plotly_chart(fig_rad, use_container_width=True)
+                fig_rad.update_layout(dragmode=False)
+                st.plotly_chart(fig_rad, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">알고리즘 역량 레이더 차트</div>
@@ -3488,7 +3504,8 @@ elif st.session_state["page"] == "simulation":
                     font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
                     legend=dict(orientation='h',y=-0.3))
                 fig_bar.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
-                st.plotly_chart(fig_bar, use_container_width=True)
+                fig_bar.update_layout(dragmode=False)
+                st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">RMSE · MAE 비교</div>
@@ -3532,7 +3549,8 @@ elif st.session_state["page"] == "simulation":
                 fig_hm2.update_layout(title=dict(text="노이즈 레벨별 RMSE 히트맵",font=dict(size=11)),
                     xaxis_title="노이즈 σ", height=220, paper_bgcolor='white',
                     font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
-                st.plotly_chart(fig_hm2, use_container_width=True)
+                fig_hm2.update_layout(dragmode=False)
+                st.plotly_chart(fig_hm2, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">노이즈 레벨별 RMSE 히트맵</div>
@@ -3574,7 +3592,7 @@ elif st.session_state["page"] == "simulation":
                                bgcolor='#F7F8FA'),
                     height=220, margin=dict(l=0,r=0,t=35,b=0),
                     paper_bgcolor='white', font=dict(family='Noto Sans KR',size=9,color='#0D1B2A'))
-                st.plotly_chart(fig3d2, use_container_width=True)
+                st.plotly_chart(fig3d2, use_container_width=True, config={"displayModeBar": False, "staticPlot": False, "scrollZoom": False})
                 st.markdown("""
                 <div class="chart-explain">
                   <div class="chart-explain-title">3D 서피스 — 노이즈 × 스텝 수 → EKF RMSE</div>
