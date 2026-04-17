@@ -2442,6 +2442,52 @@ elif st.session_state["page"] == "simulation":
     .chart-explain-body s  { color:#E8002A; text-decoration:none; font-weight:600; }
     /* 차트 섹션 */
     .sim-chart-wrap { background:#fff; padding:8px 0; }
+    /* 참고문헌·공식 카드 */
+    .sim-ref-card {
+        background: #0D1B2A;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding: 28px 72px;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+    }
+    .sim-ref-section-title {
+        font-size: 0.62rem; font-weight: 700; letter-spacing: 2.5px;
+        text-transform: uppercase; color: #00B4A0;
+        margin-bottom: 14px; padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .sim-ref-item {
+        display: flex; gap: 12px; align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    .sim-ref-icon {
+        width: 22px; height: 22px; border-radius: 4px;
+        background: rgba(0,180,160,0.15); border: 1px solid rgba(0,180,160,0.3);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; font-weight: 800; color: #00B4A0;
+        flex-shrink: 0; margin-top: 1px;
+    }
+    .sim-ref-text { font-size: 0.76rem; color: rgba(255,255,255,0.45); line-height: 1.65; }
+    .sim-ref-text b { color: rgba(255,255,255,0.75); font-weight: 600; }
+    .sim-ref-text em { color: #00B4A0; font-style: normal; }
+    .sim-formula-box {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px; padding: 14px 18px;
+        margin-bottom: 10px;
+    }
+    .sim-formula-label {
+        font-size: 0.62rem; font-weight: 700; color: #00B4A0;
+        letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px;
+    }
+    .sim-formula-eq {
+        font-family: 'Plus Jakarta Sans', monospace;
+        font-size: 0.85rem; color: rgba(255,255,255,0.8);
+        letter-spacing: 0.3px; line-height: 1.8;
+    }
+    .sim-formula-desc {
+        font-size: 0.72rem; color: rgba(255,255,255,0.35);
+        margin-top: 5px; line-height: 1.6;
+    }
     /* 3D 섹션 */
     .sim-3d-wrap { background:#0D1B2A; padding:40px 24px; }
     .sim-3d-title {
@@ -2790,6 +2836,53 @@ elif st.session_state["page"] == "simulation":
                 </div>
                 """, unsafe_allow_html=True)
 
+        st.markdown("""
+        <div class="sim-ref-card">
+            <div>
+                <div class="sim-ref-section-title">📚 참고 문헌</div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2: Equivalent-Circuit Methods.
+                        Artech House. <em>Chapter 5 · pp. 123–148</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">H</div>
+                    <div class="sim-ref-text">
+                        <b>Hu, X. et al. (2012)</b> — A comparative study of equivalent circuit models for Li-ion batteries.
+                        <em>Journal of Power Sources, 198, 359–367</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">L</div>
+                    <div class="sim-ref-text">
+                        <b>Liaw, B.Y. et al. (2004)</b> — Modeling of lithium ion cells — A simple equivalent-circuit model approach.
+                        <em>Solid State Ionics, 175(1–4), 835–839</em>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="sim-ref-section-title">📐 사용 공식</div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">측정 모델</div>
+                    <div class="sim-formula-eq">ΔV = R₀ · ΔI + ε</div>
+                    <div class="sim-formula-desc">ε ~ N(0, σ²) : 측정 노이즈, ΔI : 전류 펄스 크기</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">최소제곱 추정 (OLS)</div>
+                    <div class="sim-formula-eq">R̂₀ = Σ(ΔIₙ · ΔVₙ) / Σ(ΔIₙ²)</div>
+                    <div class="sim-formula-desc">선형 회귀의 해석적 해 — 잔차 제곱합 최소화</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">SOH 추정</div>
+                    <div class="sim-formula-eq">SOH = SOH₀ · (1 − α · k)</div>
+                    <div class="sim-formula-desc">α : 사이클당 열화율, k : 사이클 수</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     # ══════════════════════════════════════════════════════
     # TAB 07 — 칼만 필터
     # ══════════════════════════════════════════════════════
@@ -2974,6 +3067,48 @@ elif st.session_state["page"] == "simulation":
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="sim-ref-card">
+            <div>
+                <div class="sim-ref-section-title">📚 참고 문헌</div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">K</div>
+                    <div class="sim-ref-text">
+                        <b>Kalman, R.E. (1960)</b> — A New Approach to Linear Filtering and Prediction Problems.
+                        <em>Journal of Basic Engineering, 82(1), 35–45</em> — 칼만 필터 원조 논문
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2004)</b> — Extended Kalman filtering for battery management systems of LiPB-based HEV battery packs.
+                        <em>Journal of Power Sources, 134(2), 252–261</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
+                        <em>Chapter 7 · Kalman-Filter SOC Estimation, pp. 181–220</em>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="sim-ref-section-title">📐 사용 공식</div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">예측 단계 (Predict)</div>
+                    <div class="sim-formula-eq">x̂ₖ⁻ = Axₖ₋₁ + Buₖ<br>Pₖ⁻ = APₖ₋₁A' + Q</div>
+                    <div class="sim-formula-desc">A: 상태 전이, Q: 프로세스 노이즈 공분산</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">수정 단계 (Update)</div>
+                    <div class="sim-formula-eq">Kₖ = Pₖ⁻H'(HPₖ⁻H' + R)⁻¹<br>x̂ₖ = x̂ₖ⁻ + Kₖ(zₖ − Hx̂ₖ⁻)<br>Pₖ = (I − KₖH)Pₖ⁻</div>
+                    <div class="sim-formula-desc">K: 칼만 이득, R: 측정 노이즈 공분산, z: 실제 측정값</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 08 — EKF
@@ -3160,6 +3295,53 @@ elif st.session_state["page"] == "simulation":
                 </div>
                 """, unsafe_allow_html=True)
 
+        st.markdown("""
+        <div class="sim-ref-card">
+            <div>
+                <div class="sim-ref-section-title">📚 참고 문헌</div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2004)</b> — Extended Kalman filtering for battery management systems of LiPB-based HEV battery packs — Part 3: State and parameter estimation.
+                        <em>Journal of Power Sources, 134(2), 277–292</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">W</div>
+                    <div class="sim-ref-text">
+                        <b>Wan, E.A. & Van der Merwe, R. (2000)</b> — The Unscented Kalman Filter for Nonlinear Estimation.
+                        <em>IEEE AS-SPCC, 153–158</em> — 비선형 필터 비교 기준
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">S</div>
+                    <div class="sim-ref-text">
+                        <b>Sakia, R.M. (1992)</b> — The Box-Cox Transformation Technique: A Review.
+                        <em>The Statistician, 41(2), 169–178</em> — 비선형 모델 선형화 근거
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="sim-ref-section-title">📐 사용 공식</div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">비선형 OCV-SOC 모델 (3차 다항식)</div>
+                    <div class="sim-formula-eq">OCV(s) = a₀ + a₁s + a₂s² + a₃s³</div>
+                    <div class="sim-formula-desc">s: SOC, aᵢ: 피팅 계수 (a₀=3.0, a₁=1.5, a₂=−0.8, a₃=0.5)</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">야코비안 선형화 (EKF 핵심)</div>
+                    <div class="sim-formula-eq">Hₖ = ∂OCV/∂s|_{ŝₖ⁻} = a₁ + 2a₂s + 3a₃s²</div>
+                    <div class="sim-formula-desc">매 스텝마다 현재 SOC 추정값 주변에서 선형화</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">EKF 칼만 이득</div>
+                    <div class="sim-formula-eq">Kₖ = Pₖ⁻Hₖ(Hₖ²Pₖ⁻ + R)⁻¹</div>
+                    <div class="sim-formula-desc">Hₖ가 고정(KF)이 아닌 매 스텝 갱신(EKF)되는 것이 핵심 차이</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     # ══════════════════════════════════════════════════════
     # TAB 12 — 선형 회귀 용량 추정
     # ══════════════════════════════════════════════════════
@@ -3339,6 +3521,53 @@ elif st.session_state["page"] == "simulation":
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="sim-ref-card">
+            <div>
+                <div class="sim-ref-section-title">📚 참고 문헌</div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
+                        <em>Chapter 12 · Unbiased Capacity Estimation, pp. 289–318</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">W</div>
+                    <div class="sim-ref-text">
+                        <b>Weng, C. et al. (2013)</b> — On-board state of health monitoring of lithium-ion batteries using incremental capacity analysis with support vector regression.
+                        <em>Journal of Power Sources, 235, 36–44</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">C</div>
+                    <div class="sim-ref-text">
+                        <b>Chin, C.S. et al. (2018)</b> — Online State-of-Health Estimation of Lithium-Ion Battery Cells Using the Coulomb-Counting Method.
+                        <em>Energies, 11(7), 1820</em>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="sim-ref-section-title">📐 사용 공식</div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">쿨롱 카운팅 기반 용량 모델</div>
+                    <div class="sim-formula-eq">ΔAh = Q · ΔSOC + ε₁<br>ΔV  = ΔSOC + ε₂</div>
+                    <div class="sim-formula-desc">ΔAh: 전류 적분량, ΔSOC: SOC 변화량, Q: 전체 용량</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">OLS 용량 추정</div>
+                    <div class="sim-formula-eq">Q̂ = Σ(ΔAhₙ · ΔVₙ) / Σ(ΔVₙ²)</div>
+                    <div class="sim-formula-desc">최소제곱 해석해 — 측정 노이즈가 ΔV에만 있다는 가정</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">SOH 산출</div>
+                    <div class="sim-formula-eq">SOH = Q̂_now / Q_initial × 100%</div>
+                    <div class="sim-formula-desc">현재 추정 용량을 초기 정격 용량으로 정규화</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════
     # TAB 19 — 종합 성능 비교
@@ -3603,6 +3832,53 @@ elif st.session_state["page"] == "simulation":
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="sim-ref-card">
+            <div>
+                <div class="sim-ref-section-title">📚 참고 문헌</div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">P</div>
+                    <div class="sim-ref-text">
+                        <b>Plett, G.L. (2015)</b> — Battery Management Systems, Vol.2.
+                        <em>Chapter 19 · Algorithm Comparison &amp; Simulation, pp. 451–488</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">H</div>
+                    <div class="sim-ref-text">
+                        <b>He, H. et al. (2011)</b> — State-of-charge estimation of the lithium-ion battery using an adaptive extended Kalman filter based on an improved Thevenin model.
+                        <em>IEEE Trans. Veh. Technol., 60(4), 1461–1469</em>
+                    </div>
+                </div>
+                <div class="sim-ref-item">
+                    <div class="sim-ref-icon">Z</div>
+                    <div class="sim-ref-text">
+                        <b>Zhang, R. et al. (2018)</b> — A Study on the Open Circuit Voltage and State of Charge Characterization of High Capacity Lithium-Ion Battery Under Different Temperature.
+                        <em>Energies, 11(9), 2408</em>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="sim-ref-section-title">📐 평가 지표 공식</div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">RMSE (평균 제곱근 오차)</div>
+                    <div class="sim-formula-eq">RMSE = √( (1/N) · Σ(ŝₖ − sₖ)² )</div>
+                    <div class="sim-formula-desc">ŝₖ: 추정 SOC, sₖ: 실제 SOC, N: 총 스텝 수</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">MAE (평균 절대 오차)</div>
+                    <div class="sim-formula-eq">MAE = (1/N) · Σ|ŝₖ − sₖ|</div>
+                    <div class="sim-formula-desc">이상치에 덜 민감한 오차 지표 — RMSE 보완 역할</div>
+                </div>
+                <div class="sim-formula-box">
+                    <div class="sim-formula-label">알고리즘 복잡도 비교</div>
+                    <div class="sim-formula-eq">KF: O(n²) · EKF: O(n²) · OLS: O(n·m)</div>
+                    <div class="sim-formula-desc">n: 상태 차원, m: 측정 포인트 수 — 실시간 BMS 적용 기준</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── 푸터 ──
     st.markdown("""
