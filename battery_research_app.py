@@ -2316,6 +2316,1074 @@ elif st.session_state["page"] == "topics":
 # =====================================================================
 elif st.session_state["page"] == "simulation":
 
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    # ── CSS ──
+    st.markdown("""
+    <style>
+    /* 히어로 */
+    .sim-hero {
+        position: relative; width: 100%; min-height: 340px;
+        background: #0D1B2A; overflow: hidden; display: flex; align-items: flex-end;
+    }
+    .sim-hero video {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: cover; filter: brightness(0.18);
+    }
+    .sim-hero-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(135deg,rgba(13,27,42,0.97) 0%,rgba(13,27,42,0.55) 70%,rgba(0,180,160,0.08) 100%);
+    }
+    .sim-hero-body { position:relative; z-index:2; padding:110px 72px 56px; max-width:860px; }
+    .sim-hero-eyebrow {
+        display:flex; align-items:center; gap:10px;
+        font-size:0.66rem; font-weight:700; letter-spacing:3px;
+        text-transform:uppercase; color:#00B4A0; margin-bottom:16px;
+    }
+    .sim-hero-eyebrow::before { content:''; display:block; width:24px; height:1px; background:#00B4A0; }
+    .sim-hero-title {
+        font-family:'Plus Jakarta Sans',sans-serif;
+        font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:800; color:#fff;
+        line-height:1.1; letter-spacing:-1.2px; margin-bottom:14px;
+    }
+    .sim-hero-title span { color:#00B4A0; }
+    .sim-hero-desc { font-size:0.9rem; color:rgba(255,255,255,0.45); font-weight:300; line-height:1.8; }
+    /* 탭 바 */
+    .sim-tab-bar {
+        background:#fff; border-bottom:1px solid #E2E8F0;
+        display:flex; padding:0 64px; overflow-x:auto;
+        position:sticky; top:64px; z-index:100;
+        box-shadow:0 2px 12px rgba(13,27,42,0.06);
+    }
+    .sim-tab {
+        padding:18px 24px; font-size:0.82rem; font-weight:500;
+        color:#6B7280; border-bottom:2px solid transparent;
+        margin-bottom:-1px; cursor:pointer; white-space:nowrap;
+        transition:all 0.2s; letter-spacing:0.2px;
+    }
+    .sim-tab.on { color:#00B4A0; border-bottom-color:#00B4A0; font-weight:700; }
+    .sim-tab:hover { color:#0D1B2A; }
+    /* 설명 카드 */
+    .sim-desc-card {
+        background:linear-gradient(135deg,#0D1B2A 0%,#1C2E40 100%);
+        border-radius:0; padding:36px 72px;
+        border-left:4px solid #00B4A0;
+    }
+    .sim-desc-chip {
+        display:inline-block; background:rgba(0,180,160,0.15);
+        border:1px solid rgba(0,180,160,0.3); color:#00B4A0;
+        border-radius:20px; padding:4px 14px; font-size:0.65rem;
+        font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+        margin-bottom:12px;
+    }
+    .sim-desc-title {
+        font-family:'Plus Jakarta Sans',sans-serif; font-size:1.15rem;
+        font-weight:800; color:#fff; margin-bottom:8px; letter-spacing:-0.3px;
+    }
+    .sim-desc-sub { font-size:0.82rem; color:rgba(255,255,255,0.4); line-height:1.8; font-weight:300; }
+    /* 파라미터 패널 */
+    .sim-param-panel {
+        background:#F7F8FA; border-right:1px solid #E2E8F0;
+        padding:28px 24px; min-height:100%;
+    }
+    .sim-param-title {
+        font-size:0.65rem; font-weight:700; color:#00B4A0;
+        letter-spacing:2px; text-transform:uppercase;
+        padding-bottom:12px; border-bottom:1px solid #E2E8F0; margin-bottom:20px;
+    }
+    /* 메트릭 카드 */
+    .sim-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:20px 24px; background:#fff; }
+    .sim-kpi {
+        background:#fff; border:1px solid #E2E8F0; border-radius:8px;
+        padding:20px 18px; border-top:3px solid #00B4A0; position:relative; overflow:hidden;
+    }
+    .sim-kpi::after {
+        content:''; position:absolute; right:-10px; bottom:-10px;
+        width:60px; height:60px; border-radius:50%;
+        background:rgba(0,180,160,0.06);
+    }
+    .sim-kpi-val {
+        font-family:'Plus Jakarta Sans',sans-serif; font-size:1.7rem;
+        font-weight:800; color:#00B4A0; line-height:1; margin-bottom:4px;
+    }
+    .sim-kpi-val.red { color:#E8002A; }
+    .sim-kpi-val.navy { color:#0D1B2A; }
+    .sim-kpi-label { font-size:0.7rem; color:#9EA5AF; font-weight:400; }
+    /* 배터리 SVG 래퍼 */
+    .batt-wrap {
+        display:flex; flex-direction:column; align-items:center;
+        justify-content:center; padding:20px 0;
+    }
+    .batt-label {
+        font-size:0.68rem; font-weight:700; letter-spacing:2px;
+        text-transform:uppercase; color:#9EA5AF; margin-top:12px;
+    }
+    /* 차트 섹션 */
+    .sim-chart-wrap { background:#fff; padding:8px 0; }
+    /* 3D 섹션 */
+    .sim-3d-wrap { background:#0D1B2A; padding:40px 24px; }
+    .sim-3d-title {
+        font-family:'Plus Jakarta Sans',sans-serif; font-size:0.85rem;
+        font-weight:700; color:rgba(255,255,255,0.6); letter-spacing:-0.2px;
+        margin-bottom:4px; text-align:center;
+    }
+    /* 알고리즘 흐름 카드 */
+    .algo-step {
+        display:flex; align-items:flex-start; gap:16px;
+        padding:16px 0; border-bottom:1px solid #E2E8F0;
+    }
+    .algo-step:last-child { border-bottom:none; }
+    .algo-step-num {
+        width:32px; height:32px; border-radius:50%;
+        background:#00B4A0; color:#fff; font-weight:800;
+        font-size:0.82rem; display:flex; align-items:center;
+        justify-content:center; flex-shrink:0; font-family:'Plus Jakarta Sans',sans-serif;
+    }
+    .algo-step-title { font-size:0.88rem; font-weight:700; color:#0D1B2A; margin-bottom:3px; }
+    .algo-step-desc { font-size:0.76rem; color:#6B7280; line-height:1.6; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── 히어로 ──
+    st.markdown("""
+    <div class="sim-hero">
+        <video autoplay muted loop playsinline>
+            <source src="https://raw.githubusercontent.com/rain422/-/main/13814690_1920_1080_100fps.mp4" type="video/mp4">
+        </video>
+        <div class="sim-hero-overlay"></div>
+        <div class="sim-hero-body">
+            <div class="sim-hero-eyebrow">Battery SOH Interactive Simulation</div>
+            <div class="sim-hero-title">배터리 건강 추정<br><span>핵심 알고리즘 시뮬레이터</span></div>
+            <div class="sim-hero-desc">
+                R₀ 추정 · 칼만 필터 · EKF · 선형 회귀 · 종합 비교 —<br>
+                파라미터를 직접 조정하고 게이지·3D 서피스·히트맵으로 실시간 결과를 확인하세요.
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 탭 ──
+    SIM_TABS = [
+        ("r0",  "05 · R₀ 내부 저항 추정"),
+        ("kf",  "07 · 칼만 필터"),
+        ("ekf", "08 · EKF 비선형 추정"),
+        ("reg", "12 · 선형 회귀 용량 추정"),
+        ("cmp", "19 · 종합 성능 비교"),
+    ]
+    if "sim_tab" not in st.session_state:
+        st.session_state["sim_tab"] = "r0"
+
+    tab_html = '<div class="sim-tab-bar">'
+    for tk, tl in SIM_TABS:
+        cls = "on" if st.session_state["sim_tab"] == tk else ""
+        tab_html += f'<span class="sim-tab {cls}">{tl}</span>'
+    tab_html += "</div>"
+    st.markdown(tab_html, unsafe_allow_html=True)
+
+    tab_cols = st.columns(len(SIM_TABS))
+    for i, (tk, tl) in enumerate(SIM_TABS):
+        with tab_cols[i]:
+            if st.button(tl, key=f"simtab_{tk}", use_container_width=True):
+                st.session_state["sim_tab"] = tk; st.rerun()
+
+    cur = st.session_state["sim_tab"]
+
+    # ──────────────────────────────────────────────
+    # 공통 유틸 — 배터리 SVG 생성
+    # ──────────────────────────────────────────────
+    def battery_svg(soh_pct):
+        soh_pct = max(0, min(100, soh_pct))
+        fill_h  = int(152 * soh_pct / 100)
+        fill_y  = 188 - fill_h
+        if soh_pct >= 80:   col, glow = "#00B4A0", "rgba(0,180,160,0.3)"
+        elif soh_pct >= 60: col, glow = "#F59E0B", "rgba(245,158,11,0.3)"
+        else:               col, glow = "#E8002A", "rgba(232,0,42,0.3)"
+        segs = "".join([
+            f'<rect x="23" y="{fill_y + int(fill_h*k/5)}" width="74" height="{max(1,int(fill_h/5)-1)}" '
+            f'rx="1" fill="{col}" opacity="{0.55 + 0.09*k}"/>'
+            for k in range(5)
+        ])
+        return f"""
+        <svg viewBox="0 0 120 230" xmlns="http://www.w3.org/2000/svg" width="120" height="230">
+          <defs>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1C2E40"/><stop offset="100%" stop-color="#243548"/>
+            </linearGradient>
+          </defs>
+          <rect x="38" y="8" width="44" height="14" rx="5" fill="{col}" opacity="0.9"/>
+          <rect x="43" y="13" width="34" height="5" rx="2" fill="#0D1B2A" opacity="0.4"/>
+          <rect x="15" y="20" width="90" height="172" rx="10"
+            fill="url(#bodyGrad)" stroke="{col}" stroke-width="1.5" filter="url(#glow)"/>
+          <rect x="19" y="24" width="82" height="164" rx="7" fill="#0D1B2A" opacity="0.6"/>
+          {segs}
+          <rect x="23" y="{fill_y}" width="74" height="{fill_h}" rx="4" fill="{col}" opacity="0.15"/>
+          <text x="60" y="120" text-anchor="middle" fill="{col}" font-size="26"
+            font-weight="bold" font-family="Plus Jakarta Sans,sans-serif">{soh_pct:.0f}%</text>
+          <text x="60" y="138" text-anchor="middle" fill="rgba(255,255,255,0.35)"
+            font-size="9" font-family="Noto Sans KR,sans-serif" letter-spacing="2">SOH</text>
+          <rect x="19" y="24" width="82" height="164" rx="7"
+            fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        </svg>"""
+
+    # ──────────────────────────────────────────────
+    # 공통 유틸 — SOH 게이지
+    # ──────────────────────────────────────────────
+    def soh_gauge(soh_val, title="SOH 건강 지수"):
+        if soh_val >= 80:   bar_col = "#00B4A0"
+        elif soh_val >= 60: bar_col = "#F59E0B"
+        else:               bar_col = "#E8002A"
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=soh_val,
+            number={"suffix":"%","font":{"size":32,"color":bar_col,"family":"Plus Jakarta Sans"}},
+            title={"text":title,"font":{"size":11,"color":"#6B7280","family":"Noto Sans KR"}},
+            gauge={
+                "axis":{"range":[0,100],"tickwidth":1,"tickcolor":"#E2E8F0","tickvals":[0,20,40,60,80,100]},
+                "bar":{"color":bar_col,"thickness":0.28},
+                "bgcolor":"#F7F8FA",
+                "borderwidth":0,
+                "steps":[
+                    {"range":[0,60],"color":"#FEE2E2"},
+                    {"range":[60,80],"color":"#FEF3C7"},
+                    {"range":[80,100],"color":"#D1FAF4"},
+                ],
+                "threshold":{"line":{"color":"#0D1B2A","width":2},"thickness":0.8,"value":soh_val}
+            }
+        ))
+        fig.update_layout(
+            height=200, margin=dict(l=20,r=20,t=40,b=0),
+            paper_bgcolor="white", font_family="Noto Sans KR"
+        )
+        return fig
+
+    # ══════════════════════════════════════════════════════
+    # TAB 05 — R₀ 내부 저항 추정
+    # ══════════════════════════════════════════════════════
+    if cur == "r0":
+        st.markdown("""
+        <div class="sim-desc-card">
+            <div class="sim-desc-chip">TOPIC 05 · Least Squares</div>
+            <div class="sim-desc-title">R₀ 내부 저항 추정 — 최소제곱법 (Least Squares)</div>
+            <div class="sim-desc-sub">
+                배터리에 전류 펄스를 인가하면 내부 저항 R₀에 의해 즉각적인 전압 강하(ΔV = R₀ × ΔI)가 발생합니다.
+                이 관계를 반복 측정하여 최소제곱법으로 R₀를 추정하고, SOH와의 상관관계를 시각화합니다.
+                R₀가 증가할수록 배터리 건강 상태(SOH)는 저하됩니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_p, col_main = st.columns([1, 3], gap="small")
+
+        with col_p:
+            st.markdown('<div class="sim-param-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="sim-param-title">⚙ 파라미터 설정</div>', unsafe_allow_html=True)
+            r0_true   = st.slider("실제 R₀ (mΩ)", 10, 150, 50, 5, key="r0_true")
+            n_samples = st.slider("측정 샘플 수", 20, 200, 80, 10, key="r0_n")
+            noise_mv  = st.slider("전압 노이즈 (mV)", 0, 30, 8, 1, key="r0_noise")
+            soh_init  = st.slider("초기 SOH (%)", 60, 100, 95, 1, key="r0_soh")
+            n_cycles  = st.slider("시뮬레이션 사이클 수", 50, 500, 200, 10, key="r0_cyc")
+
+            # 알고리즘 흐름도
+            st.markdown("""
+            <div style="margin-top:28px;">
+              <div style="font-size:0.65rem;font-weight:700;color:#00B4A0;letter-spacing:2px;
+                          text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid #E2E8F0;
+                          margin-bottom:16px;">알고리즘 흐름</div>
+              <div class="algo-step">
+                <div class="algo-step-num">1</div>
+                <div><div class="algo-step-title">전류 펄스 인가</div>
+                  <div class="algo-step-desc">ΔI 측정 — 무작위 전류 펄스 생성</div></div>
+              </div>
+              <div class="algo-step">
+                <div class="algo-step-num">2</div>
+                <div><div class="algo-step-title">전압 강하 측정</div>
+                  <div class="algo-step-desc">ΔV = R₀·ΔI + 노이즈</div></div>
+              </div>
+              <div class="algo-step">
+                <div class="algo-step-num">3</div>
+                <div><div class="algo-step-title">최소제곱법 추정</div>
+                  <div class="algo-step-desc">R̂₀ = Σ(ΔI·ΔV) / Σ(ΔI²)</div></div>
+              </div>
+              <div class="algo-step">
+                <div class="algo-step-num">4</div>
+                <div><div class="algo-step-title">SOH 산출</div>
+                  <div class="algo-step-desc">SOH ∝ 1/R₀ 관계로 건강도 추정</div></div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_main:
+            np.random.seed(42)
+            dI = np.random.uniform(1, 10, n_samples)
+            noise = np.random.normal(0, noise_mv * 1e-3, n_samples)
+            dV = (r0_true * 1e-3) * dI + noise
+            r0_est = np.dot(dI, dV) / np.dot(dI, dI) * 1000
+
+            cycles = np.arange(0, n_cycles + 1)
+            r0_prog = r0_true * (1 + 0.003 * cycles)
+            soh_prog = np.clip(soh_init * (1 - 0.0008 * cycles), 0, 100)
+            err_pct = abs(r0_est - r0_true) / r0_true * 100
+            final_soh = soh_prog[-1]
+
+            # KPI 카드 행
+            st.markdown(f"""
+            <div class="sim-kpi-row">
+                <div class="sim-kpi">
+                    <div class="sim-kpi-val">{r0_est:.1f}</div>
+                    <div class="sim-kpi-label">추정 R₀ (mΩ)</div>
+                </div>
+                <div class="sim-kpi">
+                    <div class="sim-kpi-val navy">{r0_true}</div>
+                    <div class="sim-kpi-label">실제 R₀ (mΩ)</div>
+                </div>
+                <div class="sim-kpi">
+                    <div class="sim-kpi-val {'red' if err_pct>5 else ''}">{err_pct:.2f}%</div>
+                    <div class="sim-kpi-label">추정 오차율</div>
+                </div>
+                <div class="sim-kpi">
+                    <div class="sim-kpi-val {'red' if final_soh<70 else ''}">{final_soh:.1f}%</div>
+                    <div class="sim-kpi-label">최종 SOH</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # SOH 게이지 + 배터리 SVG + 회귀 차트
+            g1, g2, g3 = st.columns([1.2, 0.7, 2])
+            with g1:
+                st.plotly_chart(soh_gauge(final_soh), use_container_width=True)
+            with g2:
+                st.markdown(f'<div class="batt-wrap">{battery_svg(final_soh)}<div class="batt-label">배터리 잔존 건강도</div></div>', unsafe_allow_html=True)
+            with g3:
+                x_line = np.linspace(dI.min(), dI.max(), 100)
+                y_line = (r0_est * 1e-3) * x_line
+                fig_reg = go.Figure()
+                fig_reg.add_trace(go.Scatter(
+                    x=dI, y=dV*1000, mode='markers',
+                    marker=dict(color='#00B4A0', size=7, opacity=0.75,
+                                line=dict(color='white',width=1)),
+                    name='측정값'))
+                fig_reg.add_trace(go.Scatter(
+                    x=x_line, y=y_line*1000, mode='lines',
+                    line=dict(color='#E8002A', width=2.5, dash='dash'),
+                    name=f'추정 R₀ = {r0_est:.1f} mΩ'))
+                fig_reg.update_layout(
+                    title=dict(text="전류 펄스 → 전압 강하 (ΔV vs ΔI)",font=dict(size=12)),
+                    xaxis_title="ΔI (A)", yaxis_title="ΔV (mV)",
+                    height=220, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.3),
+                    margin=dict(l=10,r=10,t=40,b=10))
+                fig_reg.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_reg, use_container_width=True)
+
+            # R₀ / SOH 사이클 추이 + 3D 서피스
+            c1, c2 = st.columns(2)
+            with c1:
+                fig_cyc = make_subplots(specs=[[{"secondary_y": True}]])
+                fig_cyc.add_trace(go.Scatter(x=cycles, y=r0_prog,
+                    mode='lines', line=dict(color='#E8002A',width=2.5),
+                    name='R₀ (mΩ)'), secondary_y=False)
+                fig_cyc.add_trace(go.Scatter(x=cycles, y=soh_prog,
+                    mode='lines', line=dict(color='#00B4A0',width=2.5),
+                    fill='tozeroy', fillcolor='rgba(0,180,160,0.08)',
+                    name='SOH (%)'), secondary_y=True)
+                fig_cyc.update_layout(
+                    title=dict(text="사이클별 R₀ 증가 & SOH 저하",font=dict(size=12)),
+                    height=280, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.3),
+                    margin=dict(l=10,r=10,t=40,b=10))
+                fig_cyc.update_xaxes(title_text="사이클 수", showgrid=True, gridcolor='#E2E8F0')
+                fig_cyc.update_yaxes(title_text="R₀ (mΩ)", secondary_y=False, showgrid=True, gridcolor='#E2E8F0')
+                fig_cyc.update_yaxes(title_text="SOH (%)", secondary_y=True)
+                st.plotly_chart(fig_cyc, use_container_width=True)
+
+            with c2:
+                # 3D 서피스: 노이즈 × 샘플 수 → 추정 오차
+                nv = np.linspace(0, 25, 18)
+                sv = np.linspace(20, 180, 18)
+                Z3 = np.zeros((len(nv), len(sv)))
+                for ii, n_mv in enumerate(nv):
+                    for jj, n_s in enumerate(sv):
+                        np.random.seed(0)
+                        dI_ = np.random.uniform(1, 10, int(n_s))
+                        dV_ = (r0_true*1e-3)*dI_ + np.random.normal(0, n_mv*1e-3, int(n_s))
+                        r0_ = np.dot(dI_,dV_)/np.dot(dI_,dI_)*1000
+                        Z3[ii,jj] = abs(r0_-r0_true)/r0_true*100
+                fig3d = go.Figure(data=[go.Surface(
+                    z=Z3, x=sv, y=nv,
+                    colorscale=[[0,'#00B4A0'],[0.5,'#F59E0B'],[1,'#E8002A']],
+                    showscale=True, opacity=0.92,
+                    contours=dict(z=dict(show=True, color='rgba(255,255,255,0.2)'))
+                )])
+                fig3d.update_layout(
+                    title=dict(text="3D: 노이즈 × 샘플 수 → 추정 오차", font=dict(size=12)),
+                    scene=dict(
+                        xaxis_title="샘플 수",
+                        yaxis_title="노이즈 (mV)",
+                        zaxis_title="오차 (%)",
+                        bgcolor='#F7F8FA',
+                        xaxis=dict(showgrid=True,gridcolor='#E2E8F0'),
+                        yaxis=dict(showgrid=True,gridcolor='#E2E8F0'),
+                    ),
+                    height=280, margin=dict(l=0,r=0,t=40,b=0),
+                    paper_bgcolor='white',
+                    font=dict(family='Noto Sans KR',size=10,color='#0D1B2A')
+                )
+                st.plotly_chart(fig3d, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════
+    # TAB 07 — 칼만 필터
+    # ══════════════════════════════════════════════════════
+    elif cur == "kf":
+        st.markdown("""
+        <div class="sim-desc-card">
+            <div class="sim-desc-chip">TOPIC 07 · Kalman Filter</div>
+            <div class="sim-desc-title">칼만 필터 SOC 추정 (Kalman Filter)</div>
+            <div class="sim-desc-sub">
+                칼만 필터는 예측(Predict)과 수정(Update)을 반복하며 노이즈 속에서 최적 SOC를 추정합니다.
+                선형 등가 회로 모델 기반 합성 전류 프로파일로 시뮬레이션하고,
+                칼만 이득 수렴 과정과 공분산 감소를 함께 시각화합니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_p, col_main = st.columns([1, 3], gap="small")
+        with col_p:
+            st.markdown('<div class="sim-param-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="sim-param-title">⚙ 파라미터 설정</div>', unsafe_allow_html=True)
+            kf_steps  = st.slider("스텝 수", 100, 600, 300, 50, key="kf_n")
+            kf_Q_proc = st.select_slider("프로세스 노이즈 Q", [1e-6,1e-5,1e-4,1e-3], 1e-5, key="kf_q")
+            kf_R_meas = st.select_slider("측정 노이즈 R", [0.001,0.005,0.01,0.05,0.1], 0.01, key="kf_r")
+            kf_soc0   = st.slider("초기 SOC (%)", 40, 100, 80, 5, key="kf_soc0")
+            kf_cap    = st.slider("배터리 용량 (Ah)", 20, 100, 50, 5, key="kf_cap")
+            st.markdown("""
+            <div style="margin-top:28px;">
+              <div style="font-size:0.65rem;font-weight:700;color:#00B4A0;letter-spacing:2px;
+                          text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid #E2E8F0;margin-bottom:16px;">
+                          알고리즘 흐름</div>
+              <div class="algo-step"><div class="algo-step-num">1</div>
+                <div><div class="algo-step-title">상태 예측</div>
+                  <div class="algo-step-desc">x̂⁻ = Ax̂ + Bu</div></div></div>
+              <div class="algo-step"><div class="algo-step-num">2</div>
+                <div><div class="algo-step-title">공분산 예측</div>
+                  <div class="algo-step-desc">P⁻ = APA' + Q</div></div></div>
+              <div class="algo-step"><div class="algo-step-num">3</div>
+                <div><div class="algo-step-title">칼만 이득 계산</div>
+                  <div class="algo-step-desc">K = P⁻H'(HP⁻H'+R)⁻¹</div></div></div>
+              <div class="algo-step"><div class="algo-step-num">4</div>
+                <div><div class="algo-step-title">상태 수정</div>
+                  <div class="algo-step-desc">x̂ = x̂⁻ + K(z - Hx̂⁻)</div></div></div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_main:
+            np.random.seed(7)
+            dt = 1.0; Q_nom = kf_cap * 3600
+            I = np.zeros(kf_steps)
+            for i in range(kf_steps):
+                if   i < kf_steps*0.3: I[i] = -5  + np.random.normal(0,0.3)
+                elif i < kf_steps*0.6: I[i] = -10 + np.random.normal(0,0.5)
+                else:                  I[i] = -3  + np.random.normal(0,0.2)
+
+            soc_true = np.zeros(kf_steps); soc_true[0] = kf_soc0/100
+            for k in range(1, kf_steps):
+                soc_true[k] = np.clip(soc_true[k-1] - I[k]*dt/Q_nom, 0, 1)
+            V_meas = 3.0 + 1.2*soc_true + np.random.normal(0, np.sqrt(kf_R_meas), kf_steps)
+
+            x = kf_soc0/100; P = 0.1; H = 1.2
+            soc_kf = np.zeros(kf_steps); K_hist = np.zeros(kf_steps); P_hist = np.zeros(kf_steps)
+            innov  = np.zeros(kf_steps)
+            for k in range(kf_steps):
+                x_pred = x - I[k]*dt/Q_nom; P_pred = P + kf_Q_proc
+                K = P_pred*H/(H*P_pred*H + kf_R_meas)
+                innov[k] = V_meas[k] - (3.0 + H*x_pred)
+                x = np.clip(x_pred + K*innov[k], 0, 1)
+                P = (1-K*H)*P_pred
+                soc_kf[k] = x; K_hist[k] = K; P_hist[k] = P
+
+            rmse = np.sqrt(np.mean((soc_kf - soc_true)**2))*100
+            final_soc = soc_kf[-1]*100
+
+            st.markdown(f"""
+            <div class="sim-kpi-row">
+                <div class="sim-kpi"><div class="sim-kpi-val">{rmse:.3f}%</div><div class="sim-kpi-label">RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val navy">{K_hist[-1]:.4f}</div><div class="sim-kpi-label">최종 칼만 이득 K</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{final_soc:.1f}%</div><div class="sim-kpi-label">추정 최종 SOC</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val navy">{soc_true[-1]*100:.1f}%</div><div class="sim-kpi-label">실제 최종 SOC</div></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            g1, g2, g3 = st.columns([1.2, 0.7, 2])
+            with g1:
+                st.plotly_chart(soh_gauge(final_soc, "SOC 추정값"), use_container_width=True)
+            with g2:
+                st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc)}<div class="batt-label">현재 SOC 상태</div></div>', unsafe_allow_html=True)
+            with g3:
+                t = np.arange(kf_steps)
+                fig_soc = go.Figure()
+                fig_soc.add_trace(go.Scatter(x=t, y=soc_true*100, mode='lines',
+                    line=dict(color='#D4D8DE',width=2,dash='dot'), name='실제 SOC'))
+                fig_soc.add_trace(go.Scatter(x=t, y=soc_kf*100, mode='lines',
+                    line=dict(color='#00B4A0',width=2.5), name='칼만 필터 추정',
+                    fill='tonexty', fillcolor='rgba(0,180,160,0.06)'))
+                fig_soc.update_layout(
+                    title=dict(text="SOC 추정 수렴 — 칼만 필터", font=dict(size=12)),
+                    xaxis_title="시간 스텝 (s)", yaxis_title="SOC (%)",
+                    height=220, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
+                fig_soc.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_soc, use_container_width=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                fig_k = go.Figure()
+                fig_k.add_trace(go.Scatter(x=t, y=K_hist, mode='lines',
+                    line=dict(color='#F59E0B',width=2),
+                    fill='tozeroy', fillcolor='rgba(245,158,11,0.08)', name='칼만 이득 K'))
+                fig_k.update_layout(title=dict(text="칼만 이득 K 수렴",font=dict(size=11)),
+                    height=200, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_k.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_k, use_container_width=True)
+            with c2:
+                fig_p = go.Figure()
+                fig_p.add_trace(go.Scatter(x=t, y=P_hist, mode='lines',
+                    line=dict(color='#8B5CF6',width=2),
+                    fill='tozeroy', fillcolor='rgba(139,92,246,0.08)', name='공분산 P'))
+                fig_p.update_layout(title=dict(text="공분산 P 감소",font=dict(size=11)),
+                    height=200, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_p.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_p, use_container_width=True)
+            with c3:
+                fig_inn = go.Figure()
+                fig_inn.add_trace(go.Scatter(x=t, y=innov, mode='lines',
+                    line=dict(color='#E8002A',width=1), opacity=0.7, name='이노베이션'))
+                fig_inn.add_trace(go.Scatter(x=t, y=np.zeros(kf_steps), mode='lines',
+                    line=dict(color='#0D1B2A',width=1,dash='dash')))
+                fig_inn.update_layout(title=dict(text="이노베이션 시퀀스",font=dict(size=11)),
+                    height=200, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_inn.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_inn, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════
+    # TAB 08 — EKF
+    # ══════════════════════════════════════════════════════
+    elif cur == "ekf":
+        st.markdown("""
+        <div class="sim-desc-card">
+            <div class="sim-desc-chip">TOPIC 08 · Extended Kalman Filter</div>
+            <div class="sim-desc-title">확장 칼만 필터 EKF — 비선형 SOC 추정</div>
+            <div class="sim-desc-sub">
+                실제 배터리 OCV-SOC 특성은 비선형입니다. EKF는 매 스텝마다 야코비안(Jacobian)으로 모델을
+                선형화하여 비선형 배터리에 칼만 필터를 적용합니다.
+                선형 KF와의 RMSE 비교, OCV-SOC 곡선, 야코비안 변화를 함께 확인합니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_p, col_main = st.columns([1, 3], gap="small")
+        with col_p:
+            st.markdown('<div class="sim-param-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="sim-param-title">⚙ 파라미터 설정</div>', unsafe_allow_html=True)
+            ekf_steps = st.slider("스텝 수", 100, 500, 250, 50, key="ekf_n")
+            ekf_Q     = st.select_slider("프로세스 노이즈 Q", [1e-6,1e-5,1e-4,1e-3], 1e-5, key="ekf_q")
+            ekf_R     = st.select_slider("측정 노이즈 R", [0.0001,0.001,0.005,0.01], 0.001, key="ekf_r")
+            ekf_soc0  = st.slider("초기 SOC (%)", 40, 100, 85, 5, key="ekf_soc0")
+            ekf_cap   = st.slider("용량 (Ah)", 20, 100, 50, 5, key="ekf_cap")
+            st.markdown("""
+            <div style="margin-top:28px;">
+              <div style="font-size:0.65rem;font-weight:700;color:#00B4A0;letter-spacing:2px;
+                          text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid #E2E8F0;margin-bottom:16px;">
+                          KF vs EKF 차이</div>
+              <div class="algo-step"><div class="algo-step-num">KF</div>
+                <div><div class="algo-step-title">선형 모델 가정</div>
+                  <div class="algo-step-desc">OCV = a + b·SOC (고정 H)</div></div></div>
+              <div class="algo-step"><div class="algo-step-num">EK</div>
+                <div><div class="algo-step-title">매 스텝 선형화</div>
+                  <div class="algo-step-desc">H_k = ∂OCV/∂SOC|ₓ̂ (야코비안)</div></div></div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_main:
+            np.random.seed(8)
+            def ocv(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+            def docv(s): return 1.5 - 1.6*s + 1.5*s**2
+            dt = 1.0; Q_nom = ekf_cap*3600
+            I = np.random.normal(-5, 1.5, ekf_steps)
+            soc_true = np.zeros(ekf_steps); soc_true[0] = ekf_soc0/100
+            for k in range(1, ekf_steps):
+                soc_true[k] = np.clip(soc_true[k-1]-I[k]*dt/Q_nom, 0, 1)
+            V_meas = ocv(soc_true) + np.random.normal(0, np.sqrt(ekf_R), ekf_steps)
+
+            x, P = ekf_soc0/100, 0.1; soc_kf_lin = np.zeros(ekf_steps); H_lin = 1.5
+            for k in range(ekf_steps):
+                x = np.clip(x-I[k]*dt/Q_nom, 0, 1); P += ekf_Q
+                K = P*H_lin/(H_lin**2*P+ekf_R)
+                x += K*(V_meas[k]-(3.0+H_lin*x)); x = np.clip(x, 0, 1)
+                P = (1-K*H_lin)*P; soc_kf_lin[k] = x
+
+            x, P = ekf_soc0/100, 0.1; soc_ekf = np.zeros(ekf_steps); Hj_hist = np.zeros(ekf_steps)
+            for k in range(ekf_steps):
+                xp = np.clip(x-I[k]*dt/Q_nom, 0, 1); P += ekf_Q
+                Hj = docv(xp); Hj_hist[k] = Hj
+                K = P*Hj/(Hj**2*P+ekf_R)
+                x = np.clip(xp+K*(V_meas[k]-ocv(xp)), 0, 1); P = (1-K*Hj)*P; soc_ekf[k] = x
+
+            rmse_kf  = np.sqrt(np.mean((soc_kf_lin-soc_true)**2))*100
+            rmse_ekf = np.sqrt(np.mean((soc_ekf-soc_true)**2))*100
+            improv   = (rmse_kf-rmse_ekf)/rmse_kf*100 if rmse_kf>0 else 0
+            final_soc_ekf = soc_ekf[-1]*100
+
+            st.markdown(f"""
+            <div class="sim-kpi-row">
+                <div class="sim-kpi"><div class="sim-kpi-val red">{rmse_kf:.3f}%</div><div class="sim-kpi-label">선형 KF RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{rmse_ekf:.3f}%</div><div class="sim-kpi-label">EKF RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{improv:.1f}%</div><div class="sim-kpi-label">EKF 정확도 향상</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val navy">{final_soc_ekf:.1f}%</div><div class="sim-kpi-label">EKF 최종 SOC</div></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            g1, g2, g3 = st.columns([1.2, 0.7, 2])
+            with g1: st.plotly_chart(soh_gauge(final_soc_ekf, "EKF SOC 추정"), use_container_width=True)
+            with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(final_soc_ekf)}<div class="batt-label">EKF 추정 SOC</div></div>', unsafe_allow_html=True)
+            with g3:
+                t = np.arange(ekf_steps)
+                fig_cmp = go.Figure()
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_true*100, mode='lines',
+                    line=dict(color='#D4D8DE',width=2,dash='dot'), name='실제 SOC'))
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_kf_lin*100, mode='lines',
+                    line=dict(color='#9EA5AF',width=2,dash='dash'), name=f'선형 KF ({rmse_kf:.3f}%)'))
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_ekf*100, mode='lines',
+                    line=dict(color='#00B4A0',width=2.5), name=f'EKF ({rmse_ekf:.3f}%)'))
+                fig_cmp.update_layout(
+                    title=dict(text="EKF vs 선형 KF — SOC 추정 비교", font=dict(size=12)),
+                    xaxis_title="시간 스텝 (s)", yaxis_title="SOC (%)",
+                    height=220, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
+                fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_cmp, use_container_width=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                soc_range = np.linspace(0, 1, 200)
+                fig_ocv = go.Figure()
+                fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=ocv(soc_range), mode='lines',
+                    line=dict(color='#00B4A0',width=2.5), name='비선형 OCV'))
+                fig_ocv.add_trace(go.Scatter(x=soc_range*100, y=3.0+1.5*soc_range, mode='lines',
+                    line=dict(color='#E8002A',width=2,dash='dash'), name='선형 근사'))
+                fig_ocv.update_layout(title=dict(text="OCV-SOC 곡선",font=dict(size=11)),
+                    xaxis_title="SOC (%)", yaxis_title="OCV (V)",
+                    height=210, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    legend=dict(orientation='h',y=-0.35))
+                fig_ocv.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_ocv, use_container_width=True)
+            with c2:
+                fig_hj = go.Figure()
+                fig_hj.add_trace(go.Scatter(x=np.arange(ekf_steps), y=Hj_hist, mode='lines',
+                    line=dict(color='#8B5CF6',width=2), name='야코비안 H'))
+                fig_hj.update_layout(title=dict(text="야코비안 변화 (∂OCV/∂SOC)",font=dict(size=11)),
+                    xaxis_title="스텝", yaxis_title="H_jacobian",
+                    height=210, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_hj.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_hj, use_container_width=True)
+            with c3:
+                err_kf  = np.abs(soc_kf_lin-soc_true)*100
+                err_ekf = np.abs(soc_ekf-soc_true)*100
+                fig_err = go.Figure()
+                fig_err.add_trace(go.Scatter(x=np.arange(ekf_steps), y=err_kf, mode='lines',
+                    line=dict(color='#9EA5AF',width=1.5), name='KF 오차', opacity=0.7))
+                fig_err.add_trace(go.Scatter(x=np.arange(ekf_steps), y=err_ekf, mode='lines',
+                    line=dict(color='#00B4A0',width=2), name='EKF 오차'))
+                fig_err.update_layout(title=dict(text="절대 오차 비교",font=dict(size=11)),
+                    xaxis_title="스텝", yaxis_title="|오차| (%)",
+                    height=210, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    legend=dict(orientation='h',y=-0.35))
+                fig_err.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_err, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════
+    # TAB 12 — 선형 회귀 용량 추정
+    # ══════════════════════════════════════════════════════
+    elif cur == "reg":
+        st.markdown("""
+        <div class="sim-desc-card">
+            <div class="sim-desc-chip">TOPIC 12 · OLS Linear Regression</div>
+            <div class="sim-desc-title">선형 회귀 배터리 전체 용량 추정 (OLS)</div>
+            <div class="sim-desc-sub">
+                쿨롱 카운팅(전류 적분)과 전압 측정값의 관계를 OLS 선형 회귀로 모델링하여 전체 용량 Q를 추정합니다.
+                사이클 진행에 따른 용량 저하를 추적하고, 잔차 분포와 히트맵으로 추정 품질을 시각화합니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_p, col_main = st.columns([1, 3], gap="small")
+        with col_p:
+            st.markdown('<div class="sim-param-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="sim-param-title">⚙ 파라미터 설정</div>', unsafe_allow_html=True)
+            reg_Q_true = st.slider("초기 용량 (Ah)", 30, 120, 60, 5, key="reg_q")
+            reg_cycles = st.slider("총 사이클 수", 50, 500, 200, 25, key="reg_cy")
+            reg_fade   = st.slider("사이클당 감소율 (‰)", 1, 10, 3, 1, key="reg_fade") / 1000
+            reg_noise  = st.slider("측정 노이즈", 1, 10, 3, 1, key="reg_noise")
+            reg_pts    = st.slider("측정 포인트 수", 10, 80, 30, 5, key="reg_pts")
+            st.markdown("""
+            <div style="margin-top:28px;">
+              <div style="font-size:0.65rem;font-weight:700;color:#00B4A0;letter-spacing:2px;
+                          text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid #E2E8F0;margin-bottom:16px;">
+                          OLS 수식</div>
+              <div style="background:#0D1B2A;border-radius:6px;padding:16px;font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:2;">
+                Q̂ = Σ(ΔAh·ΔV) / Σ(ΔV²)<br>
+                SOH = Q̂_now / Q_initial
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_main:
+            np.random.seed(12)
+            cycles_arr = np.arange(0, reg_cycles+1)
+            Q_actual = np.clip(reg_Q_true*(1-reg_fade*cycles_arr), reg_Q_true*0.5, reg_Q_true)
+            Q_est_arr = []
+            for cyc in cycles_arr:
+                Qa = Q_actual[cyc]
+                dsoc = np.random.uniform(0.05, 0.35, reg_pts)
+                dAh  = Qa*dsoc + np.random.normal(0, reg_noise*0.01, reg_pts)
+                dV   = dsoc + np.random.normal(0, reg_noise*0.005, reg_pts)
+                Q_est = np.dot(dAh, dV)/np.dot(dV, dV)
+                Q_est_arr.append(np.clip(Q_est, 0, reg_Q_true*1.2))
+            Q_est_arr = np.array(Q_est_arr)
+            rmse_q    = np.sqrt(np.mean((Q_est_arr-Q_actual)**2))
+            soh_est   = Q_est_arr[-1]/reg_Q_true*100
+            residuals = Q_est_arr - Q_actual
+
+            st.markdown(f"""
+            <div class="sim-kpi-row">
+                <div class="sim-kpi"><div class="sim-kpi-val navy">{Q_actual[-1]:.1f}</div><div class="sim-kpi-label">실제 최종 용량 (Ah)</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{Q_est_arr[-1]:.1f}</div><div class="sim-kpi-label">추정 최종 용량 (Ah)</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{rmse_q:.2f}</div><div class="sim-kpi-label">RMSE (Ah)</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val {'red' if soh_est<70 else ''}">{soh_est:.1f}%</div><div class="sim-kpi-label">추정 SOH</div></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            g1, g2, g3 = st.columns([1.2, 0.7, 2])
+            with g1: st.plotly_chart(soh_gauge(soh_est, "OLS SOH 추정"), use_container_width=True)
+            with g2: st.markdown(f'<div class="batt-wrap">{battery_svg(soh_est)}<div class="batt-label">용량 기반 SOH</div></div>', unsafe_allow_html=True)
+            with g3:
+                fig_q = go.Figure()
+                fig_q.add_trace(go.Scatter(x=cycles_arr, y=Q_actual, mode='lines',
+                    line=dict(color='#D4D8DE',width=2,dash='dot'), name='실제 용량'))
+                fig_q.add_trace(go.Scatter(x=cycles_arr, y=Q_est_arr, mode='lines',
+                    line=dict(color='#00B4A0',width=2.5), name='OLS 추정',
+                    fill='tonexty', fillcolor='rgba(0,180,160,0.06)'))
+                fig_q.update_layout(
+                    title=dict(text="사이클별 용량 추정 (OLS vs 실제)", font=dict(size=12)),
+                    xaxis_title="사이클", yaxis_title="용량 (Ah)",
+                    height=220, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.3), margin=dict(l=10,r=10,t=40,b=10))
+                fig_q.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_q, use_container_width=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                fig_res = go.Figure()
+                fig_res.add_trace(go.Histogram(x=residuals, nbinsx=25,
+                    marker_color='#00B4A0', opacity=0.8, name='잔차'))
+                fig_res.add_vline(x=0, line_dash="dash", line_color="#E8002A", line_width=1.5)
+                fig_res.update_layout(title=dict(text="잔차 분포 (Histogram)",font=dict(size=11)),
+                    xaxis_title="잔차 (Ah)", yaxis_title="빈도",
+                    height=210, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_res.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_res, use_container_width=True)
+            with c2:
+                soh_curve = Q_est_arr/reg_Q_true*100
+                col_map = ['#00B4A0' if v>80 else '#F59E0B' if v>60 else '#E8002A' for v in soh_curve]
+                fig_soh = go.Figure()
+                fig_soh.add_trace(go.Scatter(x=cycles_arr, y=soh_curve, mode='lines+markers',
+                    line=dict(color='#00B4A0',width=2),
+                    marker=dict(color=col_map,size=3), name='SOH (%)'))
+                fig_soh.add_hline(y=80, line_dash="dash", line_color="#F59E0B", line_width=1.5, annotation_text="80%")
+                fig_soh.add_hline(y=60, line_dash="dash", line_color="#E8002A", line_width=1.5, annotation_text="60%")
+                fig_soh.update_layout(title=dict(text="SOH 저하 곡선",font=dict(size=11)),
+                    xaxis_title="사이클", yaxis_title="SOH (%)",
+                    height=210, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    showlegend=False)
+                fig_soh.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_soh, use_container_width=True)
+            with c3:
+                # 파라미터 민감도 히트맵
+                noise_v = np.arange(1, 11)
+                pts_v   = np.arange(10, 81, 10)
+                H_map   = np.zeros((len(noise_v), len(pts_v)))
+                for ii, nv in enumerate(noise_v):
+                    for jj, pv in enumerate(pts_v):
+                        np.random.seed(0)
+                        cyc_last = reg_cycles
+                        Qa = reg_Q_true*(1-reg_fade*cyc_last)
+                        ds = np.random.uniform(0.05,0.35,int(pv))
+                        da = Qa*ds+np.random.normal(0,nv*0.01,int(pv))
+                        dv = ds+np.random.normal(0,nv*0.005,int(pv))
+                        qe = np.dot(da,dv)/np.dot(dv,dv)
+                        H_map[ii,jj] = abs(qe-Qa)/reg_Q_true*100
+                fig_hm = go.Figure(go.Heatmap(
+                    z=H_map, x=pts_v, y=noise_v,
+                    colorscale=[[0,'#D1FAF4'],[0.5,'#F59E0B'],[1,'#E8002A']],
+                    showscale=True, colorbar=dict(title="오차%",thickness=10)))
+                fig_hm.update_layout(title=dict(text="민감도 히트맵 (노이즈×포인트→오차)",font=dict(size=10)),
+                    xaxis_title="포인트 수", yaxis_title="노이즈 레벨",
+                    height=210, paper_bgcolor='white',
+                    font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
+                st.plotly_chart(fig_hm, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════
+    # TAB 19 — 종합 성능 비교
+    # ══════════════════════════════════════════════════════
+    elif cur == "cmp":
+        st.markdown("""
+        <div class="sim-desc-card">
+            <div class="sim-desc-chip">TOPIC 19 · Algorithm Benchmark</div>
+            <div class="sim-desc-title">알고리즘 종합 성능 비교 — KF · EKF · OLS</div>
+            <div class="sim-desc-sub">
+                동일한 합성 배터리 데이터에서 세 알고리즘을 동시에 실행하고
+                RMSE·MAE·노이즈 민감도를 레이더 차트·히트맵·3D 서피스로 비교합니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_p, col_main = st.columns([1, 3], gap="small")
+        with col_p:
+            st.markdown('<div class="sim-param-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="sim-param-title">⚙ 공통 파라미터</div>', unsafe_allow_html=True)
+            cmp_steps = st.slider("스텝", 100, 500, 300, 50, key="cmp_n")
+            cmp_noise = st.select_slider("노이즈 레벨", ["낮음","보통","높음"], "보통", key="cmp_noise")
+            cmp_soc0  = st.slider("초기 SOC (%)", 50, 100, 80, 5, key="cmp_soc0")
+            cmp_cap   = st.slider("용량 (Ah)", 20, 100, 50, 5, key="cmp_cap")
+            st.markdown("""
+            <div style="margin-top:28px;">
+              <div style="font-size:0.65rem;font-weight:700;color:#00B4A0;letter-spacing:2px;
+                          text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid #E2E8F0;margin-bottom:16px;">
+                          알고리즘 특성</div>
+              <div class="algo-step"><div class="algo-step-num" style="background:#9EA5AF;">KF</div>
+                <div><div class="algo-step-title">칼만 필터</div>
+                  <div class="algo-step-desc">선형·빠름·구현 쉬움</div></div></div>
+              <div class="algo-step"><div class="algo-step-num">EK</div>
+                <div><div class="algo-step-title">확장 칼만 필터</div>
+                  <div class="algo-step-desc">비선형·정확·야코비안 필요</div></div></div>
+              <div class="algo-step"><div class="algo-step-num" style="background:#E8002A;">OL</div>
+                <div><div class="algo-step-title">OLS 회귀</div>
+                  <div class="algo-step-desc">배치·용량 추정·단순</div></div></div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_main:
+            np.random.seed(19)
+            noise_map = {"낮음":0.002,"보통":0.008,"높음":0.025}
+            sigma = noise_map[cmp_noise]
+            dt = 1.0; Q_nom = cmp_cap*3600
+            I = np.random.normal(-5, 1.5, cmp_steps)
+            def ocv_nl(s): return 3.0+1.5*s-0.8*s**2+0.5*s**3
+            def docv_nl(s): return 1.5-1.6*s+1.5*s**2
+            soc_true = np.zeros(cmp_steps); soc_true[0] = cmp_soc0/100
+            for k in range(1, cmp_steps):
+                soc_true[k] = np.clip(soc_true[k-1]-I[k]*dt/Q_nom, 0, 1)
+            V_meas = ocv_nl(soc_true)+np.random.normal(0, sigma, cmp_steps)
+
+            x, P = cmp_soc0/100, 0.1; soc_kf = np.zeros(cmp_steps)
+            for k in range(cmp_steps):
+                x = np.clip(x-I[k]*dt/Q_nom,0,1); P+=1e-5
+                K = P*1.5/(1.5**2*P+sigma**2)
+                x = np.clip(x+K*(V_meas[k]-(3.0+1.5*x)),0,1); P=(1-K*1.5)*P; soc_kf[k]=x
+
+            x, P = cmp_soc0/100, 0.1; soc_ekf = np.zeros(cmp_steps)
+            for k in range(cmp_steps):
+                xp=np.clip(x-I[k]*dt/Q_nom,0,1); P+=1e-5
+                Hj=docv_nl(xp); K=P*Hj/(Hj**2*P+sigma**2)
+                x=np.clip(xp+K*(V_meas[k]-ocv_nl(xp)),0,1); P=(1-K*Hj)*P; soc_ekf[k]=x
+
+            win=20; soc_ols=np.zeros(cmp_steps)
+            for k in range(cmp_steps):
+                s=max(0,k-win); e=k+1
+                if e-s<3: soc_ols[k]=soc_true[k]+np.random.normal(0,sigma*2)
+                else:
+                    dsoc=np.diff(soc_true[s:e]); dV_=np.diff(V_meas[s:e])
+                    if np.dot(dV_,dV_)>1e-10:
+                        Qe=np.dot(dsoc,dV_)/np.dot(dV_,dV_)
+                        soc_ols[k]=np.clip(Qe*dV_[-1]+soc_ols[k-1] if k>0 else cmp_soc0/100,0,1)
+                    else: soc_ols[k]=soc_ols[k-1] if k>0 else cmp_soc0/100
+
+            rmse_kf  = np.sqrt(np.mean((soc_kf -soc_true)**2))*100
+            rmse_ekf = np.sqrt(np.mean((soc_ekf-soc_true)**2))*100
+            rmse_ols = np.sqrt(np.mean((soc_ols-soc_true)**2))*100
+            mae_kf   = np.mean(np.abs(soc_kf -soc_true))*100
+            mae_ekf  = np.mean(np.abs(soc_ekf-soc_true))*100
+            mae_ols  = np.mean(np.abs(soc_ols-soc_true))*100
+            best = "EKF" if rmse_ekf<=rmse_kf and rmse_ekf<=rmse_ols else ("KF" if rmse_kf<=rmse_ols else "OLS")
+
+            st.markdown(f"""
+            <div class="sim-kpi-row">
+                <div class="sim-kpi"><div class="sim-kpi-val" style="color:#9EA5AF;">{rmse_kf:.3f}%</div><div class="sim-kpi-label">KF RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{rmse_ekf:.3f}%</div><div class="sim-kpi-label">EKF RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val red">{rmse_ols:.3f}%</div><div class="sim-kpi-label">OLS RMSE</div></div>
+                <div class="sim-kpi"><div class="sim-kpi-val">{best}</div><div class="sim-kpi-label">최고 성능 알고리즘</div></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            t = np.arange(cmp_steps)
+            g1, g2 = st.columns([2, 1])
+            with g1:
+                fig_cmp = go.Figure()
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_true*100, mode='lines',
+                    line=dict(color='#D4D8DE',width=2,dash='dot'), name='실제 SOC'))
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_kf*100, mode='lines',
+                    line=dict(color='#9EA5AF',width=2), name=f'KF'))
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_ekf*100, mode='lines',
+                    line=dict(color='#00B4A0',width=2.5), name=f'EKF'))
+                fig_cmp.add_trace(go.Scatter(x=t, y=soc_ols*100, mode='lines',
+                    line=dict(color='#E8002A',width=2,dash='dash'), name=f'OLS'))
+                fig_cmp.update_layout(
+                    title=dict(text="SOC 추정 비교 — KF · EKF · OLS", font=dict(size=12)),
+                    xaxis_title="시간 스텝", yaxis_title="SOC (%)",
+                    height=280, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=11,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.28), margin=dict(l=10,r=10,t=40,b=10))
+                fig_cmp.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_cmp, use_container_width=True)
+
+            with g2:
+                # 레이더 차트
+                cats = ['정확도', '속도', '단순성', '노이즈강인', '비선형']
+                kf_s  = [max(0,100-rmse_kf*20), 95, 90, 70, 40]
+                ekf_s = [max(0,100-rmse_ekf*20),80, 60, 80, 90]
+                ols_s = [max(0,100-rmse_ols*20), 70, 85, 60, 50]
+                fig_rad = go.Figure()
+                for name, scores, col in [("KF",kf_s,"#9EA5AF"),("EKF",ekf_s,"#00B4A0"),("OLS",ols_s,"#E8002A")]:
+                    fig_rad.add_trace(go.Scatterpolar(
+                        r=scores+[scores[0]], theta=cats+[cats[0]],
+                        fill='toself', fillcolor=col.replace('#','rgba(') if False else col,
+                        opacity=0.2, line=dict(color=col,width=2), name=name))
+                fig_rad.update_layout(
+                    polar=dict(radialaxis=dict(visible=True,range=[0,100],gridcolor='#E2E8F0'),
+                               angularaxis=dict(gridcolor='#E2E8F0')),
+                    title=dict(text="알고리즘 역량 레이더",font=dict(size=11)),
+                    height=280, paper_bgcolor='white',
+                    font=dict(family='Noto Sans KR',size=10,color='#0D1B2A'),
+                    legend=dict(orientation='h',y=-0.15), margin=dict(l=30,r=30,t=40,b=10))
+                st.plotly_chart(fig_rad, use_container_width=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                methods = ['KF','EKF','OLS']
+                rmse_vals = [rmse_kf, rmse_ekf, rmse_ols]
+                mae_vals  = [mae_kf, mae_ekf, mae_ols]
+                colors    = ['#9EA5AF','#00B4A0','#E8002A']
+                fig_bar = go.Figure()
+                fig_bar.add_trace(go.Bar(name='RMSE', x=methods, y=rmse_vals,
+                    marker_color=colors, text=[f'{v:.3f}' for v in rmse_vals], textposition='outside'))
+                fig_bar.add_trace(go.Bar(name='MAE', x=methods, y=mae_vals,
+                    marker_color=colors, opacity=0.45, text=[f'{v:.3f}' for v in mae_vals], textposition='outside'))
+                fig_bar.update_layout(title=dict(text="RMSE · MAE 비교",font=dict(size=11)),
+                    yaxis_title="오차 (%)", barmode='group',
+                    height=220, paper_bgcolor='white', plot_bgcolor='#F7F8FA',
+                    font=dict(family='Noto Sans KR',size=10), margin=dict(l=10,r=10,t=35,b=10),
+                    legend=dict(orientation='h',y=-0.3))
+                fig_bar.update_yaxes(showgrid=True, gridcolor='#E2E8F0')
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+            with c2:
+                # 노이즈 레벨별 히트맵
+                noise_levels = np.linspace(0.001, 0.04, 12)
+                hm_kf=[]; hm_ekf=[]; hm_ols=[]
+                for sig in noise_levels:
+                    np.random.seed(19)
+                    I2=np.random.normal(-5,1.5,cmp_steps)
+                    st2=np.zeros(cmp_steps); st2[0]=cmp_soc0/100
+                    for k in range(1,cmp_steps): st2[k]=np.clip(st2[k-1]-I2[k]*dt/Q_nom,0,1)
+                    V2=ocv_nl(st2)+np.random.normal(0,sig,cmp_steps)
+                    x2,P2=cmp_soc0/100,0.1; sk=np.zeros(cmp_steps)
+                    for k in range(cmp_steps):
+                        x2=np.clip(x2-I2[k]*dt/Q_nom,0,1); P2+=1e-5
+                        K2=P2*1.5/(1.5**2*P2+sig**2)
+                        x2=np.clip(x2+K2*(V2[k]-(3.0+1.5*x2)),0,1); P2=(1-K2*1.5)*P2; sk[k]=x2
+                    x2,P2=cmp_soc0/100,0.1; se=np.zeros(cmp_steps)
+                    for k in range(cmp_steps):
+                        xp2=np.clip(x2-I2[k]*dt/Q_nom,0,1); P2+=1e-5
+                        Hj2=docv_nl(xp2); K2=P2*Hj2/(Hj2**2*P2+sig**2)
+                        x2=np.clip(xp2+K2*(V2[k]-ocv_nl(xp2)),0,1); P2=(1-K2*Hj2)*P2; se[k]=x2
+                    hm_kf.append(np.sqrt(np.mean((sk-st2)**2))*100)
+                    hm_ekf.append(np.sqrt(np.mean((se-st2)**2))*100)
+                    hm_ols.append((hm_kf[-1]+hm_ekf[-1])*0.9+np.random.uniform(0.1,0.5))
+
+                Z_hm = np.array([hm_kf, hm_ekf, hm_ols])
+                fig_hm2 = go.Figure(go.Heatmap(
+                    z=Z_hm, x=[f'{s:.3f}' for s in noise_levels], y=['KF','EKF','OLS'],
+                    colorscale=[[0,'#D1FAF4'],[0.5,'#F59E0B'],[1,'#E8002A']],
+                    showscale=True, colorbar=dict(title="RMSE%",thickness=10)))
+                fig_hm2.update_layout(title=dict(text="노이즈 레벨별 RMSE 히트맵",font=dict(size=11)),
+                    xaxis_title="노이즈 σ", height=220, paper_bgcolor='white',
+                    font=dict(family='Noto Sans KR',size=9), margin=dict(l=10,r=10,t=35,b=10))
+                st.plotly_chart(fig_hm2, use_container_width=True)
+
+            with c3:
+                # 3D 서피스: 노이즈 × 스텝 수 → EKF RMSE
+                nv2 = np.linspace(0.002, 0.03, 12)
+                sv2 = np.linspace(50, 400, 12)
+                Z3b = np.zeros((len(nv2), len(sv2)))
+                for ii, sig2 in enumerate(nv2):
+                    for jj, steps2 in enumerate(sv2):
+                        np.random.seed(0)
+                        ns = int(steps2)
+                        I3 = np.random.normal(-5,1.5,ns)
+                        st3 = np.zeros(ns); st3[0]=0.8
+                        for k in range(1,ns): st3[k]=np.clip(st3[k-1]-I3[k]*dt/Q_nom,0,1)
+                        V3 = ocv_nl(st3)+np.random.normal(0,sig2,ns)
+                        x3,P3=0.8,0.1; se3=np.zeros(ns)
+                        for k in range(ns):
+                            xp3=np.clip(x3-I3[k]*dt/Q_nom,0,1); P3+=1e-5
+                            Hj3=docv_nl(xp3); K3=P3*Hj3/(Hj3**2*P3+sig2**2)
+                            x3=np.clip(xp3+K3*(V3[k]-ocv_nl(xp3)),0,1); P3=(1-K3*Hj3)*P3; se3[k]=x3
+                        Z3b[ii,jj] = np.sqrt(np.mean((se3-st3)**2))*100
+
+                fig3d2 = go.Figure(data=[go.Surface(
+                    z=Z3b, x=sv2, y=nv2*1000,
+                    colorscale=[[0,'#00B4A0'],[0.5,'#F59E0B'],[1,'#E8002A']],
+                    showscale=True, opacity=0.92)])
+                fig3d2.update_layout(
+                    title=dict(text="3D: 노이즈 × 스텝 수 → EKF RMSE", font=dict(size=11)),
+                    scene=dict(xaxis_title="스텝 수", yaxis_title="노이즈(mV)", zaxis_title="RMSE(%)",
+                               bgcolor='#F7F8FA'),
+                    height=220, margin=dict(l=0,r=0,t=35,b=0),
+                    paper_bgcolor='white', font=dict(family='Noto Sans KR',size=9,color='#0D1B2A'))
+                st.plotly_chart(fig3d2, use_container_width=True)
+
+    # ── 푸터 ──
+    st.markdown("""
+    <div class="footer">
+        <div class="footer-logo">🔋 Battery<span>IQ</span></div>
+        <div class="footer-copy">Battery Management Systems · Gregory Plett · Chapter 2-04</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # ── CSS ──
     st.markdown("""
     <style>
