@@ -2184,31 +2184,7 @@ elif st.session_state["page"] == "topics":
         display: none !important;
     }
 
-    /* ── 토픽 카드 버튼 오버레이 ──
-       .tp-card-marker 를 포함한 column 전체를 position:relative로 만들고
-       그 안의 Streamlit 버튼을 absolute inset:0 으로 카드 전체 영역에 덮음 */
-    [data-testid="column"]:has(.tp-card-marker) {
-        position: relative !important;
-    }
-    [data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] {
-        position: absolute !important;
-        inset: 0 !important;
-        z-index: 10 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    [data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] button {
-        width: 100% !important;
-        height: 100% !important;
-        opacity: 0 !important;
-        cursor: pointer !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
+    /* ── 토픽 카드 버튼 오버레이는 JS로 처리 (하단 script 태그 참조) ── */
 
     /* 히어로 */
     .tp-hero {
@@ -2557,23 +2533,37 @@ elif st.session_state["page"] == "topics":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Streamlit 버튼 오버레이 CSS ──
+    # ── 토픽 카드 버튼 오버레이 — JS MutationObserver ──
+    # CSS만으로는 Streamlit DOM 구조상 position:absolute 가 작동 불가.
+    # JS로 직접 .tp-card 를 찾아 같은 column 내 버튼을 카드 전체에 절대 위치로 오버레이.
     st.markdown("""
-    <style>
-    /* 토픽 카드 위의 st.button 을 투명하게 오버레이 */
-    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"]
-      > div > [data-testid="stButton"] > button,
-    [data-testid="element-container"] + [data-testid="element-container"]
-      [data-testid="stButton"] > button {
-        margin-top: -60px !important;
-        height: 60px !important;
-        opacity: 0 !important;
-        cursor: pointer !important;
-        position: relative !important;
-        z-index: 10 !important;
-        width: 100% !important;
-    }
-    </style>
+    <script>
+    (function(){
+        function applyOverlay(){
+            document.querySelectorAll('.tp-card').forEach(function(card){
+                var col = card.closest('[data-testid="column"]');
+                if(!col || col.dataset.tpOverlaid) return;
+                col.style.position = 'relative';
+                col.dataset.tpOverlaid = '1';
+                var btnWrap = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
+                if(!btnWrap) return;
+                btnWrap.style.cssText = [
+                    'position:absolute','top:0','left:0','right:0','bottom:0',
+                    'z-index:10','margin:0','padding:0'
+                ].join('!important;') + '!important';
+                var btn = btnWrap.querySelector('button');
+                if(btn) btn.style.cssText = [
+                    'width:100%','height:100%','opacity:0',
+                    'cursor:pointer','background:transparent',
+                    'border:none','box-shadow:none','border-radius:0'
+                ].join('!important;') + '!important';
+            });
+        }
+        // DOM 변화 감지 (Streamlit 재렌더링 대응)
+        new MutationObserver(applyOverlay).observe(document.body, {childList:true, subtree:true});
+        applyOverlay();
+    })();
+    </script>
     """, unsafe_allow_html=True)
 
     # ── 푸터 ──
