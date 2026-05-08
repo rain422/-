@@ -1494,6 +1494,58 @@ elif st.session_state["page"] == "detail":
     tidx = st.session_state["sel_idx"]
     num,ko,en,bg,kw = TOPICS[tidx]
 
+    # ── 디테일 페이지 전용 CSS ──
+    tabs=[("news","뉴스 수집"),("papers","논문 검색"),("select","자료 선택"),("report","보고서"),("save","다운로드")]
+    active_tab = st.session_state["tab"]
+
+    st.markdown("""
+    <style>
+    /* ── 중복 탭 버튼 숨김 ──
+       Streamlit은 각 요소를 .element-container 또는 .stMarkdownContainer로 감쌈.
+       dtab-bar 다음에 오는 Streamlit 컬럼 행(기능 버튼)을 dtab 위로 올려 투명 오버레이 처리 */
+    .stMarkdownContainer:has(.dtab-bar) + div {
+        margin-top: -52px !important;
+        position: relative !important;
+        z-index: 20 !important;
+    }
+    .element-container:has(.dtab-bar) + div {
+        margin-top: -52px !important;
+        position: relative !important;
+        z-index: 20 !important;
+    }
+    .stMarkdownContainer:has(.dtab-bar) + div button,
+    .element-container:has(.dtab-bar) + div button {
+        opacity: 0 !important;
+        height: 52px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        cursor: pointer !important;
+    }
+    .stMarkdownContainer:has(.dtab-bar) + div [data-testid="column"],
+    .element-container:has(.dtab-bar) + div [data-testid="column"] {
+        padding: 0 !important;
+    }
+
+    /* ── 홈으로 버튼 — 텍스트 링크처럼 표시 ── */
+    .detail-hero + div button, .detail-hero + div + div button:first-of-type {
+        background: transparent !important;
+        border: none !important;
+        color: #9EA5AF !important;
+        font-size: 0.78rem !important;
+        padding: 10px 16px !important;
+        box-shadow: none !important;
+        letter-spacing: 0.3px !important;
+    }
+    .detail-hero + div button:hover {
+        color: #00B4A0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     kw_chips = "".join([f'<span class="d-kw">{k}</span>' for k in kw])
     st.markdown(f"""
     <div class="detail-hero" data-num="{num}">
@@ -1504,23 +1556,23 @@ elif st.session_state["page"] == "detail":
     </div>
     """, unsafe_allow_html=True)
 
-    bc,_ = st.columns([2,8])
-    with bc:
-        if st.button("← 홈으로"):
-            st.session_state["page"]="home"; st.rerun()
+    # 홈으로 버튼 — detail-hero 바로 아래 네비 영역에 배치
+    _bc, _ = st.columns([2, 8])
+    with _bc:
+        if st.button("← 홈으로", key="detail_back"):
+            st.session_state["page"] = "home"; st.rerun()
 
-    tabs=[("news","뉴스 수집"),("papers","논문 검색"),("select","자료 선택"),("report","보고서"),("save","다운로드")]
-    tab_html='<div class="dtab-bar">'
-    for tk,tl in tabs:
-        cls="on" if st.session_state["tab"]==tk else ""
-        tab_html+=f'<span class="dtab {cls}">{tl}</span>'
-    tab_html+="</div>"
+    tab_html = '<div class="dtab-bar">'
+    for tk, tl in tabs:
+        cls = "on" if active_tab == tk else ""
+        tab_html += f'<span class="dtab {cls}">{tl}</span>'
+    tab_html += "</div>"
     st.markdown(tab_html, unsafe_allow_html=True)
-    tc=st.columns(len(tabs))
-    for i,(tk,tl) in enumerate(tabs):
+    tc = st.columns(len(tabs))
+    for i, (tk, tl) in enumerate(tabs):
         with tc[i]:
-            if st.button(tl,key=f"dt_{tk}",use_container_width=True):
-                st.session_state["tab"]=tk; st.rerun()
+            if st.button(tl, key=f"dt_{tk}", use_container_width=True):
+                st.session_state["tab"] = tk; st.rerun()
 
     mc,sc=st.columns([7,3],gap="medium")
 
