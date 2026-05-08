@@ -1179,6 +1179,7 @@ if st.session_state["page"] == "home":
         for col, (num,title,sub,desc,img) in zip(cols, row):
             with col:
                 st.markdown(f"""
+                <div class="tech-panel-marker" style="display:none"></div>
                 <div class="tech-panel">
                     <div class="tech-panel-top"></div>
                     <img src="{img}" alt="{title}">
@@ -1198,6 +1199,36 @@ if st.session_state["page"] == "home":
                     for k2 in ["news_ko","news_en","papers","arxiv","sel_news","sel_papers","sel_arxiv","report"]:
                         st.session_state[k2]=[] if k2!="report" else ""
                     st.rerun()
+
+    # ── 기술 패널 버튼 오버레이 JS ──
+    st.markdown("""
+    <script>
+    (function(){
+        function applyTechOverlay(){
+            document.querySelectorAll('.tech-panel').forEach(function(panel){
+                var col = panel.closest('[data-testid="column"]');
+                if(!col || col.dataset.techOverlaid) return;
+                col.style.position = 'relative';
+                col.dataset.techOverlaid = '1';
+                var btnWrap = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
+                if(!btnWrap) return;
+                btnWrap.style.cssText = [
+                    'position:absolute','top:0','left:0','right:0','bottom:0',
+                    'z-index:10','margin:0','padding:0'
+                ].join('!important;') + '!important';
+                var btn = btnWrap.querySelector('button');
+                if(btn) btn.style.cssText = [
+                    'width:100%','height:100%','opacity:0',
+                    'cursor:pointer','background:transparent',
+                    'border:none','box-shadow:none','border-radius:0'
+                ].join('!important;') + '!important';
+            });
+        }
+        new MutationObserver(applyTechOverlay).observe(document.body, {childList:true, subtree:true});
+        applyTechOverlay();
+    })();
+    </script>
+    """, unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px;background:#f7f8fa;'></div>", unsafe_allow_html=True)
 
