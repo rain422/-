@@ -2184,10 +2184,31 @@ elif st.session_state["page"] == "topics":
         display: none !important;
     }
 
-    /* 토픽 카드 위 버튼 오버레이 */
-    .tpc-wrap { position: relative; }
-    .tpc-wrap .stButton { position: absolute !important; inset: 0 !important; z-index: 10 !important; opacity: 0 !important; }
-    .tpc-wrap .stButton > button { width: 100% !important; height: 100% !important; cursor: pointer !important; }
+    /* ── 토픽 카드 버튼 오버레이 ──
+       .tp-card-marker 를 포함한 column 전체를 position:relative로 만들고
+       그 안의 Streamlit 버튼을 absolute inset:0 으로 카드 전체 영역에 덮음 */
+    [data-testid="column"]:has(.tp-card-marker) {
+        position: relative !important;
+    }
+    [data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] {
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 10 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    [data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] button {
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
     /* 히어로 */
     .tp-hero {
@@ -2503,6 +2524,7 @@ elif st.session_state["page"] == "topics":
                 kw_chips = "".join([f'<span class="tp-card-kw">{k}</span>' for k in kw[:3]])
                 with col:
                     st.markdown(f"""
+                    <div class="tp-card-marker" style="display:none"></div>
                     <div class="tp-card">
                         <div class="tp-card-num">TOPIC {num}</div>
                         <div class="tp-card-title">{ko}</div>
