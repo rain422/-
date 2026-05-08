@@ -858,7 +858,8 @@ def compute_ekf_sim(ekf_steps, ekf_Q, ekf_R, ekf_soc0, ekf_cap):
         Hj = docv(xp); Hj_hist[k] = Hj
         K = P*Hj / (Hj**2*P + ekf_R)
         x = np.clip(xp + K*(V_meas[k] - ocv(xp)), 0, 1); P = (1 - K*Hj)*P; soc_ekf[k] = x
-    return I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist, ocv, docv
+    # 함수 객체는 직렬화 불가 → 반환 제외, 호출부에서 재정의
+    return I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist
 
 @st.cache_data(show_spinner=False)
 def compute_cmp_sim(cmp_steps, cmp_noise_key, cmp_soc0, cmp_cap):
@@ -896,7 +897,8 @@ def compute_cmp_sim(cmp_steps, cmp_noise_key, cmp_soc0, cmp_cap):
                 soc_ols[k] = np.clip(Qe*dV_[-1] + soc_ols[k-1] if k > 0 else cmp_soc0/100, 0, 1)
             else:
                 soc_ols[k] = soc_ols[k-1] if k > 0 else cmp_soc0/100
-    return I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma, ocv_nl, docv_nl
+    # 함수 객체는 직렬화 불가 → 반환 제외, 호출부에서 재정의
+    return I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma
 
 @st.cache_data(show_spinner=False)
 def compute_cmp_heatmap(cmp_steps, cmp_soc0, cmp_cap):
@@ -3372,8 +3374,11 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist, ocv, docv = compute_ekf_sim(
+            I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist = compute_ekf_sim(
                 ekf_steps, ekf_Q, ekf_R, ekf_soc0, ekf_cap)
+            # 함수 객체는 캐시 반환 불가 → 로컬 재정의
+            def ocv(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+            def docv(s): return 1.5 - 1.6*s + 1.5*s**2
 
             rmse_kf  = np.sqrt(np.mean((soc_kf_lin-soc_true)**2))*100
             rmse_ekf = np.sqrt(np.mean((soc_ekf-soc_true)**2))*100
@@ -3816,8 +3821,11 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma, ocv_nl, docv_nl = compute_cmp_sim(
+            I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma = compute_cmp_sim(
                 cmp_steps, cmp_noise, cmp_soc0, cmp_cap)
+            # 함수 객체는 캐시 반환 불가 → 로컬 재정의
+            def ocv_nl(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+            def docv_nl(s): return 1.5 - 1.6*s + 1.5*s**2
             dt = 1.0; Q_nom = cmp_cap * 3600
 
             rmse_kf  = np.sqrt(np.mean((soc_kf -soc_true)**2))*100
