@@ -1500,28 +1500,29 @@ elif st.session_state["page"] == "detail":
 
     st.markdown("""
     <style>
-    /* ── 중복 탭 버튼 숨김 ──
-       Streamlit은 각 요소를 .element-container 또는 .stMarkdownContainer로 감쌈.
-       dtab-bar 다음에 오는 Streamlit 컬럼 행(기능 버튼)을 dtab 위로 올려 투명 오버레이 처리 */
-    .stMarkdownContainer:has(.dtab-bar) + div {
-        margin-top: -52px !important;
-        position: relative !important;
-        z-index: 20 !important;
+    /* ── 시각 레이어: dtab-bar는 장식용, 클릭 통과 ── */
+    .dtab-bar, .dtab-bar * {
+        pointer-events: none !important;
     }
+
+    /* ── 기능 레이어: 투명 버튼 행을 dtab-bar 위로 올려 클릭 담당 ── */
+    .stMarkdownContainer:has(.dtab-bar) + div,
     .element-container:has(.dtab-bar) + div {
-        margin-top: -52px !important;
+        margin-top: -54px !important;
         position: relative !important;
-        z-index: 20 !important;
+        z-index: 999 !important;
     }
     .stMarkdownContainer:has(.dtab-bar) + div button,
     .element-container:has(.dtab-bar) + div button {
         opacity: 0 !important;
-        height: 52px !important;
+        min-height: 54px !important;
+        height: 54px !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
         cursor: pointer !important;
+        pointer-events: auto !important;
     }
     .stMarkdownContainer:has(.dtab-bar) + div [data-testid="column"],
     .element-container:has(.dtab-bar) + div [data-testid="column"] {
@@ -1529,7 +1530,8 @@ elif st.session_state["page"] == "detail":
     }
 
     /* ── 홈으로 버튼 — 텍스트 링크처럼 표시 ── */
-    .detail-hero + div button, .detail-hero + div + div button:first-of-type {
+    .detail-hero + div button,
+    .detail-hero + div + div button {
         background: transparent !important;
         border: none !important;
         color: #9EA5AF !important;
@@ -1538,7 +1540,8 @@ elif st.session_state["page"] == "detail":
         box-shadow: none !important;
         letter-spacing: 0.3px !important;
     }
-    .detail-hero + div button:hover {
+    .detail-hero + div button:hover,
+    .detail-hero + div + div button:hover {
         color: #00B4A0 !important;
         background: transparent !important;
         border: none !important;
