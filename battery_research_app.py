@@ -2792,12 +2792,58 @@ elif st.session_state["page"] == "simulation":
     if "sim_tab" not in st.session_state:
         st.session_state["sim_tab"] = "r0"
 
-    tab_html = '<div class="sim-tab-bar">'
-    for tk, tl in SIM_TABS:
-        cls = "on" if st.session_state["sim_tab"] == tk else ""
-        tab_html += f'<span class="sim-tab {cls}">{tl}</span>'
-    tab_html += "</div>"
-    st.markdown(tab_html, unsafe_allow_html=True)
+    sim_tab_keys  = [tk for tk, _ in SIM_TABS]
+    sim_active_idx = sim_tab_keys.index(st.session_state["sim_tab"]) + 1  # nth-child 1-base
+
+    # 마커 + CSS로 Streamlit 버튼 자체를 탭바처럼 스타일링 (HTML 탭바 이중 표시 제거)
+    st.markdown(f"""
+    <style>
+    /* ── 시뮬레이션 탭 버튼 행 컨테이너 ── */
+    div:has(> .sim-tab-marker) + div {{
+        background: #fff !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding: 0 64px !important;
+        gap: 0 !important;
+        position: sticky !important;
+        top: 64px !important;
+        z-index: 100 !important;
+        box-shadow: 0 2px 12px rgba(13,27,42,0.06) !important;
+    }}
+    div:has(> .sim-tab-marker) + div > div {{
+        gap: 0 !important;
+    }}
+    /* ── 공통 버튼 스타일 ── */
+    div:has(> .sim-tab-marker) + div button {{
+        border-radius: 0 !important;
+        border: none !important;
+        border-bottom: 2px solid transparent !important;
+        background: #fff !important;
+        color: #6B7280 !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        height: 58px !important;
+        min-height: 58px !important;
+        letter-spacing: 0.2px !important;
+        white-space: nowrap !important;
+        box-shadow: none !important;
+        transition: color 0.15s, border-color 0.15s !important;
+        width: 100% !important;
+        padding: 0 24px !important;
+    }}
+    div:has(> .sim-tab-marker) + div button:hover {{
+        color: #0D1B2A !important;
+        background: #fff !important;
+        border-bottom: 2px solid #E2E8F0 !important;
+    }}
+    /* ── 활성 탭 ── */
+    div:has(> .sim-tab-marker) + div [data-testid="column"]:nth-child({sim_active_idx}) button {{
+        color: #00B4A0 !important;
+        border-bottom: 2px solid #00B4A0 !important;
+        font-weight: 700 !important;
+    }}
+    </style>
+    <div class="sim-tab-marker" style="display:none"></div>
+    """, unsafe_allow_html=True)
 
     tab_cols = st.columns(len(SIM_TABS))
     for i, (tk, tl) in enumerate(SIM_TABS):
