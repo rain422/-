@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import urllib.parse
 import numpy as np
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="BatteryIQ — 배터리 건강 추정 연구 포털",
@@ -1200,35 +1201,29 @@ if st.session_state["page"] == "home":
                         st.session_state[k2]=[] if k2!="report" else ""
                     st.rerun()
 
-    # ── 기술 패널 버튼 오버레이 JS ──
-    st.markdown("""
+    # ── 기술 패널 버튼 오버레이 — components.html로 실제 JS 실행 ──
+    components.html("""
     <script>
     (function(){
-        function applyTechOverlay(){
-            document.querySelectorAll('.tech-panel').forEach(function(panel){
+        function overlay(){
+            var d = window.parent.document;
+            d.querySelectorAll('.tech-panel').forEach(function(panel){
                 var col = panel.closest('[data-testid="column"]');
-                if(!col || col.dataset.techOverlaid) return;
+                if(!col || col._techDone) return;
                 col.style.position = 'relative';
-                col.dataset.techOverlaid = '1';
-                var btnWrap = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
-                if(!btnWrap) return;
-                btnWrap.style.cssText = [
-                    'position:absolute','top:0','left:0','right:0','bottom:0',
-                    'z-index:10','margin:0','padding:0'
-                ].join('!important;') + '!important';
-                var btn = btnWrap.querySelector('button');
-                if(btn) btn.style.cssText = [
-                    'width:100%','height:100%','opacity:0',
-                    'cursor:pointer','background:transparent',
-                    'border:none','box-shadow:none','border-radius:0'
-                ].join('!important;') + '!important';
+                col._techDone = true;
+                var bw = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
+                if(!bw) return;
+                bw.style.cssText = 'position:absolute!important;top:0!important;left:0!important;right:0!important;bottom:0!important;z-index:10!important;margin:0!important;padding:0!important;';
+                var b = bw.querySelector('button');
+                if(b) b.style.cssText = 'width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;background:transparent!important;border:none!important;box-shadow:none!important;border-radius:0!important;';
             });
         }
-        new MutationObserver(applyTechOverlay).observe(document.body, {childList:true, subtree:true});
-        applyTechOverlay();
+        new MutationObserver(overlay).observe(window.parent.document.body, {childList:true, subtree:true});
+        overlay();
     })();
     </script>
-    """, unsafe_allow_html=True)
+    """, height=0, scrolling=False)
 
     st.markdown("<div style='height:8px;background:#f7f8fa;'></div>", unsafe_allow_html=True)
 
@@ -2564,38 +2559,29 @@ elif st.session_state["page"] == "topics":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── 토픽 카드 버튼 오버레이 — JS MutationObserver ──
-    # CSS만으로는 Streamlit DOM 구조상 position:absolute 가 작동 불가.
-    # JS로 직접 .tp-card 를 찾아 같은 column 내 버튼을 카드 전체에 절대 위치로 오버레이.
-    st.markdown("""
+    # ── 토픽 카드 버튼 오버레이 — components.html로 실제 JS 실행 ──
+    components.html("""
     <script>
     (function(){
-        function applyOverlay(){
-            document.querySelectorAll('.tp-card').forEach(function(card){
+        function overlay(){
+            var d = window.parent.document;
+            d.querySelectorAll('.tp-card').forEach(function(card){
                 var col = card.closest('[data-testid="column"]');
-                if(!col || col.dataset.tpOverlaid) return;
+                if(!col || col._tpDone) return;
                 col.style.position = 'relative';
-                col.dataset.tpOverlaid = '1';
-                var btnWrap = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
-                if(!btnWrap) return;
-                btnWrap.style.cssText = [
-                    'position:absolute','top:0','left:0','right:0','bottom:0',
-                    'z-index:10','margin:0','padding:0'
-                ].join('!important;') + '!important';
-                var btn = btnWrap.querySelector('button');
-                if(btn) btn.style.cssText = [
-                    'width:100%','height:100%','opacity:0',
-                    'cursor:pointer','background:transparent',
-                    'border:none','box-shadow:none','border-radius:0'
-                ].join('!important;') + '!important';
+                col._tpDone = true;
+                var bw = col.querySelector('[data-testid="stButton"]') || col.querySelector('.stButton');
+                if(!bw) return;
+                bw.style.cssText = 'position:absolute!important;top:0!important;left:0!important;right:0!important;bottom:0!important;z-index:10!important;margin:0!important;padding:0!important;';
+                var b = bw.querySelector('button');
+                if(b) b.style.cssText = 'width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;background:transparent!important;border:none!important;box-shadow:none!important;border-radius:0!important;';
             });
         }
-        // DOM 변화 감지 (Streamlit 재렌더링 대응)
-        new MutationObserver(applyOverlay).observe(document.body, {childList:true, subtree:true});
-        applyOverlay();
+        new MutationObserver(overlay).observe(window.parent.document.body, {childList:true, subtree:true});
+        overlay();
     })();
     </script>
-    """, unsafe_allow_html=True)
+    """, height=0, scrolling=False)
 
     # ── 푸터 ──
     st.markdown("""
