@@ -66,6 +66,47 @@ section[data-testid="stSidebar"] { display:none !important; }
     color: var(--white) !important;
     border-color: var(--teal) !important;
 }
+
+/* ══════════════════════════════
+   카드 클릭 오버레이 — 공통
+   stVerticalBlock 이 카드와 버튼을 모두 직접 자식으로 가짐.
+   position:relative 로 기준점을 삼고 버튼을 absolute fill.
+══════════════════════════════ */
+[data-testid="stVerticalBlock"]:has(.tech-panel),
+[data-testid="stVerticalBlock"]:has(.tp-card) {
+    position: relative !important;
+    overflow: visible !important;
+}
+[data-testid="stVerticalBlock"]:has(.tech-panel) [data-testid="stButton"],
+[data-testid="stVerticalBlock"]:has(.tp-card)   [data-testid="stButton"] {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 20 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+[data-testid="stVerticalBlock"]:has(.tech-panel) [data-testid="stButton"] button,
+[data-testid="stVerticalBlock"]:has(.tp-card)   [data-testid="stButton"] button {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    pointer-events: auto !important;
+}
+
+/* components.html 1px iframe 레이아웃 영향 제거 */
+[data-testid="stCustomComponentV1"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 0 !important;
+}
 .stTabs [data-baseweb="tab-list"] { display:none !important; }
 .stTabs [data-baseweb="tab-panel"] { padding:0 !important; background:transparent !important; border:none !important; }
 textarea {
@@ -1223,7 +1264,7 @@ if st.session_state["page"] == "home":
         overlay();
     })();
     </script>
-    """, height=0, scrolling=False)
+    """, height=1, scrolling=False)
 
     st.markdown("<div style='height:8px;background:#f7f8fa;'></div>", unsafe_allow_html=True)
 
@@ -2581,7 +2622,7 @@ elif st.session_state["page"] == "topics":
         overlay();
     })();
     </script>
-    """, height=0, scrolling=False)
+    """, height=1, scrolling=False)
 
     # ── 푸터 ──
     st.markdown("""
