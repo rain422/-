@@ -726,7 +726,7 @@ NEWS_IMGS = [
 def fetch_news(keyword, hl, gl, ceid, n=8):
     url = f"https://news.google.com/rss/search?q={urllib.parse.quote(keyword)}&hl={hl}&gl={gl}&ceid={ceid}"
     try: return feedparser.parse(url).entries[:n]
-    except: return []
+    except Exception: return []
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_arxiv(keyword, n=6):
@@ -744,7 +744,7 @@ def fetch_arxiv(keyword, n=6):
             authors = ", ".join(a.get("name","") for a in ar[:3]) if ar else e.get("author","")
             if title: out.append({"title":title,"authors":authors,"abstract":summary,"url":link,"published":pub})
         return out
-    except: return []
+    except Exception: return []
 
 def fetch_scholar(keyword, n=4):
     out=[]
@@ -757,7 +757,7 @@ def fetch_scholar(keyword, n=4):
                             "year":bib.get("pub_year",""),"journal":bib.get("venue",""),
                             "abstract":bib.get("abstract",""),"url":pub.get("pub_url","")})
             except StopIteration: break
-    except: pass
+    except Exception: pass
     return out
 
 def build_report(num,ko,en,bg,kw,nko,nen,papers,arxiv):
@@ -781,6 +781,196 @@ def build_report(num,ko,en,bg,kw,nko,nen,papers,arxiv):
     return f"""# {num}. {ko}\n## 연구 분석 보고서 — BatteryIQ\n\n**작성일:** {today} | **키워드:** {kw_str}\n**기준 문헌:** Gregory Plett - *Battery Management Systems*\n**수집 자료:** 뉴스 {n_news}건 · 논문 {n_p}편\n\n---\n\n## 초록\n\n{ko}은(는) 배터리 건강 상태(SOH) 추정의 핵심 주제이다. {bg}\n\n**키워드:** {kw_str}\n\n---\n\n## 1. 서론\n\n### 1.1 연구 배경\n{bg}\n\n### 1.2 연구 목적\n{ko}({en})에 관한 최신 연구 동향과 기술 현황을 체계적으로 분석한다.\n\n---\n\n## 2. 이론적 배경\n\n| 핵심 개념 | 설명 |\n|----------|------|\n{"".join([f"| **{k}** | {ko} 분야 핵심 요소 |\n" for k in kw])}\n\n---\n\n## 3. 최신 기술 동향\n\n### 3.1 국내 동향\n{"".join([f"**[뉴스]** [{n['title']}]({n['link']})\n> {n['source']} | {n['published']}\n\n" for n in nko]) or "(없음)"}\n\n### 3.2 해외 동향\n{"".join([f"**[News]** [{n['title']}]({n['link']})\n> {n['source']} | {n['published']}\n\n" for n in nen]) or "(없음)"}\n\n---\n\n## 4. 핵심 선행 연구\n\n### 4.1 Google Scholar\n{sb}\n\n### 4.2 arXiv 최신 연구\n{ab}\n\n---\n\n## 5. 기술적 분석\n\n| 구분 | 주요 방법 | 특징 | 적용 분야 |\n|------|----------|------|----------|\n| 모델 기반 | 등가 회로 모델 | 구현 용이, 실시간 | BMS 내장 |\n| 필터 기반 | EKF / UKF | 높은 정확도 | 전기차 |\n| 데이터 기반 | 머신러닝 | 대용량 데이터 | 클라우드 BMS |\n\n---\n\n## 6. 결론\n\n- {ko}은(는) BMS 핵심 기능으로 연구 수요 지속 증가\n- 칼만 필터 + 데이터 기반 융합 연구 트렌드\n- AI/ML 융합, 디지털 트윈, 차세대 배터리 적용이 향후 과제\n\n---\n\n## 참고문헌\n\n{"".join([f"{r}  \n" for r in refs]) or "(없음)"}\n\n---\n*BatteryIQ 연구 포털 | Gregory Plett, Battery Management Systems Vol.2 (2015)*"""
 
 # =====================================================================
+# 시뮬레이션 캐시 함수 — 슬라이더 값이 바뀔 때만 재계산
+# =====================================================================
+@st.cache_data(show_spinner=False)
+def compute_r0_sim(r0_true, n_samples, noise_mv):
+    """R0 탭: 회귀 데이터 생성"""
+    np.random.seed(42)
+    dI = np.random.uniform(1, 10, n_samples)
+    noise = np.random.normal(0, noise_mv * 1e-3, n_samples)
+    dV = (r0_true * 1e-3) * dI + noise
+    r0_est = np.dot(dI, dV) / np.dot(dI, dI) * 1000
+    return dI, dV, r0_est
+
+@st.cache_data(show_spinner=False)
+def compute_r0_3d(r0_true):
+    """R0 탭: 3D 서피스 (18×18 루프 — 가장 무거운 연산)"""
+    nv = np.linspace(0, 25, 18)
+    sv = np.linspace(20, 180, 18)
+    Z3 = np.zeros((len(nv), len(sv)))
+    for ii, n_mv in enumerate(nv):
+        for jj, n_s in enumerate(sv):
+            np.random.seed(0)
+            dI_ = np.random.uniform(1, 10, int(n_s))
+            dV_ = (r0_true * 1e-3) * dI_ + np.random.normal(0, n_mv * 1e-3, int(n_s))
+            r0_ = np.dot(dI_, dV_) / np.dot(dI_, dI_) * 1000
+            Z3[ii, jj] = abs(r0_ - r0_true) / r0_true * 100
+    return nv, sv, Z3
+
+@st.cache_data(show_spinner=False)
+def compute_kf_sim(kf_steps, kf_Q_proc, kf_R_meas, kf_soc0, kf_cap):
+    """KF 탭: 전체 칼만 필터 시뮬레이션"""
+    np.random.seed(7)
+    dt = 1.0; Q_nom = kf_cap * 3600
+    I = np.zeros(kf_steps)
+    for i in range(kf_steps):
+        if   i < kf_steps * 0.3: I[i] = -5  + np.random.normal(0, 0.3)
+        elif i < kf_steps * 0.6: I[i] = -10 + np.random.normal(0, 0.5)
+        else:                     I[i] = -3  + np.random.normal(0, 0.2)
+    soc_true = np.zeros(kf_steps); soc_true[0] = kf_soc0 / 100
+    for k in range(1, kf_steps):
+        soc_true[k] = np.clip(soc_true[k-1] - I[k] * dt / Q_nom, 0, 1)
+    V_meas = 3.0 + 1.2 * soc_true + np.random.normal(0, np.sqrt(kf_R_meas), kf_steps)
+    x = kf_soc0 / 100; P = 0.1; H = 1.2
+    soc_kf = np.zeros(kf_steps); K_hist = np.zeros(kf_steps)
+    P_hist = np.zeros(kf_steps); innov = np.zeros(kf_steps)
+    for k in range(kf_steps):
+        x_pred = x - I[k] * dt / Q_nom; P_pred = P + kf_Q_proc
+        K = P_pred * H / (H * P_pred * H + kf_R_meas)
+        innov[k] = V_meas[k] - (3.0 + H * x_pred)
+        x = np.clip(x_pred + K * innov[k], 0, 1)
+        P = (1 - K * H) * P_pred
+        soc_kf[k] = x; K_hist[k] = K; P_hist[k] = P
+    return I, soc_true, V_meas, soc_kf, K_hist, P_hist, innov
+
+@st.cache_data(show_spinner=False)
+def compute_ekf_sim(ekf_steps, ekf_Q, ekf_R, ekf_soc0, ekf_cap):
+    """EKF 탭: 선형 KF + EKF 비교 시뮬레이션"""
+    np.random.seed(8)
+    def ocv(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+    def docv(s): return 1.5 - 1.6*s + 1.5*s**2
+    dt = 1.0; Q_nom = ekf_cap * 3600
+    I = np.random.normal(-5, 1.5, ekf_steps)
+    soc_true = np.zeros(ekf_steps); soc_true[0] = ekf_soc0 / 100
+    for k in range(1, ekf_steps):
+        soc_true[k] = np.clip(soc_true[k-1] - I[k]*dt/Q_nom, 0, 1)
+    V_meas = ocv(soc_true) + np.random.normal(0, np.sqrt(ekf_R), ekf_steps)
+    x, P = ekf_soc0/100, 0.1; soc_kf_lin = np.zeros(ekf_steps); H_lin = 1.5
+    for k in range(ekf_steps):
+        x = np.clip(x - I[k]*dt/Q_nom, 0, 1); P += ekf_Q
+        K = P*H_lin / (H_lin**2*P + ekf_R)
+        x += K*(V_meas[k] - (3.0 + H_lin*x)); x = np.clip(x, 0, 1)
+        P = (1 - K*H_lin)*P; soc_kf_lin[k] = x
+    x, P = ekf_soc0/100, 0.1; soc_ekf = np.zeros(ekf_steps); Hj_hist = np.zeros(ekf_steps)
+    for k in range(ekf_steps):
+        xp = np.clip(x - I[k]*dt/Q_nom, 0, 1); P += ekf_Q
+        Hj = docv(xp); Hj_hist[k] = Hj
+        K = P*Hj / (Hj**2*P + ekf_R)
+        x = np.clip(xp + K*(V_meas[k] - ocv(xp)), 0, 1); P = (1 - K*Hj)*P; soc_ekf[k] = x
+    return I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist, ocv, docv
+
+@st.cache_data(show_spinner=False)
+def compute_cmp_sim(cmp_steps, cmp_noise_key, cmp_soc0, cmp_cap):
+    """CMP 탭: KF + EKF + OLS 동시 시뮬레이션"""
+    np.random.seed(19)
+    noise_map = {"낮음": 0.002, "보통": 0.008, "높음": 0.025}
+    sigma = noise_map[cmp_noise_key]
+    dt = 1.0; Q_nom = cmp_cap * 3600
+    def ocv_nl(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+    def docv_nl(s): return 1.5 - 1.6*s + 1.5*s**2
+    I = np.random.normal(-5, 1.5, cmp_steps)
+    soc_true = np.zeros(cmp_steps); soc_true[0] = cmp_soc0 / 100
+    for k in range(1, cmp_steps):
+        soc_true[k] = np.clip(soc_true[k-1] - I[k]*dt/Q_nom, 0, 1)
+    V_meas = ocv_nl(soc_true) + np.random.normal(0, sigma, cmp_steps)
+    x, P = cmp_soc0/100, 0.1; soc_kf = np.zeros(cmp_steps)
+    for k in range(cmp_steps):
+        x = np.clip(x - I[k]*dt/Q_nom, 0, 1); P += 1e-5
+        K = P*1.5 / (1.5**2*P + sigma**2)
+        x = np.clip(x + K*(V_meas[k] - (3.0 + 1.5*x)), 0, 1); P = (1-K*1.5)*P; soc_kf[k] = x
+    x, P = cmp_soc0/100, 0.1; soc_ekf = np.zeros(cmp_steps)
+    for k in range(cmp_steps):
+        xp = np.clip(x - I[k]*dt/Q_nom, 0, 1); P += 1e-5
+        Hj = docv_nl(xp); K = P*Hj / (Hj**2*P + sigma**2)
+        x = np.clip(xp + K*(V_meas[k] - ocv_nl(xp)), 0, 1); P = (1-K*Hj)*P; soc_ekf[k] = x
+    win = 20; soc_ols = np.zeros(cmp_steps)
+    for k in range(cmp_steps):
+        s = max(0, k - win); e = k + 1
+        if e - s < 3:
+            soc_ols[k] = soc_true[k] + np.random.normal(0, sigma*2)
+        else:
+            dsoc = np.diff(soc_true[s:e]); dV_ = np.diff(V_meas[s:e])
+            if np.dot(dV_, dV_) > 1e-10:
+                Qe = np.dot(dsoc, dV_) / np.dot(dV_, dV_)
+                soc_ols[k] = np.clip(Qe*dV_[-1] + soc_ols[k-1] if k > 0 else cmp_soc0/100, 0, 1)
+            else:
+                soc_ols[k] = soc_ols[k-1] if k > 0 else cmp_soc0/100
+    return I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma, ocv_nl, docv_nl
+
+@st.cache_data(show_spinner=False)
+def compute_cmp_heatmap(cmp_steps, cmp_soc0, cmp_cap):
+    """CMP 탭: 노이즈 레벨별 RMSE 히트맵 (실제 OLS 계산 포함)"""
+    noise_levels = np.linspace(0.001, 0.04, 12)
+    dt = 1.0; Q_nom = cmp_cap * 3600
+    def ocv_nl(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+    def docv_nl(s): return 1.5 - 1.6*s + 1.5*s**2
+    hm_kf = []; hm_ekf = []; hm_ols = []
+    win = 20
+    for sig in noise_levels:
+        np.random.seed(19)
+        I2 = np.random.normal(-5, 1.5, cmp_steps)
+        st2 = np.zeros(cmp_steps); st2[0] = cmp_soc0 / 100
+        for k in range(1, cmp_steps):
+            st2[k] = np.clip(st2[k-1] - I2[k]*dt/Q_nom, 0, 1)
+        V2 = ocv_nl(st2) + np.random.normal(0, sig, cmp_steps)
+        # KF
+        x2, P2 = cmp_soc0/100, 0.1; sk = np.zeros(cmp_steps)
+        for k in range(cmp_steps):
+            x2 = np.clip(x2 - I2[k]*dt/Q_nom, 0, 1); P2 += 1e-5
+            K2 = P2*1.5 / (1.5**2*P2 + sig**2)
+            x2 = np.clip(x2 + K2*(V2[k] - (3.0 + 1.5*x2)), 0, 1); P2 = (1-K2*1.5)*P2; sk[k] = x2
+        # EKF
+        x2, P2 = cmp_soc0/100, 0.1; se = np.zeros(cmp_steps)
+        for k in range(cmp_steps):
+            xp2 = np.clip(x2 - I2[k]*dt/Q_nom, 0, 1); P2 += 1e-5
+            Hj2 = docv_nl(xp2); K2 = P2*Hj2 / (Hj2**2*P2 + sig**2)
+            x2 = np.clip(xp2 + K2*(V2[k] - ocv_nl(xp2)), 0, 1); P2 = (1-K2*Hj2)*P2; se[k] = x2
+        # OLS 슬라이딩 윈도우 — 실제 계산
+        so = np.zeros(cmp_steps)
+        for k in range(cmp_steps):
+            s = max(0, k - win); e = k + 1
+            if e - s < 3:
+                so[k] = st2[k] + np.random.normal(0, sig*2)
+            else:
+                dsoc = np.diff(st2[s:e]); dV_ = np.diff(V2[s:e])
+                if np.dot(dV_, dV_) > 1e-10:
+                    Qe = np.dot(dsoc, dV_) / np.dot(dV_, dV_)
+                    so[k] = np.clip(Qe*dV_[-1] + so[k-1] if k > 0 else cmp_soc0/100, 0, 1)
+                else:
+                    so[k] = so[k-1] if k > 0 else cmp_soc0/100
+        hm_kf.append(np.sqrt(np.mean((sk - st2)**2)) * 100)
+        hm_ekf.append(np.sqrt(np.mean((se - st2)**2)) * 100)
+        hm_ols.append(np.sqrt(np.mean((so - st2)**2)) * 100)
+    return noise_levels, np.array([hm_kf, hm_ekf, hm_ols])
+
+@st.cache_data(show_spinner=False)
+def compute_cmp_3d(cmp_steps, cmp_soc0, cmp_cap):
+    """CMP 탭: 3D 서피스 (12×12 루프 — 가장 무거운 연산)"""
+    dt = 1.0; Q_nom = cmp_cap * 3600
+    def ocv_nl(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
+    def docv_nl(s): return 1.5 - 1.6*s + 1.5*s**2
+    nv2 = np.linspace(0.002, 0.03, 12)
+    sv2 = np.linspace(50, 400, 12)
+    Z3b = np.zeros((len(nv2), len(sv2)))
+    for ii, sig2 in enumerate(nv2):
+        for jj, steps2 in enumerate(sv2):
+            np.random.seed(0)
+            ns = int(steps2)
+            I3 = np.random.normal(-5, 1.5, ns)
+            st3 = np.zeros(ns); st3[0] = 0.8
+            for k in range(1, ns):
+                st3[k] = np.clip(st3[k-1] - I3[k]*dt/Q_nom, 0, 1)
+            V3 = ocv_nl(st3) + np.random.normal(0, sig2, ns)
+            x3, P3 = 0.8, 0.1; se3 = np.zeros(ns)
+            for k in range(ns):
+                xp3 = np.clip(x3 - I3[k]*dt/Q_nom, 0, 1); P3 += 1e-5
+                Hj3 = docv_nl(xp3); K3 = P3*Hj3 / (Hj3**2*P3 + sig2**2)
+                x3 = np.clip(xp3 + K3*(V3[k] - ocv_nl(xp3)), 0, 1); P3 = (1-K3*Hj3)*P3; se3[k] = x3
+            Z3b[ii, jj] = np.sqrt(np.mean((se3 - st3)**2)) * 100
+    return nv2, sv2, Z3b
+
+# =====================================================================
 # 세션
 # =====================================================================
 for k,v in [("page","home"),("sel_idx",0),
@@ -791,13 +981,6 @@ for k,v in [("page","home"),("sel_idx",0),
             ("show_topic_nav",False),("overview_tab","competitiveness"),
             ("nr_topic_idx",-1),("nr_news",[]),("topics_page",1)]:
     if k not in st.session_state: st.session_state[k]=v
-
-# 쿼리 파라미터로 페이지 이동 감지 (HTML 버튼 → topics)
-_qp = st.query_params.to_dict()
-if _qp.get("goto") == "topics":
-    st.query_params.clear()
-    st.session_state["page"] = "topics"
-    st.rerun()
 
 # =====================================================================
 # GNB
@@ -861,8 +1044,6 @@ st.markdown("""
 }
 /* 페이지 상단 여백 */
 .main-spacer { height: 8px; }
-#MainMenu, footer, header { visibility: hidden; }
-.stDeployButton { display: none; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
 [data-testid="stAppViewBlockContainer"] { padding: 0 !important; max-width: 100% !important; }
 </style>
@@ -2684,11 +2865,7 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            np.random.seed(42)
-            dI = np.random.uniform(1, 10, n_samples)
-            noise = np.random.normal(0, noise_mv * 1e-3, n_samples)
-            dV = (r0_true * 1e-3) * dI + noise
-            r0_est = np.dot(dI, dV) / np.dot(dI, dI) * 1000
+            dI, dV, r0_est = compute_r0_sim(r0_true, n_samples, noise_mv)
 
             cycles = np.arange(0, n_cycles + 1)
             r0_prog = r0_true * (1 + 0.003 * cycles)
@@ -2794,16 +2971,7 @@ elif st.session_state["page"] == "simulation":
 
             with c2:
                 # 3D 서피스: 노이즈 × 샘플 수 → 추정 오차
-                nv = np.linspace(0, 25, 18)
-                sv = np.linspace(20, 180, 18)
-                Z3 = np.zeros((len(nv), len(sv)))
-                for ii, n_mv in enumerate(nv):
-                    for jj, n_s in enumerate(sv):
-                        np.random.seed(0)
-                        dI_ = np.random.uniform(1, 10, int(n_s))
-                        dV_ = (r0_true*1e-3)*dI_ + np.random.normal(0, n_mv*1e-3, int(n_s))
-                        r0_ = np.dot(dI_,dV_)/np.dot(dI_,dI_)*1000
-                        Z3[ii,jj] = abs(r0_-r0_true)/r0_true*100
+                nv, sv, Z3 = compute_r0_3d(r0_true)
                 fig3d = go.Figure(data=[go.Surface(
                     z=Z3, x=sv, y=nv,
                     colorscale=[[0,'#00B4A0'],[0.5,'#F59E0B'],[1,'#E8002A']],
@@ -2933,29 +3101,9 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            np.random.seed(7)
+            I, soc_true, V_meas, soc_kf, K_hist, P_hist, innov = compute_kf_sim(
+                kf_steps, kf_Q_proc, kf_R_meas, kf_soc0, kf_cap)
             dt = 1.0; Q_nom = kf_cap * 3600
-            I = np.zeros(kf_steps)
-            for i in range(kf_steps):
-                if   i < kf_steps*0.3: I[i] = -5  + np.random.normal(0,0.3)
-                elif i < kf_steps*0.6: I[i] = -10 + np.random.normal(0,0.5)
-                else:                  I[i] = -3  + np.random.normal(0,0.2)
-
-            soc_true = np.zeros(kf_steps); soc_true[0] = kf_soc0/100
-            for k in range(1, kf_steps):
-                soc_true[k] = np.clip(soc_true[k-1] - I[k]*dt/Q_nom, 0, 1)
-            V_meas = 3.0 + 1.2*soc_true + np.random.normal(0, np.sqrt(kf_R_meas), kf_steps)
-
-            x = kf_soc0/100; P = 0.1; H = 1.2
-            soc_kf = np.zeros(kf_steps); K_hist = np.zeros(kf_steps); P_hist = np.zeros(kf_steps)
-            innov  = np.zeros(kf_steps)
-            for k in range(kf_steps):
-                x_pred = x - I[k]*dt/Q_nom; P_pred = P + kf_Q_proc
-                K = P_pred*H/(H*P_pred*H + kf_R_meas)
-                innov[k] = V_meas[k] - (3.0 + H*x_pred)
-                x = np.clip(x_pred + K*innov[k], 0, 1)
-                P = (1-K*H)*P_pred
-                soc_kf[k] = x; K_hist[k] = K; P_hist[k] = P
 
             rmse = np.sqrt(np.mean((soc_kf - soc_true)**2))*100
             final_soc = soc_kf[-1]*100
@@ -3156,29 +3304,8 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            np.random.seed(8)
-            def ocv(s): return 3.0 + 1.5*s - 0.8*s**2 + 0.5*s**3
-            def docv(s): return 1.5 - 1.6*s + 1.5*s**2
-            dt = 1.0; Q_nom = ekf_cap*3600
-            I = np.random.normal(-5, 1.5, ekf_steps)
-            soc_true = np.zeros(ekf_steps); soc_true[0] = ekf_soc0/100
-            for k in range(1, ekf_steps):
-                soc_true[k] = np.clip(soc_true[k-1]-I[k]*dt/Q_nom, 0, 1)
-            V_meas = ocv(soc_true) + np.random.normal(0, np.sqrt(ekf_R), ekf_steps)
-
-            x, P = ekf_soc0/100, 0.1; soc_kf_lin = np.zeros(ekf_steps); H_lin = 1.5
-            for k in range(ekf_steps):
-                x = np.clip(x-I[k]*dt/Q_nom, 0, 1); P += ekf_Q
-                K = P*H_lin/(H_lin**2*P+ekf_R)
-                x += K*(V_meas[k]-(3.0+H_lin*x)); x = np.clip(x, 0, 1)
-                P = (1-K*H_lin)*P; soc_kf_lin[k] = x
-
-            x, P = ekf_soc0/100, 0.1; soc_ekf = np.zeros(ekf_steps); Hj_hist = np.zeros(ekf_steps)
-            for k in range(ekf_steps):
-                xp = np.clip(x-I[k]*dt/Q_nom, 0, 1); P += ekf_Q
-                Hj = docv(xp); Hj_hist[k] = Hj
-                K = P*Hj/(Hj**2*P+ekf_R)
-                x = np.clip(xp+K*(V_meas[k]-ocv(xp)), 0, 1); P = (1-K*Hj)*P; soc_ekf[k] = x
+            I, soc_true, V_meas, soc_kf_lin, soc_ekf, Hj_hist, ocv, docv = compute_ekf_sim(
+                ekf_steps, ekf_Q, ekf_R, ekf_soc0, ekf_cap)
 
             rmse_kf  = np.sqrt(np.mean((soc_kf_lin-soc_true)**2))*100
             rmse_ekf = np.sqrt(np.mean((soc_ekf-soc_true)**2))*100
@@ -3621,40 +3748,9 @@ elif st.session_state["page"] == "simulation":
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_main:
-            np.random.seed(19)
-            noise_map = {"낮음":0.002,"보통":0.008,"높음":0.025}
-            sigma = noise_map[cmp_noise]
-            dt = 1.0; Q_nom = cmp_cap*3600
-            I = np.random.normal(-5, 1.5, cmp_steps)
-            def ocv_nl(s): return 3.0+1.5*s-0.8*s**2+0.5*s**3
-            def docv_nl(s): return 1.5-1.6*s+1.5*s**2
-            soc_true = np.zeros(cmp_steps); soc_true[0] = cmp_soc0/100
-            for k in range(1, cmp_steps):
-                soc_true[k] = np.clip(soc_true[k-1]-I[k]*dt/Q_nom, 0, 1)
-            V_meas = ocv_nl(soc_true)+np.random.normal(0, sigma, cmp_steps)
-
-            x, P = cmp_soc0/100, 0.1; soc_kf = np.zeros(cmp_steps)
-            for k in range(cmp_steps):
-                x = np.clip(x-I[k]*dt/Q_nom,0,1); P+=1e-5
-                K = P*1.5/(1.5**2*P+sigma**2)
-                x = np.clip(x+K*(V_meas[k]-(3.0+1.5*x)),0,1); P=(1-K*1.5)*P; soc_kf[k]=x
-
-            x, P = cmp_soc0/100, 0.1; soc_ekf = np.zeros(cmp_steps)
-            for k in range(cmp_steps):
-                xp=np.clip(x-I[k]*dt/Q_nom,0,1); P+=1e-5
-                Hj=docv_nl(xp); K=P*Hj/(Hj**2*P+sigma**2)
-                x=np.clip(xp+K*(V_meas[k]-ocv_nl(xp)),0,1); P=(1-K*Hj)*P; soc_ekf[k]=x
-
-            win=20; soc_ols=np.zeros(cmp_steps)
-            for k in range(cmp_steps):
-                s=max(0,k-win); e=k+1
-                if e-s<3: soc_ols[k]=soc_true[k]+np.random.normal(0,sigma*2)
-                else:
-                    dsoc=np.diff(soc_true[s:e]); dV_=np.diff(V_meas[s:e])
-                    if np.dot(dV_,dV_)>1e-10:
-                        Qe=np.dot(dsoc,dV_)/np.dot(dV_,dV_)
-                        soc_ols[k]=np.clip(Qe*dV_[-1]+soc_ols[k-1] if k>0 else cmp_soc0/100,0,1)
-                    else: soc_ols[k]=soc_ols[k-1] if k>0 else cmp_soc0/100
+            I, soc_true, V_meas, soc_kf, soc_ekf, soc_ols, sigma, ocv_nl, docv_nl = compute_cmp_sim(
+                cmp_steps, cmp_noise, cmp_soc0, cmp_cap)
+            dt = 1.0; Q_nom = cmp_cap * 3600
 
             rmse_kf  = np.sqrt(np.mean((soc_kf -soc_true)**2))*100
             rmse_ekf = np.sqrt(np.mean((soc_ekf-soc_true)**2))*100
@@ -3757,30 +3853,8 @@ elif st.session_state["page"] == "simulation":
                 """, unsafe_allow_html=True)
 
             with c2:
-                # 노이즈 레벨별 히트맵
-                noise_levels = np.linspace(0.001, 0.04, 12)
-                hm_kf=[]; hm_ekf=[]; hm_ols=[]
-                for sig in noise_levels:
-                    np.random.seed(19)
-                    I2=np.random.normal(-5,1.5,cmp_steps)
-                    st2=np.zeros(cmp_steps); st2[0]=cmp_soc0/100
-                    for k in range(1,cmp_steps): st2[k]=np.clip(st2[k-1]-I2[k]*dt/Q_nom,0,1)
-                    V2=ocv_nl(st2)+np.random.normal(0,sig,cmp_steps)
-                    x2,P2=cmp_soc0/100,0.1; sk=np.zeros(cmp_steps)
-                    for k in range(cmp_steps):
-                        x2=np.clip(x2-I2[k]*dt/Q_nom,0,1); P2+=1e-5
-                        K2=P2*1.5/(1.5**2*P2+sig**2)
-                        x2=np.clip(x2+K2*(V2[k]-(3.0+1.5*x2)),0,1); P2=(1-K2*1.5)*P2; sk[k]=x2
-                    x2,P2=cmp_soc0/100,0.1; se=np.zeros(cmp_steps)
-                    for k in range(cmp_steps):
-                        xp2=np.clip(x2-I2[k]*dt/Q_nom,0,1); P2+=1e-5
-                        Hj2=docv_nl(xp2); K2=P2*Hj2/(Hj2**2*P2+sig**2)
-                        x2=np.clip(xp2+K2*(V2[k]-ocv_nl(xp2)),0,1); P2=(1-K2*Hj2)*P2; se[k]=x2
-                    hm_kf.append(np.sqrt(np.mean((sk-st2)**2))*100)
-                    hm_ekf.append(np.sqrt(np.mean((se-st2)**2))*100)
-                    hm_ols.append((hm_kf[-1]+hm_ekf[-1])*0.9+np.random.uniform(0.1,0.5))
-
-                Z_hm = np.array([hm_kf, hm_ekf, hm_ols])
+                # 노이즈 레벨별 히트맵 — 실제 OLS 계산 포함
+                noise_levels, Z_hm = compute_cmp_heatmap(cmp_steps, cmp_soc0, cmp_cap)
                 fig_hm2 = go.Figure(go.Heatmap(
                     z=Z_hm, x=[f'{s:.3f}' for s in noise_levels], y=['KF','EKF','OLS'],
                     colorscale=[[0,'#D1FAF4'],[0.5,'#F59E0B'],[1,'#E8002A']],
@@ -3803,24 +3877,7 @@ elif st.session_state["page"] == "simulation":
 
             with c3:
                 # 3D 서피스: 노이즈 × 스텝 수 → EKF RMSE
-                nv2 = np.linspace(0.002, 0.03, 12)
-                sv2 = np.linspace(50, 400, 12)
-                Z3b = np.zeros((len(nv2), len(sv2)))
-                for ii, sig2 in enumerate(nv2):
-                    for jj, steps2 in enumerate(sv2):
-                        np.random.seed(0)
-                        ns = int(steps2)
-                        I3 = np.random.normal(-5,1.5,ns)
-                        st3 = np.zeros(ns); st3[0]=0.8
-                        for k in range(1,ns): st3[k]=np.clip(st3[k-1]-I3[k]*dt/Q_nom,0,1)
-                        V3 = ocv_nl(st3)+np.random.normal(0,sig2,ns)
-                        x3,P3=0.8,0.1; se3=np.zeros(ns)
-                        for k in range(ns):
-                            xp3=np.clip(x3-I3[k]*dt/Q_nom,0,1); P3+=1e-5
-                            Hj3=docv_nl(xp3); K3=P3*Hj3/(Hj3**2*P3+sig2**2)
-                            x3=np.clip(xp3+K3*(V3[k]-ocv_nl(xp3)),0,1); P3=(1-K3*Hj3)*P3; se3[k]=x3
-                        Z3b[ii,jj] = np.sqrt(np.mean((se3-st3)**2))*100
-
+                nv2, sv2, Z3b = compute_cmp_3d(cmp_steps, cmp_soc0, cmp_cap)
                 fig3d2 = go.Figure(data=[go.Surface(
                     z=Z3b, x=sv2, y=nv2*1000,
                     colorscale=[[0,'#00B4A0'],[0.5,'#F59E0B'],[1,'#E8002A']],
