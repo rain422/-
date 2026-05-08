@@ -68,27 +68,53 @@ section[data-testid="stSidebar"] { display:none !important; }
 }
 
 /* ══════════════════════════════
-   카드 클릭 오버레이 — 공통
-   stVerticalBlock 이 카드와 버튼을 모두 직접 자식으로 가짐.
-   position:relative 로 기준점을 삼고 버튼을 absolute fill.
+   카드 클릭 오버레이
+   column 기준 position:relative, 버튼은 명시적 높이로 absolute 오버레이
 ══════════════════════════════ */
-[data-testid="stVerticalBlock"]:has(.tech-panel),
-[data-testid="stVerticalBlock"]:has(.tp-card) {
+/* tech-panel: 고정 높이 420px */
+[data-testid="column"]:has(.tech-panel-marker) {
     position: relative !important;
-    overflow: visible !important;
 }
-[data-testid="stVerticalBlock"]:has(.tech-panel) [data-testid="stButton"],
-[data-testid="stVerticalBlock"]:has(.tp-card)   [data-testid="stButton"] {
+[data-testid="column"]:has(.tech-panel-marker) [data-testid="stButton"] {
     position: absolute !important;
-    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 420px !important;
     z-index: 20 !important;
     margin: 0 !important;
     padding: 0 !important;
+    pointer-events: auto !important;
+}
+[data-testid="column"]:has(.tech-panel-marker) [data-testid="stButton"] button {
     width: 100% !important;
     height: 100% !important;
+    min-height: 0 !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    pointer-events: auto !important;
 }
-[data-testid="stVerticalBlock"]:has(.tech-panel) [data-testid="stButton"] button,
-[data-testid="stVerticalBlock"]:has(.tp-card)   [data-testid="stButton"] button {
+
+/* tp-card: 고정 높이 240px */
+[data-testid="column"]:has(.tp-card-marker) {
+    position: relative !important;
+}
+[data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 240px !important;
+    z-index: 20 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: auto !important;
+}
+[data-testid="column"]:has(.tp-card-marker) [data-testid="stButton"] button {
     width: 100% !important;
     height: 100% !important;
     min-height: 0 !important;
@@ -2363,6 +2389,7 @@ elif st.session_state["page"] == "topics":
         border-top: 2px solid transparent;
         border-radius: 2px;
         padding: 28px 24px 22px;
+        min-height: 240px;
         height: 100%;
         cursor: pointer;
         transition: all 0.25s ease;
